@@ -343,6 +343,6 @@ This project is distributed under the **MIT License**.
 
 ⭐ **If this project was useful, please consider starring the repository!**
 
-*Built with ❤️ by Poojan Patel · Final Year Project · SAL Institute of Technology · GTU 2026*
+*Built with ❤️ by Poojan Patel · Final Year Project · Ahmedabad Institute of Technology · GTU 2026*
 
 </div>
