@@ -26,7 +26,7 @@
 
 ### 🏠 Dashboard
 ![Dashboard](docs/images/dashboard.png)
-
+![Dashboard](docs/images/dashboard1.png)
 ---
 
 ### ❤️ Heart Disease Prediction
@@ -120,6 +120,11 @@
 
 ### 📋 Prediction History
 ![History](docs/images/history.png)
+
+---
+
+### 🩸 Assistant
+![assistant](docs/images/assistant.png)
 
 ---
 
