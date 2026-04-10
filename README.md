@@ -325,8 +325,8 @@ Each prediction includes a recommended specialist:
 | Field | Detail |
 |---|---|
 | **Name** | Poojan Patel |
-| **College** | SAL Institute of Technology and Engineering Research |
-| **Department** | Information & Communication Technology (ICT) |
+| **College** | Ahmedabad Institute of Technology and Engineering Research |
+| **Department** | Computer Engineering (CE) |
 | **University** | Gujarat Technological University (GTU) |
 | **Year** | Final Year — 2026 |
 | **GitHub** | [@Poojanpatel12](https://github.com/Poojanpatel12) |
