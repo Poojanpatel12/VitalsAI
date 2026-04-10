@@ -325,7 +325,7 @@ Each prediction includes a recommended specialist:
 | Field | Detail |
 |---|---|
 | **Name** | Poojan Patel |
-| **College** | Ahmedabad Institute of Technology and Engineering Research |
+| **College** | Ahmedabad Institute of Technology |
 | **Department** | Computer Engineering (CE) |
 | **University** | Gujarat Technological University (GTU) |
 | **Year** | Final Year — 2026 |
