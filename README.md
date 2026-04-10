@@ -1,9 +1,6 @@
 
 # 🏥 VitalsAI — AI-Powered Health Prediction Platform
 
-# VitalsAI
-
-### AI-powered health prediction platform for Heart, Brain, Diabetes, Kidney & Eye diseases
 
 <div align="center">
 
@@ -18,11 +15,15 @@
 
 **AI-powered platform for predicting Heart Disease, Brain Stroke, Diabetes, Kidney Disease & Eye Disease — with an intelligent health chatbot powered by Claude AI.**
 
-*Final Year Project · SAL Institute of Technology · GTU · 2026*
+*Final Year Project · Ahmedabad Institute of Technology · GTU · 2026*
 
 </div>
 
 ---
+
+# VitalsAI
+
+#### AI-powered health prediction platform for Heart, Brain, Diabetes, Kidney & Eye diseases
 
 ## 🩺 Overview
 
