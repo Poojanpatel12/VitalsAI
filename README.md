@@ -1,6 +1,4 @@
-# VitalsAI
 
-#### AI-powered health prediction platform for Heart, Brain, Diabetes, Kidney & Eye diseases
 # 🏥 VitalsAI — AI-Powered Health Prediction Platform
 
 <div align="center">
@@ -21,6 +19,9 @@
 </div>
 
 ---
+# VitalsAI
+
+#### AI-powered health prediction platform for Heart, Brain, Diabetes, Kidney & Eye diseases
 
 ## 📸 Screenshots
 
