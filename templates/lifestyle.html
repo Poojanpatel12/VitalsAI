@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitalsAI — Lifestyle Recommendations</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c}
+nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 40px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:700;color:#2b6cb0}.logo span{color:#e53e3e}
+.nav-links a{text-decoration:none;color:#4a5568;font-size:13px;padding:6px 12px;border-radius:20px;margin-left:4px}
+.nav-links a:hover,.nav-links a.active{background:#2b6cb0;color:#fff}
+.hero{background:linear-gradient(135deg,#48bb78,#2b6cb0);padding:44px 40px;text-align:center;color:#fff}
+.hero h1{font-size:30px;font-weight:800;margin-bottom:8px}
+.hero p{font-size:14px;opacity:.85;max-width:480px;margin:0 auto}
+.main{max-width:1000px;margin:32px auto;padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.full{grid-column:1/-1}
+.card{background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.card h2{font-size:17px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card p.sub{font-size:13px;color:#718096;margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#4a5568;margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:.2s}
+.fg input:focus,.fg select:focus{border-color:#48bb78}
+.btn-rec{width:100%;padding:13px;background:linear-gradient(135deg,#48bb78,#2b6cb0);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:18px;transition:.2s}
+.btn-rec:hover{opacity:.9}
+
+/* Score gauge */
+.score-wrap{text-align:center;padding:10px 0 20px}
+.score-circle{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 12px;border:6px solid}
+.score-circle.low{border-color:#f56565;background:#fff5f5}
+.score-circle.medium{border-color:#ed8936;background:#fffbeb}
+.score-circle.good{border-color:#48bb78;background:#f0fff4}
+.score-num{font-size:28px;font-weight:800}
+.score-label{font-size:11px;color:#718096;font-weight:600}
+.risk-badge{display:inline-block;padding:5px 16px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:8px}
+.badge-low{background:#fff5f5;color:#c53030}
+.badge-medium{background:#fffbeb;color:#9c4221}
+.badge-high{background:#f0fff4;color:#276749}
+
+/* Rec items */
+.rec-category{margin-bottom:18px}
+.rec-category h4{font-size:13px;font-weight:700;color:#4a5568;margin-bottom:9px;display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:1px solid #f0f4f8}
+.rec-item{display:flex;align-items:flex-start;gap:8px;padding:9px 13px;background:#f7fafc;border-radius:8px;margin-bottom:6px;font-size:13px;border-left:3px solid}
+.rec-item.diet{border-color:#48bb78}
+.rec-item.exercise{border-color:#ed8936}
+.rec-item.sleep{border-color:#805ad5}
+.rec-item.medical{border-color:#e53e3e}
+.check{color:#48bb78;font-weight:700;margin-top:1px;flex-shrink:0}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">Vitals<span>AI</span></div>
+  <div class="nav-links">
+    <a href="/">Home</a><a href="/heart">Heart</a><a href="/brain">Brain</a>
+    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye">Eye</a>
+    <a href="/assistant">🤖 Assistant</a>
+    <a href="/lifestyle" class="active">🌿 Lifestyle</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>🌿 Personalized Lifestyle Recommendations</h1>
+  <p>Tamara health data enter karo — AI tamne personalized diet, exercise, sleep ane medical advice aapashe</p>
+</div>
+
+<div class="main">
+  <!-- Input Form -->
+  <div class="card">
+    <h2>📋 Your Health Profile</h2>
+    <p class="sub">Niche thamara health details bharo</p>
+    <div class="form-grid">
+      <div class="fg"><label>Age</label><input type="number" id="r-age" placeholder="e.g. 35"></div>
+      <div class="fg"><label>BMI</label><input type="number" id="r-bmi" placeholder="e.g. 27" step="0.1"></div>
+      <div class="fg"><label>Blood Pressure (Systolic)</label><input type="number" id="r-bp" placeholder="e.g. 130"></div>
+      <div class="fg"><label>Cholesterol (mg/dL)</label><input type="number" id="r-chol" placeholder="e.g. 200"></div>
+      <div class="fg"><label>Smoker?</label>
+        <select id="r-smoke"><option value="0">No</option><option value="1">Yes</option></select>
+      </div>
+      <div class="fg"><label>Physical Activity?</label>
+        <select id="r-activity"><option value="1">Yes, regularly</option><option value="0">No / Rarely</option></select>
+      </div>
+      <div class="fg"><label>Diabetes?</label>
+        <select id="r-diabetes"><option value="0">No</option><option value="1">Yes</option></select>
+      </div>
+      <div class="fg"><label>Sleep (hours/night)</label><input type="number" id="r-sleep" placeholder="e.g. 7" min="1" max="12"></div>
+      <div class="fg"><label>Stress Level</label>
+        <select id="r-stress"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+      </div>
+      <div class="fg"><label>Diet Type</label>
+        <select id="r-diet"><option value="mixed">Mixed</option><option value="veg">Vegetarian</option><option value="vegan">Vegan</option><option value="nonveg">Non-Veg</option></select>
+      </div>
+    </div>
+    <button class="btn-rec" onclick="getRecommendations()">🌟 Get My Personalized Plan</button>
+  </div>
+
+  <!-- Output -->
+  <div class="card" id="rec-output" style="display:none">
+    <h2>✅ Your Health Score</h2>
+    <div id="rec-content"></div>
+  </div>
+</div>
+
+<script>
+async function getRecommendations() {
+  const data = {
+    age:      parseInt(document.getElementById('r-age').value)||30,
+    bmi:      parseFloat(document.getElementById('r-bmi').value)||22,
+    bp:       parseInt(document.getElementById('r-bp').value)||120,
+    chol:     parseInt(document.getElementById('r-chol').value)||180,
+    smoker:   parseInt(document.getElementById('r-smoke').value),
+    activity: parseInt(document.getElementById('r-activity').value),
+    diabetes: parseInt(document.getElementById('r-diabetes').value),
+    sleep:    parseInt(document.getElementById('r-sleep').value)||7,
+    stress:   document.getElementById('r-stress').value,
+    diet:     document.getElementById('r-diet').value
+  };
+  try {
+    const res  = await fetch('/api/recommend', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    const recs = await res.json();
+    displayRecs(recs);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function displayRecs(recs) {
+  const out = document.getElementById('rec-output');
+  const con = document.getElementById('rec-content');
+  out.style.display = 'block';
+
+  const scoreClass = recs.health_score >= 75 ? 'good' : recs.health_score >= 50 ? 'medium' : 'low';
+  const riskLabel  = recs.risk_level === 'low' ? 'HIGH RISK' : recs.risk_level === 'medium' ? 'MEDIUM RISK' : 'LOW RISK';
+  const badgeClass = recs.risk_level === 'low' ? 'badge-low' : recs.risk_level === 'medium' ? 'badge-medium' : 'badge-high';
+
+  let html = `
+    <div class="score-wrap">
+      <div class="score-circle ${scoreClass}">
+        <div class="score-num">${recs.health_score}</div>
+        <div class="score-label">/ 100</div>
+      </div>
+      <div class="risk-badge ${badgeClass}">${recs.risk_level.toUpperCase()} RISK</div>
+    </div>`;
+
+  const cats = [
+    {key:'diet',     icon:'🍎', label:'Diet Recommendations',     cls:'diet'},
+    {key:'exercise', icon:'🏃', label:'Exercise Recommendations', cls:'exercise'},
+    {key:'sleep',    icon:'😴', label:'Sleep Recommendations',    cls:'sleep'},
+    {key:'medical',  icon:'🏥', label:'Medical Advice',           cls:'medical'},
+  ];
+
+  cats.forEach(cat => {
+    if (recs[cat.key] && recs[cat.key].length > 0) {
+      html += `<div class="rec-category"><h4>${cat.icon} ${cat.label}</h4>`;
+      recs[cat.key].forEach(r => {
+        html += `<div class="rec-item ${cat.cls}"><span class="check">✓</span> ${r}</div>`;
+      });
+      html += '</div>';
+    }
+  });
+
+  con.innerHTML = html;
+  out.scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>

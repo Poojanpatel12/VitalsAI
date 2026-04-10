@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitalsAI — Heart Disease</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#1a202c;--text2:#718096;--primary:#e53e3e;--nav-bg:#fff;--card-shadow:0 2px 12px rgba(0,0,0,.07);--input-bg:#fff;--input-border:#e2e8f0}
+[data-theme="dark"]{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;--primary:#f87171;--nav-bg:#1e293b;--card-shadow:0 2px 12px rgba(0,0,0,.3);--input-bg:#0f172a;--input-border:#334155}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+nav{background:var(--nav-bg);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-size:20px;font-weight:700;color:#2b6cb0;text-decoration:none}.logo span{color:#e53e3e}
+.nav-center{display:flex;gap:4px}
+.nav-center a{text-decoration:none;color:var(--text2);font-size:13px;font-weight:500;padding:6px 13px;border-radius:20px;transition:.15s}
+.nav-center a:hover,.nav-center a.active{background:#e53e3e;color:#fff}
+.nav-right{display:flex;gap:8px;align-items:center}
+.lang-sel{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer}
+.dark-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.history-btn{background:#2b6cb0;color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none}
+.bmi-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none}
+header{background:linear-gradient(135deg,#e53e3e,#c53030);color:#fff;padding:24px 40px}
+[data-theme="dark"] header{background:linear-gradient(135deg,#7f1d1d,#450a0a)}
+header h1{font-size:22px;font-weight:700}
+header p{font-size:13px;opacity:.85;margin-top:4px}
+.container{max-width:860px;margin:32px auto;padding:0 24px}
+.card{background:var(--surface);border-radius:16px;padding:32px;box-shadow:var(--card-shadow);margin-bottom:24px}
+.card h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.card p.sub{color:var(--text2);font-size:13px;margin-bottom:24px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid var(--input-border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text)}
+.fg input:focus,.fg select:focus{outline:none;border-color:#e53e3e}
+.hint{font-size:11px;color:var(--text2);margin-top:3px;display:block}
+.btn{width:100%;padding:14px;background:#e53e3e;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;transition:opacity .2s}
+.btn:hover{opacity:.88}.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Result */
+.result{display:none;border-radius:16px;padding:28px;text-align:center;margin-bottom:24px}
+.low{background:#f0fff4;border:2px solid #48bb78}[data-theme="dark"] .low{background:#052e16;border-color:#16a34a}
+.medium{background:#fffbeb;border:2px solid #ed8936}[data-theme="dark"] .medium{background:#1c1007;border-color:#d97706}
+.high{background:#fff5f5;border:2px solid #e53e3e}[data-theme="dark"] .high{background:#1c0a0a;border-color:#dc2626}
+.low .rpct{color:#276749}.medium .rpct{color:#9c4221}.high .rpct{color:#c53030}
+[data-theme="dark"] .low .rpct{color:#4ade80}[data-theme="dark"] .medium .rpct{color:#fb923c}[data-theme="dark"] .high .rpct{color:#f87171}
+.rlabel{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.rpct{font-size:52px;font-weight:700;line-height:1}.rpct span{font-size:24px}
+.rmsg{font-size:14px;margin-top:10px;color:var(--text2)}
+
+/* Gauge */
+.gauge-wrap{margin:16px auto 0;max-width:280px}
+.gauge-bar{height:10px;border-radius:5px;background:linear-gradient(to right,#48bb78,#ed8936,#e53e3e);position:relative;margin:8px 0}
+.gauge-needle{width:3px;height:18px;background:var(--text);border-radius:2px;position:absolute;top:-4px;transform:translateX(-50%);transition:left .8s ease}
+.gauge-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text2)}
+
+/* Doctor box */
+.doctor-box{background:var(--bg);border-radius:12px;padding:16px;margin-top:16px;display:flex;align-items:center;gap:12px;text-align:left}
+.doctor-icon{font-size:32px}
+.doctor-info strong{display:block;font-size:14px;font-weight:700}
+.doctor-info span{font-size:12px;color:var(--text2)}
+
+/* PDF btn */
+.pdf-btn{display:none;margin-top:16px;padding:10px 20px;background:#1a365d;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
+[data-theme="dark"] .pdf-btn{background:#1e3a5f}
+.pdf-btn:hover{opacity:.88}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">Vitals<span>AI</span></a>
+  <div class="nav-center">
+    <a href="/">Home</a><a href="/heart" class="active">Heart</a><a href="/brain">Brain</a>
+    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye">Eye</a><a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
+  </div>
+  <div class="nav-right">
+    <select class="lang-sel" onchange="setLang(this.value)"><option value="en">🇺🇸 EN</option><option value="gu">🇮🇳 GU</option><option value="hi">🇮🇳 HI</option></select>
+    <a href="/bmi" class="bmi-btn">🧮 BMI</a>
+    <a href="/history" class="history-btn">📋 History</a>
+    <button class="dark-btn" onclick="toggleDark()" id="darkBtn">🌙</button>
+  </div>
+</nav>
+<header>
+  <h1>❤️ Heart Disease Prediction</h1>
+  <p>Stacking Ensemble — RF + XGBoost + Gradient Boosting + Logistic Regression</p>
+</header>
+<div class="container">
+  <div id="result" class="result"></div>
+  <div class="lifestyle-card" id="lifestyleCard"><h3>🌱 Personalized Lifestyle Recommendations</h3><div class="ls-grid" id="lsGrid"></div></div>
+  <div class="card">
+    <h2>Patient Information</h2>
+    <p class="sub">Fill in the details below to predict heart disease risk.</p>
+    <div class="form-grid">
+      <div class="fg"><label>Age</label><input type="number" id="Age" placeholder="e.g. 45" min="1" max="100"></div>
+      <div class="fg"><label>BMI</label><input type="number" id="BMI" placeholder="e.g. 26.5" step="0.1"></div>
+      <div class="fg"><label>Systolic Blood Pressure <span class="hint">mm/Hg (e.g. 120, 145)</span></label><input type="number" id="BloodPressure" placeholder="e.g. 130"></div>
+      <div class="fg"><label>Total Cholesterol <span class="hint">mg/dL (e.g. 180, 240)</span></label><input type="number" id="Cholesterol" placeholder="e.g. 200"></div>
+      <div class="fg"><label>Diabetes?</label><select id="Diabetes"><option value="0">No</option><option value="1">Pre-diabetic</option><option value="2">Yes</option></select></div>
+      <div class="fg"><label>Smoker?</label><select id="Smoker"><option value="0">No</option><option value="1">Yes</option></select></div>
+      <div class="fg"><label>Physical Activity?</label><select id="PhysActivity"><option value="1">Yes, regularly</option><option value="0">No</option></select></div>
+      <div class="fg"><label>General Health <span class="hint">1=Excellent, 5=Poor</span></label><select id="GenHlth"><option value="1">1 — Excellent</option><option value="2">2 — Very Good</option><option value="3" selected>3 — Good</option><option value="4">4 — Fair</option><option value="5">5 — Poor</option></select></div>
+      <div class="fg"><label>Sex</label><select id="Sex"><option value="0">Female</option><option value="1">Male</option></select></div>
+    </div>
+    <button class="btn" onclick="predict()">Predict Heart Disease Risk</button>
+  </div>
+</div>
+<script>
+let lastResult=null, lastInputs=null;
+async function predict(){
+  const btn=document.querySelector('.btn');
+  btn.disabled=true; btn.textContent='Analyzing...';
+  lastInputs={Age:parseFloat(document.getElementById('Age').value)||0,BMI:parseFloat(document.getElementById('BMI').value)||0,BloodPressure:parseFloat(document.getElementById('BloodPressure').value)||120,Cholesterol:parseFloat(document.getElementById('Cholesterol').value)||180,Diabetes:parseInt(document.getElementById('Diabetes').value),Smoker:parseInt(document.getElementById('Smoker').value),PhysActivity:parseInt(document.getElementById('PhysActivity').value),GenHlth:parseInt(document.getElementById('GenHlth').value),Sex:parseInt(document.getElementById('Sex').value)};
+  try{
+    const res=await fetch('/predict/heart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastInputs)});
+    const data=await res.json(); lastResult=data;
+    const el=document.getElementById('result');
+    if(data.error){el.className='result high';el.style.display='block';el.innerHTML=`<p style="color:#c53030">${data.error}</p>`;return;}
+    const lv=data.risk.toLowerCase().split(' ')[0];
+    const emoji=lv==='high'?'⚠️':lv==='medium'?'🟡':'✅';
+    const msg=lv==='high'?'High risk detected. Please consult a cardiologist immediately.':lv==='medium'?'Moderate risk. Monitor your health and lifestyle habits.':'Low risk. Keep maintaining healthy habits!';
+    const needlePct=Math.min(data.probability,100);
+    const doctorHtml=data.doctor?`<div class="doctor-box"><div class="doctor-icon">👨‍⚕️</div><div class="doctor-info"><strong>${data.doctor}</strong><span>Recommended specialist based on your risk level</span></div></div>`:'';
+    el.className=`result ${lv}`;
+    el.style.display='block';
+    el.innerHTML=`
+      <div class="rlabel">${data.risk} ${emoji}</div>
+      <div class="rpct">${data.probability}<span>%</span></div>
+      <div class="rmsg">${msg}</div>
+      <div class="gauge-wrap">
+        <div class="gauge-bar"><div class="gauge-needle" id="needle" style="left:0%"></div></div>
+        <div class="gauge-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+      </div>
+      ${doctorHtml}
+      <button class="pdf-btn" onclick="downloadPDF()" style="display:block">📄 Download PDF Report</button>
+    `;
+    setTimeout(()=>{const n=document.getElementById('needle');if(n)n.style.left=needlePct+'%';},100);
+    el.scrollIntoView({behavior:'smooth'});
+    if(data.doctor){const db=document.createElement('div');db.className='doctor-box';db.innerHTML='<div class="doctor-icon">👨‍⚕️</div><div class="doctor-info"><strong>'+data.doctor+'</strong><span>Recommended specialist</span></div>';el.appendChild(db);}
+    const pb=document.createElement('button');pb.className='pdf-btn';pb.style.display='block';pb.textContent='📄 Download PDF Report';pb.onclick=()=>downloadPDF('heart',data,lastInputs||{});el.appendChild(pb);
+    showLifestyle('heart',data.risk);
+  }catch(e){alert('Server error: '+e.message);}
+  finally{btn.disabled=false;btn.textContent='Predict Heart Disease Risk';}
+}
+async function downloadPDF(){
+  const name=prompt('Patient name (optional):','Patient')||'Patient';
+  const age=prompt('Patient age (optional):','')||'N/A';
+  const res=await fetch('/api/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({disease:'heart',result:lastResult,inputs:lastInputs,patient_name:name,patient_age:age})});
+  if(res.ok){const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='VitalsAI_heart_report.pdf';a.click();}
+  else{const e=await res.json();alert('PDF Error: '+e.error);}
+}
+function toggleDark(){const t=document.documentElement;const d=t.getAttribute('data-theme')==='dark';t.setAttribute('data-theme',d?'light':'dark');document.getElementById('darkBtn').textContent=d?'🌙':'☀️';localStorage.setItem('theme',d?'light':'dark');}
+function setLang(l){fetch(`/api/translations/${l}`).then(r=>r.json()).then(t=>{localStorage.setItem('lang',l);localStorage.setItem('translations',JSON.stringify(t));});}
+const saved=localStorage.getItem('theme');if(saved==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('darkBtn').textContent='☀️';}
+</script>
+
+<!-- ══ DARK MODE CSS ══════════════════════════════════════ -->
+<style>
+:root{--bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#1a202c;--text2:#718096;--nav-bg:#fff;--input-bg:#fff;--input-border:#e2e8f0}
+[data-theme="dark"]{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;--nav-bg:#1e293b;--input-bg:#0f172a;--input-border:#334155}
+body{background:var(--bg)!important;color:var(--text)!important;transition:background .2s,color .2s}
+
+/* ── Chatbot Bubble ── */
+#chatBubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+#chatToggle{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2b6cb0,#1a365d);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 16px rgba(43,108,176,.4);transition:transform .2s}
+#chatToggle:hover{transform:scale(1.1)}
+#chatBox{width:340px;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;display:none;flex-direction:column;max-height:500px}
+#chatBox.open{display:flex}
+#chatHeader{background:linear-gradient(135deg,#2b6cb0,#1a365d);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}
+#chatHeader .avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
+#chatHeader .info strong{display:block;font-size:14px}
+#chatHeader .info span{font-size:11px;opacity:.8}
+#chatClose{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px}
+#chatMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:320px}
+.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
+.msg.bot{background:var(--bg);color:var(--text);border-bottom-left-radius:4px;align-self:flex-start}
+.msg.user{background:#2b6cb0;color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+.msg.typing{opacity:.6;font-style:italic}
+#chatInputWrap{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+#chatInput{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--input-bg);color:var(--text);font-family:inherit;outline:none}
+#chatInput:focus{border-color:#2b6cb0}
+#chatSend{background:#2b6cb0;color:#fff;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:14px}
+.quick-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
+.chip{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;font-family:inherit}
+.chip:hover{background:#2b6cb0;color:#fff;border-color:#2b6cb0}
+
+/* ── Lifestyle Card ── */
+.lifestyle-card{background:var(--surface);border-radius:16px;padding:24px;margin-top:20px;border:2px solid #48bb78;display:none}
+[data-theme="dark"] .lifestyle-card{border-color:#16a34a}
+.lifestyle-card h3{font-size:16px;font-weight:700;margin-bottom:16px;color:#276749}
+[data-theme="dark"] .lifestyle-card h3{color:#4ade80}
+.ls-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ls-item{background:var(--bg);border-radius:12px;padding:14px;text-align:center}
+.ls-icon{font-size:28px;margin-bottom:6px}
+.ls-title{font-size:12px;font-weight:700;margin-bottom:4px}
+.ls-tips{font-size:11px;color:var(--text2);line-height:1.5;text-align:left}
+
+/* ── Doctor Box ── */
+.doctor-box{background:var(--bg);border-radius:12px;padding:16px;margin-top:16px;display:flex;align-items:center;gap:12px}
+.doctor-icon{font-size:32px}
+.doctor-info strong{display:block;font-size:14px;font-weight:700}
+.doctor-info span{font-size:12px;color:var(--text2)}
+
+/* ── PDF btn ── */
+.pdf-btn{display:none;margin-top:12px;padding:10px 20px;background:#1a365d;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
+[data-theme="dark"] .pdf-btn{background:#1e3a5f}
+.pdf-btn:hover{opacity:.88}
+
+/* ── Dark result boxes ── */
+[data-theme="dark"] .low{background:#052e16!important;border-color:#16a34a!important}
+[data-theme="dark"] .medium,.medium{background:#1c1007!important;border-color:#d97706!important}
+[data-theme="dark"] .high{background:#1c0a0a!important;border-color:#dc2626!important}
+[data-theme="dark"] .low .rpct{color:#4ade80!important}
+[data-theme="dark"] .medium .rpct{color:#fb923c!important}
+[data-theme="dark"] .high .rpct{color:#f87171!important}
+</style>
+
+<!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
+<div class="lifestyle-card" id="lifestyleCard">
+  <h3>🌱 Personalized Lifestyle Recommendations</h3>
+  <div class="ls-grid" id="lsGrid"></div>
+</div>
+
+<!-- ══ AI CHATBOT ══════════════════════════════════════════ -->
+<div id="chatBubble">
+  <div id="chatBox">
+    <div id="chatHeader">
+      <div class="avatar">🤖</div>
+      <div class="info"><strong>VitalsAI Assistant</strong><span>Health advisor · Always online</span></div>
+      <button id="chatClose" onclick="toggleChat()">✕</button>
+    </div>
+    <div id="chatMessages">
+      <div class="msg bot">નમસ્તે! 👋 હું VitalsAI Health Assistant છું.<br>Health વિશે કોઈ પણ સવાલ પૂછો — ગુજરાતી, Hindi, અથવા English માં!</div>
+    </div>
+    <div class="quick-chips">
+      <button class="chip" onclick="askQuick('BP high hoy to shu karvu?')">❤️ High BP</button>
+      <button class="chip" onclick="askQuick('Diabetes control kevi rite karvu?')">💉 Diabetes</button>
+      <button class="chip" onclick="askQuick('Stroke ni nishaniyo shun che?')">🧠 Stroke signs</button>
+      <button class="chip" onclick="askQuick('Kidney health mate su karvu?')">🦀 Kidney</button>
+      <button class="chip" onclick="askQuick('Aankh ni kaळji kevi rite rakhvi?')">👁️ Eye care</button>
+    </div>
+    <div id="chatInputWrap">
+      <input id="chatInput" placeholder="Type your health question..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button id="chatSend" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+  <button id="chatToggle" onclick="toggleChat()">🤖</button>
+</div>
+
+<!-- ══ SHARED JS ════════════════════════════════════════════ -->
+<script>
+// ── Dark Mode ─────────────────────────────────────────────
+function toggleDark(){
+  const t=document.documentElement;
+  const d=t.getAttribute('data-theme')==='dark';
+  t.setAttribute('data-theme',d?'light':'dark');
+  const b=document.getElementById('darkBtn');
+  if(b)b.textContent=d?'🌙':'☀️';
+  localStorage.setItem('vitals_theme',d?'light':'dark');
+}
+(function(){
+  const s=localStorage.getItem('vitals_theme');
+  if(s==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    const b=document.getElementById('darkBtn');
+    if(b)b.textContent='☀️';
+  }
+})();
+
+// ── Language ──────────────────────────────────────────────
+function setLang(l){
+  localStorage.setItem('vitals_lang',l);
+  const m={en:'Language set to English',gu:'ભાષા ગુજરાતી સેટ થઈ',hi:'भाषा हिंदी सेट हो गई'};
+  addMsg('bot', m[l]||'');
+}
+(function(){
+  const l=localStorage.getItem('vitals_lang');
+  const s=document.getElementById('langSel');
+  if(l&&s)s.value=l;
+})();
+
+// ── Chatbot ───────────────────────────────────────────────
+let chatOpen=false;
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chatBox').classList.toggle('open',chatOpen);
+}
+function addMsg(role,text){
+  const el=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className='msg '+role;
+  div.innerHTML=text;
+  el.appendChild(div);
+  el.scrollTop=el.scrollHeight;
+  return div;
+}
+function askQuick(q){
+  document.getElementById('chatInput').value=q;
+  sendChat();
+}
+
+// ── Rule-based health knowledge base ─────────────────────
+const KB={
+  bp:['bp','blood pressure','હાઈ bp','ઉચ્ચ રક્તચાપ','हाई बीपी','hypertension'],
+  diabetes:['diabetes','sugar','ડાયાબિટીસ','ગ્લુકોઝ','मधुमेह','glucose'],
+  stroke:['stroke','brain','મગજ','સ્ટ્રોક','ब्रेन','nishani','signs','symptoms'],
+  kidney:['kidney','renal','કિડની','creatinine','egfr','gfr'],
+  eye:['eye','aanakh','આંખ','glaucoma','cataract','vision','drishti'],
+  heart:['heart','hridaya','હૃદય','cardiac','chest pain','cardiovascular'],
+  bmi:['bmi','weight','vajan','વજન','obese','obesity','fat'],
+  diet:['diet','food','khaanu','ખાવું','nutrition','khana'],
+  exercise:['exercise','vyayam','yoga','walk','walking','fitnes'],
+  sleep:['sleep','undo','ઊંઘ','insomnia','neend'],
+};
+const ANSWERS={
+  bp:`<b>🫀 High BP માટે:</b><br>
+• DASH diet follow કરો (ઓછું મીઠું)<br>
+• રોજ 30 min walking<br>
+• Stress management — meditation<br>
+• Alcohol/smoking avoid<br>
+• BP monitor daily<br>
+• <b>⚠️ 140/90 થી વધારે હોય તો Doctor ને મળો</b>`,
+
+  diabetes:`<b>💉 Diabetes Control:</b><br>
+• Refined sugar/carbs ઓછા<br>
+• Glycemic index ઓછો food<br>
+• રોજ 45 min moderate exercise<br>
+• Glucose monitoring daily<br>
+• HbA1c દર 3 months check<br>
+• <b>⚠️ Fasting glucose >126 mg/dL — Doctor</b>`,
+
+  stroke:`<b>🧠 Stroke ની નિશાની (FAST):</b><br>
+• <b>F</b>ace drooping (ચહેરો ટેઢો)<br>
+• <b>A</b>rm weakness (હાથ નબળો)<br>
+• <b>S</b>peech difficulty (બોલવામાં તકલીફ)<br>
+• <b>T</b>ime to call emergency!<br>
+Risk factors: BP, diabetes, smoking, stress<br>
+<b>⚠️ Emergency: 108 call કરો!</b>`,
+
+  kidney:`<b>🦀 Kidney Health:</b><br>
+• પૂરતું પાણી પીઓ (2-3L/day)<br>
+• Salt/protein ઓછું<br>
+• BP & sugar control<br>
+• NSAIDs (ibuprofen) avoid<br>
+• Annual creatinine/eGFR test<br>
+• <b>eGFR < 60 — Nephrologist</b>`,
+
+  eye:`<b>👁️ Eye Care:</b><br>
+• Screen time ઓછો (20-20-20 rule)<br>
+• UV sunglasses<br>
+• Green vegetables, carrots, fish<br>
+• Annual eye checkup<br>
+• Diabetes patients — every 6 months<br>
+• <b>⚠️ Vision loss/pain — Ophthalmologist</b>`,
+
+  heart:`<b>❤️ Heart Health:</b><br>
+• Mediterranean diet<br>
+• Saturated fat ઓછું<br>
+• 150 min/week aerobic exercise<br>
+• Cholesterol & BP monitor<br>
+• Smoking quit<br>
+• <b>⚠️ Chest pain — Emergency!</b>`,
+
+  bmi:`<b>🧮 Healthy Weight:</b><br>
+• BMI 18.5-24.9 = Normal<br>
+• Calorie deficit for weight loss<br>
+• Protein intake વધારો<br>
+• Strength training + cardio<br>
+• Crash diets avoid<br>
+• <b>BMI calculator: <a href="/bmi" style="color:#2b6cb0">/bmi</a></b>`,
+
+  diet:`<b>🍎 Healthy Diet Tips:</b><br>
+• Half plate vegetables/fruits<br>
+• Whole grains prefer<br>
+• Processed food avoid<br>
+• 8 glasses water daily<br>
+• Breakfast skip ન કરો<br>
+• Portion control practice`,
+
+  exercise:`<b>🏃 Exercise Guide:</b><br>
+• 150 min/week moderate cardio<br>
+• 2x/week strength training<br>
+• Daily 10,000 steps goal<br>
+• Yoga/meditation for stress<br>
+• Sedentary work — hourly break<br>
+• Start slow, build gradually`,
+
+  sleep:`<b>😴 Better Sleep:</b><br>
+• 7-9 hours daily<br>
+• Fixed sleep schedule<br>
+• Screen off 1hr before bed<br>
+• Dark, cool room<br>
+• Caffeine after 2pm avoid<br>
+• Stress journaling before sleep`,
+
+  default:`<b>🤖 VitalsAI Assistant:</b><br>
+હું આ topics પર help કરી શકું:<br>
+❤️ Heart · 🧠 Brain/Stroke · 💉 Diabetes<br>
+🦀 Kidney · 👁️ Eye · 🧮 BMI<br>
+🍎 Diet · 🏃 Exercise · 😴 Sleep<br><br>
+Quick buttons ક્લિક કરો અથવા સવાલ type કરો!`
+};
+
+async function sendChat(){
+  const inp=document.getElementById('chatInput');
+  const q=inp.value.trim();
+  if(!q)return;
+  inp.value='';
+  addMsg('user',q);
+  const typing=addMsg('bot','<span class="typing">Thinking...</span>');
+  setTimeout(()=>{
+    const ql=q.toLowerCase();
+    let ans=ANSWERS.default;
+    for(const [k,kws] of Object.entries(KB)){
+      if(kws.some(kw=>ql.includes(kw))){ans=ANSWERS[k];break;}
+    }
+    typing.innerHTML=ans;
+    document.getElementById('chatMessages').scrollTop=99999;
+  },800);
+}
+
+// ── Lifestyle Recommendations ─────────────────────────────
+const LS_DATA={
+  heart:{
+    LOW:{diet:'Mediterranean diet, omega-3 fish, nuts, olive oil',exercise:'30 min brisk walk daily + yoga',sleep:'7-8 hours, fixed schedule'},
+    MEDIUM:{diet:'Low sodium (<1500mg), avoid fried food, more fiber',exercise:'45 min cardio 5x/week + strength 2x',sleep:'8 hours, stress management'},
+    HIGH:{diet:'Strict DASH diet, no alcohol, no processed meat',exercise:'Light walk only — Doctor clearance first',sleep:'8-9 hours, no caffeine after noon'}
+  },
+  brain:{
+    LOW:{diet:'Mediterranean diet, leafy greens, berries, fish',exercise:'Aerobic exercise 30 min daily + brain games',sleep:'7-9 hours, consistent wake time'},
+    MEDIUM:{diet:'Low sodium, no alcohol, omega-3 rich food',exercise:'Moderate cardio, yoga for BP control',sleep:'8 hours, stress journaling'},
+    HIGH:{diet:'Strict low-sodium, blood thinner foods (garlic, turmeric)',exercise:'Light walks only — medical clearance needed',sleep:'9 hours, no screen before bed'}
+  },
+  diabetes:{
+    LOW:{diet:'Low glycemic foods, vegetables, whole grains',exercise:'45 min walk daily, yoga',sleep:'7-8 hours, consistent timing'},
+    MEDIUM:{diet:'No sugar/refined carbs, high protein, fiber-rich',exercise:'60 min moderate exercise daily',sleep:'8 hours — poor sleep raises glucose'},
+    HIGH:{diet:'Diabetic diet strictly, small frequent meals',exercise:'30 min light walk — monitor glucose before/after',sleep:'8-9 hours, manage stress'}
+  },
+  kidney:{
+    No_Disease:{diet:'Adequate water (2L+), balanced protein, low salt',exercise:'30 min walk daily',sleep:'7-8 hours'},
+    Low_Risk:{diet:'Low protein (0.8g/kg), low potassium foods',exercise:'Light aerobic exercise, no heavy lifting',sleep:'8 hours, avoid NSAIDs'},
+    Moderate_Risk:{diet:'Renal diet — restrict phosphorus/potassium/sodium',exercise:'Gentle walking, aqua therapy',sleep:'8-9 hours, dialysis schedule if needed'},
+    High_Risk:{diet:'Strict renal diet — Dietitian consultation required',exercise:'Light movement only — Nephrologist guidance',sleep:'9 hours, fluid restriction'},
+    Severe_Disease:{diet:'Dialysis-specific diet — No self-medication',exercise:'Rest + gentle physiotherapy only',sleep:'9+ hours, complete medical supervision'}
+  },
+  eye:{
+    default:{diet:'Lutein/zeaxanthin rich: spinach, kale, eggs, fish',exercise:'Eye exercises, 20-20-20 rule (every 20min look 20ft away 20sec)',sleep:'7-8 hours, eye rest essential'}
+  }
+};
+
+function showLifestyle(disease, riskOrPrediction){
+  const card=document.getElementById('lifestyleCard');
+  const grid=document.getElementById('lsGrid');
+  if(!card||!grid)return;
+  
+  let ls=null;
+  const risk=riskOrPrediction||'';
+  
+  if(disease==='kidney'||disease==='eye'){
+    ls=LS_DATA[disease]?.[risk]||LS_DATA[disease]?.default||LS_DATA.heart.LOW;
+  } else {
+    const lvl=risk.includes('HIGH')?'HIGH':risk.includes('MEDIUM')?'MEDIUM':'LOW';
+    ls=LS_DATA[disease]?.[lvl]||LS_DATA.heart.LOW;
+  }
+  
+  grid.innerHTML=`
+    <div class="ls-item">
+      <div class="ls-icon">🍎</div>
+      <div class="ls-title">Diet</div>
+      <div class="ls-tips">${ls.diet}</div>
+    </div>
+    <div class="ls-item">
+      <div class="ls-icon">🏃</div>
+      <div class="ls-title">Exercise</div>
+      <div class="ls-tips">${ls.exercise}</div>
+    </div>
+    <div class="ls-item">
+      <div class="ls-icon">😴</div>
+      <div class="ls-title">Sleep</div>
+      <div class="ls-tips">${ls.sleep}</div>
+    </div>
+  `;
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── PDF Download ──────────────────────────────────────────
+async function downloadPDF(disease, result, inputs){
+  const name=prompt('Patient name:','Patient')||'Patient';
+  const age=prompt('Patient age:','')||'N/A';
+  const res=await fetch('/api/report',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({disease,result,inputs,patient_name:name,patient_age:age})
+  });
+  if(res.ok){
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`VitalsAI_${disease}_report.pdf`;a.click();
+  } else {
+    const e=await res.json();
+    alert('PDF Error: '+e.error);
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitalsAI — Diabetes (XAI)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c}
+nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 40px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:700;color:#2b6cb0}.logo span{color:#e53e3e}
+.nav-links a{text-decoration:none;color:#4a5568;font-size:13px;padding:6px 12px;border-radius:20px;margin-left:4px}
+.nav-links a:hover,.nav-links a.active{background:#2b6cb0;color:#fff}
+
+.hero{background:linear-gradient(135deg,#f59e0b,#d97706);padding:40px 40px;color:#fff}
+.hero h1{font-size:24px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.hero p{font-size:13px;opacity:.85}
+
+.main{max-width:1200px;margin:28px auto;padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.full{grid-column:1/-1}
+
+.card{background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.card h2{font-size:17px;font-weight:700;margin-bottom:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#4a5568;margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px}
+.fg input:focus,.fg select:focus{outline:none;border-color:#f59e0b}
+.btn-predict{width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-predict:hover{opacity:.9}
+
+.result-box{background:#fff;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.07);display:none}
+.result-box.show{display:block}
+
+.risk-indicator{text-align:center;margin-bottom:24px;padding:20px;border-radius:12px;background:#f0f4f8}
+.risk-level{font-size:28px;font-weight:800;margin-bottom:8px}
+.risk-level.high{color:#f59e0b}
+.risk-level.medium{color:#f97316}
+.risk-level.low{color:#10b981}
+
+.exp-section{margin-bottom:24px;border:1px solid #e2e8f0;border-radius:12px;padding:16px}
+.exp-section h3{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.exp-section.high{border-left:4px solid #f59e0b;background:#fffbeb}
+.exp-section.high h3{color:#f59e0b}
+.exp-list{list-style:none}
+.exp-list li{padding:8px 0;font-size:13px;line-height:1.6;color:#4a5568;border-bottom:1px solid rgba(0,0,0,.05)}
+.exp-list li:last-child{border-bottom:none}
+.exp-list li::before{content:'→ ';color:#2b6cb0;font-weight:600;margin-right:8px}
+
+.features{margin-bottom:24px}
+.features h3{font-size:14px;font-weight:700;margin-bottom:12px}
+.feature-item{margin-bottom:12px}
+.feature-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#4a5568;margin-bottom:4px}
+.feature-bar{width:100%;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.feature-bar-fill{height:100%;background:linear-gradient(90deg,#f59e0b,#d97706);border-radius:4px;transition:width .3s}
+
+.suggestions{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:16px;margin-bottom:24px}
+.suggestions h3{font-size:14px;font-weight:700;color:#f59e0b;margin-bottom:10px}
+.sug-list{list-style:none}
+.sug-list li{padding:8px 0;font-size:13px;color:#78350f;border-bottom:1px solid rgba(0,0,0,.05)}
+.sug-list li:last-child{border-bottom:none}
+.sug-list li::before{content:'✓ ';color:#d97706;font-weight:700;margin-right:6px}
+
+.lifestyle{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px}
+.lifestyle h3{font-size:14px;font-weight:700;color:#10b981;margin-bottom:12px}
+.lifestyle-cat{margin-bottom:12px}
+.lifestyle-cat strong{font-size:12px;color:#047857}
+.lifestyle-cat ul{list-style:none;padding-left:12px;margin-top:6px}
+.lifestyle-cat li{font-size:12px;color:#15803d;padding:4px 0}
+
+.loading{display:none;text-align:center;padding:20px}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">Vitals<span>AI</span></div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/heart">❤️ Heart</a>
+    <a href="/brain">🧠 Brain</a>
+    <a href="/diabetes" class="active">🩺 Diabetes</a>
+    <a href="/kidney">🫘 Kidney</a>
+    <a href="/eye">👁️ Eye</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>🩺 Diabetes Prediction (XAI)</h1>
+  <p>Explainable AI - જાણો કે HIGH/LOW Risk કેમ આવ્યો</p>
+</div>
+
+<div class="main">
+  <div class="card">
+    <h2>📋 Patient Information</h2>
+    <div class="form-grid">
+      <div class="fg"><label>Pregnancies</label><input type="number" id="pregnancies" placeholder="0" min="0" max="17"></div>
+      <div class="fg"><label>Glucose (mg/dL)</label><input type="number" id="glucose" placeholder="e.g. 120"></div>
+      <div class="fg"><label>Blood Pressure</label><input type="number" id="bloodpressure" placeholder="e.g. 70"></div>
+      <div class="fg"><label>Skin Thickness</label><input type="number" id="skinthickness" placeholder="e.g. 20"></div>
+      <div class="fg"><label>Insulin</label><input type="number" id="insulin" placeholder="e.g. 80"></div>
+      <div class="fg"><label>BMI</label><input type="number" id="bmi" placeholder="e.g. 26.5" step="0.1"></div>
+      <div class="fg"><label>Diabetes Pedigree</label><input type="number" id="diabetespedigreefunction" placeholder="e.g. 0.5" step="0.01"></div>
+      <div class="fg"><label>Age</label><input type="number" id="age" placeholder="e.g. 35" min="1" max="120"></div>
+    </div>
+    <button class="btn-predict" onclick="predictDiabetes()">🔮 Predict Diabetes Risk</button>
+  </div>
+
+  <div class="result-box" id="result">
+    <div class="risk-indicator" id="risk-ind"></div>
+    
+    <div id="exp-high" class="exp-section high"></div>
+    <div id="exp-low" class="exp-section low"></div>
+    
+    <div class="features">
+      <h3>📊 Top Contributing Factors</h3>
+      <div id="features"></div>
+    </div>
+    
+    <div id="suggestions" class="suggestions"></div>
+    <div id="lifestyle" class="lifestyle"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Analyzing your health data...</p>
+  </div>
+</div>
+
+<script>
+async function predictDiabetes() {
+  const data = {
+    Pregnancies: parseInt(document.getElementById('pregnancies').value)||0,
+    Glucose: parseInt(document.getElementById('glucose').value)||120,
+    BloodPressure: parseInt(document.getElementById('bloodpressure').value)||70,
+    SkinThickness: parseInt(document.getElementById('skinthickness').value)||20,
+    Insulin: parseInt(document.getElementById('insulin').value)||80,
+    BMI: parseFloat(document.getElementById('bmi').value)||26.5,
+    DiabetesPedigreeFunction: parseFloat(document.getElementById('diabetespedigreefunction').value)||0.5,
+    Age: parseInt(document.getElementById('age').value)||35
+  };
+  
+  document.getElementById('loading').style.display = 'block';
+  
+  try {
+    const res = await fetch('/api/predict/diabetes', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    displayResult(result);
+    
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function displayResult(result) {
+  const riskLevel = result.risk.split(' ')[0].toLowerCase();
+  
+  const riskInd = document.getElementById('risk-ind');
+  riskInd.innerHTML = `
+    <div class="risk-level ${riskLevel}">${result.risk}</div>
+    <div style="font-size:14px;color:#718096">Probability: ${result.probability}% | Doctor: ${result.doctor}</div>
+  `;
+  
+  const highDiv = document.getElementById('exp-high');
+  if (result.why_high_risk && result.why_high_risk.length > 0) {
+    highDiv.innerHTML = `
+      <h3>⚠️ Why HIGH Risk?</h3>
+      <ul class="exp-list">
+        ${result.why_high_risk.map(e => `<li>${e}</li>`).join('')}
+      </ul>
+    `;
+  } else {
+    highDiv.style.display = 'none';
+  }
+  
+  const lowDiv = document.getElementById('exp-low');
+  if (result.why_low_risk && result.why_low_risk.length > 0) {
+    lowDiv.innerHTML = `
+      <h3>✅ Positive Factors</h3>
+      <ul class="exp-list">
+        ${result.why_low_risk.map(e => `<li>${e}</li>`).join('')}
+      </ul>
+    `;
+  } else {
+    lowDiv.style.display = 'none';
+  }
+  
+  const featDiv = document.getElementById('features');
+  if (result.feature_importance) {
+    let html = '';
+    result.feature_importance.forEach(f => {
+      const pct = Math.min(100, (f.contribution_percent / f.max_weight) * 100);
+      html += `
+        <div class="feature-item">
+          <div class="feature-label">
+            <span>${f.feature}</span>
+            <span>${f.contribution_percent}%</span>
+          </div>
+          <div class="feature-bar">
+            <div class="feature-bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+      `;
+    });
+    featDiv.innerHTML = html;
+  }
+  
+  const sugDiv = document.getElementById('suggestions');
+  if (result.suggestions) {
+    sugDiv.innerHTML = `
+      <h3>💊 Recommended Actions</h3>
+      <ul class="sug-list">
+        ${result.suggestions.map(s => `<li>${s}</li>`).join('')}
+      </ul>
+    `;
+  }
+  
+  const lifDiv = document.getElementById('lifestyle');
+  if (result.lifestyle_changes && Object.keys(result.lifestyle_changes).length > 0) {
+    let html = '<h3>🌿 Lifestyle Changes</h3>';
+    for (let [cat, items] of Object.entries(result.lifestyle_changes)) {
+      if (Array.isArray(items) && items.length > 0) {
+        html += `
+          <div class="lifestyle-cat">
+            <strong>${cat.charAt(0).toUpperCase() + cat.slice(1)}</strong>
+            <ul>
+              ${items.map(i => `<li>• ${i}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+    }
+    lifDiv.innerHTML = html;
+  }
+  
+  document.getElementById('result').classList.add('show');
+  document.getElementById('result').scrollIntoView({behavior: 'smooth'});
+}
+</script>
+</body>
+</html>

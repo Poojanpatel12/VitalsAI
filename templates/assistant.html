@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Health Assistant — Vitals AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep:    #060d1a;
+    --bg-card:    #0d1829;
+    --bg-panel:   #111f34;
+    --bg-input:   #0a1525;
+    --accent:     #00e5a0;
+    --accent-dim: #00b87e;
+    --accent-glow:#00e5a033;
+    --blue:       #3b82f6;
+    --red:        #ef4444;
+    --amber:      #f59e0b;
+    --text-1:     #f0f6ff;
+    --text-2:     #8ba0be;
+    --text-3:     #4a6080;
+    --border:     #1a2d4a;
+    --border-2:   #243d5e;
+    --radius:     14px;
+    --radius-sm:  8px;
+    --shadow:     0 4px 24px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top Navigation ── */
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .nav-logo-icon {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .nav-logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.3px;
+  }
+  .nav-logo-text span { color: var(--accent); }
+  .nav-sep { width: 1px; height: 22px; background: var(--border); }
+  .nav-page {
+    font-size: 13px;
+    color: var(--text-2);
+    background: var(--bg-panel);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .nav-links a {
+    font-size: 13px;
+    color: var(--text-2);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); background: var(--accent-glow); }
+  .nav-links { display: flex; gap: 2px; }
+  #logout-btn {
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-2);
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  #logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── Main Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+  }
+  .mode-toggle {
+    display: flex;
+    background: var(--bg-panel);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    background: transparent;
+    color: var(--text-2);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .mode-btn.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+  .sidebar-topics {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 12px;
+  }
+  .topic-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    padding: 0 8px;
+    margin-bottom: 6px;
+    margin-top: 12px;
+  }
+  .topic-label:first-child { margin-top: 0; }
+  .topic-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s;
+  }
+  .topic-btn:hover { background: var(--bg-panel); color: var(--text-1); }
+  .topic-btn .ico { font-size: 15px; width: 22px; text-align: center; }
+  .sidebar-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .new-chat-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--border-2);
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .new-chat-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+  /* ── Chat Area ── */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-deep);
+  }
+
+  /* Mode indicator */
+  .mode-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .mode-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .mode-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:0.5;transform:scale(1.3)}
+  }
+  .mode-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .mode-badge.ai { background: #00e5a022; color: var(--accent); border: 1px solid #00e5a044; }
+  .mode-badge.local { background: #3b82f622; color: #60a5fa; border: 1px solid #3b82f644; }
+  .mode-bar-right { margin-left: auto; font-size: 12px; color: var(--text-3); }
+
+  /* Messages */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    scroll-behavior: smooth;
+  }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-3);
+    text-align: center;
+    padding: 40px;
+  }
+  .empty-state .big-icon { font-size: 52px; opacity: 0.6; margin-bottom: 8px; }
+  .empty-state h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+  .empty-state p { font-size: 14px; max-width: 420px; line-height: 1.6; }
+  .empty-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+  /* Message rows */
+  .msg-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .avatar.bot { background: var(--accent); color: #000; font-size: 17px; }
+  .avatar.user { background: var(--blue); color: #fff; font-size: 11px; }
+
+  .bubble {
+    max-width: 68%;
+    padding: 13px 17px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .bubble.bot {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    border-bottom-left-radius: 4px;
+  }
+  .bubble.user {
+    background: var(--blue);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .bubble.bot strong { color: var(--accent); font-weight: 500; }
+  .bubble.bot ul { padding-left: 18px; margin: 6px 0; }
+  .bubble.bot ul li { margin: 4px 0; color: var(--text-2); }
+  .bubble.bot li::marker { color: var(--accent); }
+  .bubble.bot .sec-head {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin: 12px 0 5px;
+    display: block;
+  }
+  .bubble.bot .sec-head:first-child { margin-top: 0; }
+  .bubble-meta {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 2px;
+    padding: 0 4px;
+    text-align: right;
+  }
+  .bubble-meta.bot-meta { text-align: left; }
+
+  /* Typing indicator */
+  .typing-bubble {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    padding: 13px 17px;
+    border-radius: 16px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .t-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: tdot 1.1s infinite;
+  }
+  .t-dot:nth-child(2){animation-delay:.18s}
+  .t-dot:nth-child(3){animation-delay:.36s}
+  @keyframes tdot{0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-6px);opacity:1}}
+
+  /* Input zone */
+  .input-zone {
+    padding: 16px 24px 20px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .input-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  #user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text-1);
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+  }
+  #user-input::placeholder { color: var(--text-3); }
+  #send-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  #send-btn:hover { background: var(--accent-dim); transform: scale(1.05); }
+  #send-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+  #send-btn svg { width: 16px; height: 16px; fill: #000; }
+  .input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 2px;
+  }
+  .input-hint { font-size: 11px; color: var(--text-3); }
+  .disclaimer-small { font-size: 11px; color: var(--text-3); }
+  .disclaimer-small span { color: var(--red); }
+
+  /* Disease card in message */
+  .disease-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .dc-row { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .dc-tag {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .dc-tag.sym { background: #ef444422; color: #fca5a5; border: 1px solid #ef444433; }
+  .dc-tag.cau { background: #f59e0b22; color: #fcd34d; border: 1px solid #f59e0b33; }
+  .dc-tag.sol { background: #00e5a022; color: var(--accent); border: 1px solid #00e5a033; }
+
+  /* Responsive */
+  @media (max-width: 680px) {
+    .sidebar { display: none; }
+    #messages { padding: 16px; }
+    .bubble { max-width: 88%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-logo-icon">🏥</div>
+    <span class="nav-logo-text">Vitals<span>AI</span></span>
+  </a>
+  <div class="nav-sep"></div>
+  <span class="nav-page">AI Health Assistant</span>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="/">Dashboard</a>
+      <a href="/history">History</a>
+      <a href="/bmi">BMI</a>
+      <a href="/lifestyle">Lifestyle</a>
+    </div>
+    <button id="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- ── Main Layout ── -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Mode</h3>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-ai" onclick="setMode('ai')">🤖 Claude AI</button>
+        <button class="mode-btn" id="btn-local" onclick="setMode('local')">⚡ Quick Mode</button>
+      </div>
+    </div>
+    <div class="sidebar-topics">
+      <div class="topic-label">Disease Topics</div>
+      <button class="topic-btn" onclick="ask('ડાયાબિટીસ ના લક્ષણો, કારણ અને ઉપાય જણાવો')"><span class="ico">🩸</span> ડાયાબિટીસ</button>
+      <button class="topic-btn" onclick="ask('High Blood Pressure na lakshno, karan ane upay')"><span class="ico">❤️</span> High BP</button>
+      <button class="topic-btn" onclick="ask('Heart disease symptoms causes and treatment')"><span class="ico">🫀</span> Heart Disease</button>
+      <button class="topic-btn" onclick="ask('Kidney disease na lakshno ane upay')"><span class="ico">🫘</span> Kidney</button>
+      <button class="topic-btn" onclick="ask('Brain stroke symptoms causes and prevention')"><span class="ico">🧠</span> Brain / Stroke</button>
+      <button class="topic-btn" onclick="ask('Eye disease glaucoma symptoms and treatment')"><span class="ico">👁️</span> Eye Disease</button>
+      <button class="topic-btn" onclick="ask('Dengue fever ke lakshan aur upay')"><span class="ico">🦟</span> Dengue</button>
+      <button class="topic-btn" onclick="ask('Thyroid disease symptoms causes solution')"><span class="ico">🧬</span> Thyroid</button>
+      <button class="topic-btn" onclick="ask('Asthma na lakshno ane upay gujarati ma')"><span class="ico">🫁</span> Asthma</button>
+      <button class="topic-btn" onclick="ask('Migraine headache causes symptoms treatment')"><span class="ico">🤕</span> Migraine</button>
+
+      <div class="topic-label">Wellness</div>
+      <button class="topic-btn" onclick="ask('Better sleep tips for good health')"><span class="ico">😴</span> Sleep Tips</button>
+      <button class="topic-btn" onclick="ask('Stress management and mental health tips')"><span class="ico">🧘</span> Stress / Mental</button>
+      <button class="topic-btn" onclick="ask('Best exercise routine for heart health')"><span class="ico">🏃</span> Exercise</button>
+      <button class="topic-btn" onclick="ask('Healthy diet tips for Indians')"><span class="ico">🥗</span> Diet & Nutrition</button>
+      <button class="topic-btn" onclick="ask('Weight loss tips natural')"><span class="ico">⚖️</span> Weight Loss</button>
+    </div>
+    <div class="sidebar-footer">
+      <button class="new-chat-btn" onclick="clearChat()">+ New Conversation</button>
+    </div>
+  </aside>
+
+  <!-- Chat Area -->
+  <div class="chat-area">
+
+    <!-- Mode Bar -->
+    <div class="mode-bar">
+      <div class="mode-indicator">
+        <div class="mode-dot"></div>
+        <span id="mode-label" style="font-size:13px;color:var(--text-2)">Claude AI Mode — Dynamic answers</span>
+      </div>
+      <span class="mode-badge ai" id="mode-badge">Claude AI</span>
+      <div class="mode-bar-right" id="user-name-bar">Welcome</div>
+    </div>
+
+    <!-- Messages -->
+    <div id="messages">
+      <!-- Welcome state -->
+      <div class="empty-state" id="welcome-state">
+        <div class="big-icon">🏥</div>
+        <h2>Vitals AI Health Assistant</h2>
+        <p>Disease ના લક્ષણો, કારણો અને ઉપાય — Gujarati, Hindi, English — કોઈ પણ ભાષામાં પૂછો. Powered by Claude AI.</p>
+        <div class="empty-chips">
+          <button class="chip" onclick="ask('ડાયાબિટીસ ના લક્ષણો, કારણ અને ઉપાય')">🩸 ડાયાબિટીસ</button>
+          <button class="chip" onclick="ask('High BP symptoms causes and solution')">❤️ High BP</button>
+          <button class="chip" onclick="ask('Dengue fever ke lakshan aur upay')">🦟 Dengue</button>
+          <button class="chip" onclick="ask('Thyroid disease symptoms treatment')">🧬 Thyroid</button>
+          <button class="chip" onclick="ask('Heart attack symptoms and prevention')">🫀 Heart</button>
+          <button class="chip" onclick="ask('Kidney stone symptoms causes treatment')">🫘 Kidney Stone</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Zone -->
+    <div class="input-zone">
+      <div class="input-wrap">
+        <textarea id="user-input" rows="1" placeholder="Disease, symptoms, health question — કોઈ પણ ભાષામાં લખો..."></textarea>
+        <button id="send-btn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24"><path d="M2 21L23 12 2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <span class="input-hint">Enter ↵ to send &nbsp;·&nbsp; Shift+Enter for new line</span>
+        <span class="disclaimer-small">⚕️ For info only — Emergency: <span>108</span></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+let mode = 'ai';
+let history = [];
+let userInitials = 'U';
+
+// ── System Prompt for Claude AI ───────────────────────────
+const SYSTEM = `You are the AI Health Assistant for "Vitals AI" — a health prediction and wellness platform.
+
+DEFAULT LANGUAGE: Always respond in English unless the user writes in a different language.
+LANGUAGE RULE: If the user writes in Gujarati → reply in Gujarati. If Hindi → reply in Hindi. Otherwise always use English.
+
+For ANY disease or health question, structure your response clearly with these sections:
+
+**[Disease Name]**
+
+**Symptoms:**
+• List main symptoms
+
+**Causes:**
+• List main causes
+
+**Treatment & Solutions:**
+• Home remedies and medical treatment
+
+**When to See a Doctor:**
+• Warning signs requiring immediate attention
+
+Rules:
+- Always respond in English by default
+- Be warm, clear and informative
+- Every answer must be FRESH and specific — never give generic or canned replies
+- For wellness questions (sleep, diet, exercise) answer naturally without forcing disease structure
+- Always end with: "Please consult a doctor for personalized advice."
+- For emergencies always mention: Call 108 immediately
+- You are NOT a doctor — provide health education only`;
+
+// ── On Load ───────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('/api/me')
+    .then(r => r.json())
+    .then(d => {
+      if (d.logged_in) {
+        userInitials = d.name.slice(0, 2).toUpperCase();
+        document.getElementById('user-name-bar').textContent = 'Hi, ' + d.name.split(' ')[0];
+      }
+    }).catch(() => {});
+});
+
+// ── Mode Toggle ───────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-ai').classList.toggle('active', m === 'ai');
+  document.getElementById('btn-local').classList.toggle('active', m === 'local');
+  const badge = document.getElementById('mode-badge');
+  const label = document.getElementById('mode-label');
+  if (m === 'ai') {
+    badge.textContent = 'Claude AI';
+    badge.className = 'mode-badge ai';
+    label.textContent = 'Claude AI Mode — Dynamic, detailed answers';
+  } else {
+    badge.textContent = 'Quick Mode';
+    badge.className = 'mode-badge local';
+    label.textContent = 'Quick Mode — Fast keyword-based answers';
+  }
+}
+
+// ── Ask from sidebar/chips ────────────────────────────────
+function ask(q) {
+  document.getElementById('user-input').value = q;
+  sendMsg();
+}
+
+// ── Time ─────────────────────────────────────────────────
+function now() {
+  return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Remove welcome state ──────────────────────────────────
+function removeWelcome() {
+  const w = document.getElementById('welcome-state');
+  if (w) w.remove();
+}
+
+// ── Add message to DOM ────────────────────────────────────
+function addMsg(html, role) {
+  removeWelcome();
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (role === 'user' ? 'user' : '');
+
+  const av = document.createElement('div');
+  av.className = 'avatar ' + role;
+  av.textContent = role === 'user' ? userInitials : '🏥';
+
+  const wrap = document.createElement('div');
+  const bub = document.createElement('div');
+  bub.className = 'bubble ' + role;
+  bub.innerHTML = html;
+
+  const meta = document.createElement('div');
+  meta.className = 'bubble-meta ' + (role === 'bot' ? 'bot-meta' : '');
+  meta.textContent = now() + (role === 'bot' ? (mode === 'ai' ? ' · Claude AI' : ' · Quick') : '');
+
+  wrap.appendChild(bub);
+  wrap.appendChild(meta);
+
+  if (role === 'user') { row.appendChild(wrap); row.appendChild(av); }
+  else { row.appendChild(av); row.appendChild(wrap); }
+  msgs.appendChild(row);
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+
+// ── Typing indicator ──────────────────────────────────────
+function showTyping() {
+  removeWelcome();
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row'; row.id = 'typing-row';
+  const av = document.createElement('div');
+  av.className = 'avatar bot'; av.textContent = '🏥';
+  const bub = document.createElement('div');
+  bub.className = 'typing-bubble';
+  bub.innerHTML = '<div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>';
+  row.appendChild(av); row.appendChild(bub);
+  msgs.appendChild(row);
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+function removeTyping() {
+  const t = document.getElementById('typing-row');
+  if (t) t.remove();
+}
+
+// ── Format Claude AI reply ────────────────────────────────
+function formatReply(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#{1,3}\s+(.+)$/gm, '<span class="sec-head">$1</span>')
+    .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g, (m) => '<ul>' + m + '</ul>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+// ── Send Message ──────────────────────────────────────────
+async function sendMsg() {
+  const inp = document.getElementById('user-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+
+  addMsg(text, 'user');
+  showTyping();
+  document.getElementById('send-btn').disabled = true;
+
+  try {
+    // Send history (without current msg) + current msg — backend adds current msg
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: history, mode: mode })
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    const reply = data.response || 'Sorry, no response received. Please try again.';
+    // Push both after successful response
+    history.push({ role: 'user', content: text });
+    history.push({ role: 'assistant', content: reply });
+    removeTyping();
+    addMsg(formatReply(reply), 'bot');
+  } catch (e) {
+    removeTyping();
+    addMsg('⚠️ Error: ' + (e.message || 'Something went wrong. Please try again.'), 'bot');
+  }
+
+  document.getElementById('send-btn').disabled = false;
+}
+
+// ── Clear Chat ────────────────────────────────────────────
+function clearChat() {
+  history = [];
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = '';
+  const ws = document.createElement('div');
+  ws.className = 'empty-state'; ws.id = 'welcome-state';
+  ws.innerHTML = `
+    <div class="big-icon">🏥</div>
+    <h2>Vitals AI Health Assistant</h2>
+    <p>Disease ના લક્ષણો, કારણો અને ઉપાય — Gujarati, Hindi, English — કોઈ પણ ભાષામાં પૂછો.</p>
+    <div class="empty-chips">
+      <button class="chip" onclick="ask('ડાયાબિટીસ ના લક્ષણો, કારણ અને ઉપાય')">🩸 ડાયાબિટીસ</button>
+      <button class="chip" onclick="ask('High BP symptoms causes and solution')">❤️ High BP</button>
+      <button class="chip" onclick="ask('Dengue fever ke lakshan aur upay')">🦟 Dengue</button>
+      <button class="chip" onclick="ask('Thyroid disease symptoms treatment')">🧬 Thyroid</button>
+      <button class="chip" onclick="ask('Heart attack symptoms and prevention')">🫀 Heart</button>
+      <button class="chip" onclick="ask('Kidney stone symptoms causes treatment')">🫘 Kidney Stone</button>
+    </div>`;
+  msgs.appendChild(ws);
+}
+
+// ── Logout ────────────────────────────────────────────────
+function logout() {
+  fetch('/api/logout', { method: 'POST' })
+    .then(() => window.location.href = '/login');
+}
+
+// ── Keyboard handler ──────────────────────────────────────
+document.getElementById('user-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+document.getElementById('user-input').addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+</script>
+</body>
+</html>
