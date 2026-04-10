@@ -1,6 +1,7 @@
+# VitalsAI
 
+#### AI-powered health prediction platform for Heart, Brain, Diabetes, Kidney & Eye diseases
 # 🏥 VitalsAI — AI-Powered Health Prediction Platform
-
 
 <div align="center">
 
@@ -21,18 +22,118 @@
 
 ---
 
-# VitalsAI
+## 📸 Screenshots
 
-#### AI-powered health prediction platform for Heart, Brain, Diabetes, Kidney & Eye diseases
+### 🔐 Login Page
+![Login](docs/images/login.png)
+
+### 🏠 Dashboard
+![Dashboard](docs/images/dashboard.png)
+
+---
+
+### ❤️ Heart Disease Prediction
+<table>
+<tr>
+<td><img src="docs/images/heart_form.png"/></td>
+<td><img src="docs/images/heart_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Input Form</td>
+<td align="center">Result + Lifestyle Tips + PDF</td>
+</tr>
+</table>
+
+---
+
+### 🧠 Brain Stroke Prediction
+<table>
+<tr>
+<td><img src="docs/images/brain_form.png"/></td>
+<td><img src="docs/images/brain_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Input Form</td>
+<td align="center">Risk Assessment</td>
+</tr>
+</table>
+
+---
+
+### 🩸 Diabetes Prediction
+<table>
+<tr>
+<td><img src="docs/images/diabetes_form.png"/></td>
+<td><img src="docs/images/diabetes_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Clinical Input</td>
+<td align="center">Result + Recommendations</td>
+</tr>
+</table>
+
+---
+
+### 🫘 Kidney Disease Prediction
+<table>
+<tr>
+<td><img src="docs/images/kidney_form.png"/></td>
+<td><img src="docs/images/kidney_result.png"/></td>
+</tr>
+<tr>
+<td align="center">42 Clinical Features</td>
+<td align="center">5-Stage Classification</td>
+</tr>
+</table>
+
+---
+
+### 👁️ Eye Disease Classification (CNN)
+<table>
+<tr>
+<td><img src="docs/images/eye_form.png"/></td>
+<td><img src="docs/images/eye_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Image Upload</td>
+<td align="center">CNN Classification Result</td>
+</tr>
+</table>
+
+---
+
+### 🤖 AI Health Chatbot (Claude AI)
+![Chatbot](docs/images/chatbot.png)
+
+---
+
+### 🌿 Lifestyle Recommender & ⚖️ BMI Calculator
+<table>
+<tr>
+<td><img src="docs/images/lifestyle.png"/></td>
+<td><img src="docs/images/bmi.png"/></td>
+</tr>
+<tr>
+<td align="center">Personalized Health Plan + Score</td>
+<td align="center">BMI with Color Meter</td>
+</tr>
+</table>
+
+---
+
+### 📋 Prediction History
+![History](docs/images/history.png)
+
+---
 
 ## 🩺 Overview
 
-VitalsAI is an end-to-end AI health prediction platform that uses trained machine learning and deep learning models to assess disease risk from clinical inputs and medical images. The platform provides instant risk assessment, doctor recommendations, health history tracking, PDF reports, and an AI-powered health chatbot — all in one unified web interface.
+VitalsAI is an end-to-end AI health prediction platform that uses trained ML and deep learning models to assess disease risk from clinical inputs and medical images. It provides instant risk assessment, doctor recommendations, history tracking, PDF reports, and an AI chatbot — all in one web interface.
 
 | Traditional Health Checkup | VitalsAI |
 |---|---|
-| Requires doctor visit for initial screening | Instant AI risk assessment from home |
-| Single disease focus per visit | 5 disease modules in one platform |
+| Requires doctor visit for screening | Instant AI risk assessment from home |
+| Single disease per visit | 5 disease modules in one platform |
 | No historical tracking | Full prediction history with trends |
 | Generic advice | Personalized doctor recommendations |
 | No AI assistance | Claude AI health chatbot 24/7 |
@@ -43,30 +144,30 @@ VitalsAI is an end-to-end AI health prediction platform that uses trained machin
 
 ### 🔬 Disease Prediction Modules
 
-| Module | Model Type | Input | Output |
+| Module | Model | Features | Output |
 |---|---|---|---|
-| 🫀 Heart Disease | Stacking Ensemble | Age, BMI, BP, Cholesterol, etc. | Risk % + Doctor |
-| 🧠 Brain Stroke | ML Pipeline | Clinical features | Risk % + Doctor |
-| 🩸 Diabetes | Stacking + Scaler | Glucose, BMI, Insulin, etc. | Risk % + Doctor |
-| 🫘 Kidney Disease | Pipeline Classifier | Creatinine, BP, etc. | Category + Doctor |
-| 👁️ Eye Disease | CNN (TensorFlow) | Retinal image upload | Disease class + Doctor |
+| 🫀 Heart Disease | Stacking Ensemble (RF + XGBoost + LR) | Age, BMI, BP, Cholesterol, etc. | Risk % + Doctor |
+| 🧠 Brain Stroke | Stacking Ensemble (RF + XGBoost + SVC) | Age, Glucose, BMI, Smoking | Risk % + Doctor |
+| 🩸 Diabetes | Stacking + StandardScaler | Glucose, Insulin, BMI, etc. | Risk % + Doctor |
+| 🫘 Kidney Disease | Pipeline — 5 Stage Classifier | 42 Clinical features | Stage + Confidence |
+| 👁️ Eye Disease | CNN — MobileNetV2 Transfer Learning | Retinal fundus image | Disease + Doctor |
 
 ### 🤖 AI Health Chatbot
 - Powered by **Claude AI (Anthropic)**
-- Answers any health question in **Gujarati, Hindi, English**
-- Disease symptoms, causes, treatment — dynamic AI responses
-- Fallback keyword-based answers when offline
+- Supports **Gujarati, Hindi, English** — auto-detects language
+- Structured response: Symptoms → Causes → Treatment → When to see doctor
+- **Claude AI Mode** (dynamic) + **Quick Mode** (offline fallback)
 
 ### 📊 Additional Features
 - **Google OAuth** + Email/Password login
-- **Prediction History** — full log with timestamps
-- **PDF Report** generation per prediction
-- **BMI Calculator** with health advice
-- **Lifestyle Recommender** — personalized diet, exercise, sleep tips
-- **Health Score** based on vitals
-- **Multi-language** support (English, Gujarati, Hindi)
-- **Dark mode** UI
-- **Trend graphs** per disease
+- **Prediction History** — log with timestamps, disease filter
+- **PDF Report** — downloadable per prediction
+- **BMI Calculator** — color-coded health meter + ideal weight
+- **Lifestyle Recommender** — diet, exercise, sleep, medical advice
+- **Health Score** (0–100) based on vitals
+- **Multi-language UI** — English, Gujarati, Hindi
+- **Dark Mode** toggle
+- **Personalized Lifestyle Tips** after every prediction
 
 ---
 
@@ -78,19 +179,19 @@ User (Browser)
       ▼
 Flask Web Server (app.py)
       │
-      ├── /heart     → Stacking Ensemble Model (.pkl)
-      ├── /brain     → Brain ML Pipeline (.pkl)
-      ├── /diabetes  → Stacking + Scaler (.pkl)
-      ├── /kidney    → Pipeline Classifier (.pkl)
-      ├── /eye       → CNN Model (.h5) ← TensorFlow
+      ├── /heart      → Stacking Ensemble (.pkl)
+      ├── /brain      → Stacking Ensemble (.pkl)
+      ├── /diabetes   → Stacking + Scaler (.pkl)
+      ├── /kidney     → Pipeline Classifier (.pkl)
+      ├── /eye        → CNN MobileNetV2 (.h5)
       │
-      ├── /api/chat  → Claude AI API (Anthropic)
-      ├── /api/bmi   → BMI Calculator
-      ├── /api/recommend → Lifestyle Engine
-      ├── /api/report    → PDF Generator (ReportLab)
-      ├── /api/history   → In-memory Session Store
+      ├── /api/chat       → Claude AI API (Anthropic)
+      ├── /api/bmi        → BMI Calculator
+      ├── /api/recommend  → Lifestyle Engine
+      ├── /api/report     → PDF Generator (ReportLab)
+      ├── /api/history    → Session Store
       │
-      └── Google OAuth 2.0 Authentication
+      └── Google OAuth 2.0 + Email/Password Auth
 ```
 
 ---
@@ -100,15 +201,15 @@ Flask Web Server (app.py)
 | Layer | Technology | Role |
 |---|---|---|
 | **Language** | Python 3.10+ | Core runtime |
-| **Web Framework** | Flask 3.0 | Backend server & routing |
-| **ML Models** | Scikit-learn | Heart, Brain, Diabetes, Kidney prediction |
-| **Deep Learning** | TensorFlow / Keras | Eye CNN model |
-| **AI Chatbot** | Anthropic Claude API | Dynamic health Q&A |
-| **Authentication** | Google OAuth 2.0 + Authlib | User login |
-| **PDF Reports** | ReportLab | Downloadable health reports |
-| **Data** | Pandas, NumPy | Data processing |
-| **Frontend** | HTML, CSS, JavaScript | Web UI |
-| **Environment** | python-dotenv | Credential management |
+| **Web Framework** | Flask 3.0 | Backend & routing |
+| **ML Models** | Scikit-learn (RF, XGBoost, SVC, Stacking) | Heart, Brain, Diabetes, Kidney |
+| **Deep Learning** | TensorFlow / Keras (MobileNetV2) | Eye CNN |
+| **AI Chatbot** | Anthropic Claude API | Health Q&A |
+| **Auth** | Google OAuth 2.0 + Authlib | User login |
+| **PDF** | ReportLab | Health reports |
+| **Data** | Pandas, NumPy | Processing |
+| **Frontend** | HTML5, CSS3, Vanilla JS | Responsive UI |
+| **Env** | python-dotenv | Config management |
 
 ---
 
@@ -116,38 +217,29 @@ Flask Web Server (app.py)
 
 ```
 VitalsAI/
-│
-├── app.py                          # Main Flask application
-│
+├── app.py                      # Main Flask app
 ├── models/
-│   ├── final_stacking_model.pkl    # Heart disease model
-│   ├── brain_ml_model.pkl          # Brain stroke model
-│   ├── brain_features.pkl
-│   ├── brain_selector.pkl
-│   ├── diabetes_stack_model.pkl    # Diabetes model
-│   ├── diabetes_scaler.pkl
-│   ├── kidney_pipeline.pkl         # Kidney disease model
-│   ├── kidney_features.pkl
-│   ├── kidney_target_map.pkl
-│   ├── eye_cnn_model.h5            # Eye CNN (TensorFlow)
+│   ├── final_stacking_model.pkl
+│   ├── brain_ml_model.pkl
+│   ├── diabetes_stack_model.pkl
+│   ├── kidney_pipeline.pkl
+│   ├── eye_cnn_model.h5
 │   └── eye_class_indices.json
-│
 ├── templates/
-│   ├── index.html                  # Dashboard
-│   ├── login.html                  # Login page
-│   ├── heart.html                  # Heart prediction
-│   ├── brain.html                  # Brain prediction
-│   ├── diabetes.html               # Diabetes prediction
-│   ├── kidney.html                 # Kidney prediction
-│   ├── eye.html                    # Eye prediction
-│   ├── assistant.html              # AI Health Chatbot
-│   ├── history.html                # Prediction history
-│   ├── bmi.html                    # BMI calculator
-│   └── lifestyle.html              # Lifestyle recommender
-│
-├── .env                            # API keys (never committed)
-├── .env.example                    # Template for setup
-├── .gitignore
+│   ├── index.html              # Dashboard
+│   ├── login.html              # Auth page
+│   ├── heart.html
+│   ├── brain.html
+│   ├── diabetes.html
+│   ├── kidney.html
+│   ├── eye.html
+│   ├── assistant.html          # Claude AI Chatbot
+│   ├── history.html
+│   ├── bmi.html
+│   └── lifestyle.html
+├── docs/images/                # README screenshots
+├── .env                        # Secret keys (not committed)
+├── .env.example
 ├── requirements.txt
 └── README.md
 ```
@@ -156,167 +248,57 @@ VitalsAI/
 
 ## ⚡ Quick Start
 
-**Estimated setup time: ~5 minutes**
-
-### Step 1 — Clone the Repository
-
+### Step 1 — Clone
 ```bash
 git clone https://github.com/Poojanpatel12/VitalsAI.git
 cd VitalsAI
 ```
 
-### Step 2 — Create Virtual Environment
-
+### Step 2 — Virtual Environment
 ```bash
 python -m venv .venv
-
-# macOS / Linux
-source .venv/bin/activate
-
-# Windows
-.venv\Scripts\activate
+source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate      # Windows
 ```
 
 ### Step 3 — Install Dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 4 — Configure Environment Variables
-
-Create a `.env` file in the project root:
-
+### Step 4 — Setup `.env`
 ```env
-# Anthropic Claude AI (for chatbot)
-ANTHROPIC_API_KEY=your-anthropic-key-here
-
-# Google OAuth (for login)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
+ANTHROPIC_API_KEY=your-key-here
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
 ```
 
-> ✅ The app runs without API keys — chatbot falls back to keyword mode, Google login falls back to email/password.
-
-### Step 5 — Run the App
-
+### Step 5 — Run
 ```bash
 python app.py
 ```
-
-Open **http://localhost:5000** in your browser.
-
----
-
-## 🔐 API Keys Setup
-
-### Anthropic API Key (for AI Chatbot)
-1. Go to **console.anthropic.com**
-2. Sign up / Login
-3. Go to **API Keys** → Create Key
-4. Add to `.env` as `ANTHROPIC_API_KEY`
-
-### Google OAuth (for Google Login)
-1. Go to **console.cloud.google.com**
-2. Create project → Enable Google OAuth API
-3. Create OAuth 2.0 credentials
-4. Add redirect URI: `http://localhost:5000/auth/google/callback`
-5. Add Client ID & Secret to `.env`
-
----
-
-## 📸 Disease Modules
-
-### 🫀 Heart Disease Prediction
-Uses a **Stacking Ensemble** model trained on CDC BRFSS dataset. Inputs include Age, BMI, Blood Pressure, Cholesterol, Diabetes history, Smoking, Physical Activity, and General Health score.
-
-### 🧠 Brain Stroke Risk
-ML pipeline trained on clinical stroke dataset. Uses feature selection to identify high-risk patients based on neurological and lifestyle indicators.
-
-### 🩸 Diabetes Prediction
-Stacking classifier with StandardScaler trained on Pima Indians Diabetes dataset. Uses 8 clinical features including Glucose, Insulin, and BMI.
-
-### 🫘 Kidney Disease Classification
-Multi-class pipeline classifying into: `No_Disease`, `Low_Risk`, `Moderate_Risk`, `High_Risk`, `Severe_Disease` — with confidence scores for each class.
-
-### 👁️ Eye Disease Detection
-CNN model trained on retinal images. Detects: `Cataracts`, `Glaucoma`, `Bulging_Eyes`, `Crossed_Eyes`, `Uveitis`, `Eye_diseases`.
-
----
-
-## 🤖 AI Chatbot
-
-The assistant page (`/assistant`) features a full-screen chat interface powered by **Claude AI**:
-
-- **Claude AI Mode** — Dynamic, context-aware answers via Anthropic API
-- **Quick Mode** — Fast keyword-based local answers (works offline)
-- Supports **Gujarati, Hindi, English** — auto-detects language
-- Structured responses: Symptoms → Causes → Treatment → When to see a doctor
-- Conversation history maintained per session
-
----
-
-## 📊 Sample Prediction Output
-
-```json
-{
-  "risk": "HIGH RISK",
-  "probability": 78.4,
-  "doctor": "Cardiologist (હૃદય રોગ નિષ્ણાત)",
-  "inputs": {
-    "Age": 55,
-    "BMI": 31.2,
-    "HighBP": 1,
-    "HighChol": 1,
-    "Smoker": 1
-  }
-}
-```
+Open **http://localhost:5000**
 
 ---
 
 ## 🏥 Doctor Recommendation System
 
-Each prediction includes a recommended specialist:
-
 | Risk Level | Heart | Brain | Diabetes | Kidney |
 |---|---|---|---|---|
-| HIGH RISK | Cardiologist | Neurologist | Endocrinologist | Nephrologist |
+| HIGH RISK | Cardiologist | Neurologist | Endocrinologist | Nephrologist — Urgent |
 | MEDIUM RISK | General Physician | General Physician | General Physician | GP + Referral |
-| LOW RISK | Annual Checkup | Lifestyle Check | Diet Consultation | Annual Test |
-
----
-
-## 🌐 Available Routes
-
-| Route | Description |
-|---|---|
-| `/` | Main dashboard |
-| `/login` | Login page |
-| `/heart` | Heart disease prediction |
-| `/brain` | Brain stroke risk |
-| `/diabetes` | Diabetes prediction |
-| `/kidney` | Kidney disease detection |
-| `/eye` | Eye disease classification |
-| `/assistant` | AI health chatbot |
-| `/history` | Prediction history |
-| `/bmi` | BMI calculator |
-| `/lifestyle` | Lifestyle recommender |
-| `/status` | Model & feature status |
-| `/api/chat` | Chatbot API endpoint |
-| `/api/report` | PDF report generator |
+| LOW RISK | Annual Checkup | Lifestyle Check | Diet Consultation | Annual KFT |
 
 ---
 
 ## 🔮 Future Improvements
 
-- Deploy on cloud (AWS / Render / Railway)
-- Mobile app (Flutter / React Native)
-- More disease modules (Liver, Thyroid, Cancer screening)
-- Wearable device integration (Apple Watch, Fitbit)
-- Patient account persistence (database instead of in-memory)
-- Doctor portal for reviewing patient predictions
-- Real-time health monitoring dashboard
+- ☁️ Cloud deployment (AWS / Render)
+- 📱 Mobile app (Flutter)
+- 🧬 More disease modules (Liver, Thyroid)
+- ⌚ Wearable device integration
+- 🗄️ Database persistence (PostgreSQL)
+- 👨‍⚕️ Doctor portal
 
 ---
 
@@ -326,16 +308,10 @@ Each prediction includes a recommended specialist:
 |---|---|
 | **Name** | Poojan Patel |
 | **College** | Ahmedabad Institute of Technology |
-| **Department** | Computer Engineering (CE) |
+| **Department** | Information & Communication Technology (ICT) |
 | **University** | Gujarat Technological University (GTU) |
 | **Year** | Final Year — 2026 |
 | **GitHub** | [@Poojanpatel12](https://github.com/Poojanpatel12) |
-
----
-
-## 📄 License
-
-This project is distributed under the **MIT License**.
 
 ---
 
