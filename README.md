@@ -26,18 +26,18 @@
 ## 📸 Screenshots
 
 ### 🔐 Login Page
-![Login](docs/images/login.png)
+![Login](docs/images/Screenshot 2026-04-10 at 12.48.02 PM.png)
 
 ### 🏠 Dashboard
-![Dashboard](docs/images/dashboard.png)
+![Dashboard](docs/images/Screenshot 2026-04-10 at 12.48.16 PM.png)
 
 ---
 
 ### ❤️ Heart Disease Prediction
 <table>
 <tr>
-<td><img src="docs/images/heart_form.png"/></td>
-<td><img src="docs/images/heart_result.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.48.56 PM.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.49.40 PM.png"/></td>
 </tr>
 <tr>
 <td align="center">Input Form</td>
@@ -50,8 +50,8 @@
 ### 🧠 Brain Stroke Prediction
 <table>
 <tr>
-<td><img src="docs/images/brain_form.png"/></td>
-<td><img src="docs/images/brain_result.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.49.53 PM.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.50.43 PM.png"/></td>
 </tr>
 <tr>
 <td align="center">Input Form</td>
@@ -64,8 +64,8 @@
 ### 🩸 Diabetes Prediction
 <table>
 <tr>
-<td><img src="docs/images/diabetes_form.png"/></td>
-<td><img src="docs/images/diabetes_result.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.50.53 PM.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.52.03 PM.png"/></td>
 </tr>
 <tr>
 <td align="center">Clinical Input</td>
@@ -78,8 +78,8 @@
 ### 🫘 Kidney Disease Prediction
 <table>
 <tr>
-<td><img src="docs/images/kidney_form.png"/></td>
-<td><img src="docs/images/kidney_result.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.52.13 PM.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.57.20 PM.png"/></td>
 </tr>
 <tr>
 <td align="center">42 Clinical Features</td>
@@ -92,8 +92,8 @@
 ### 👁️ Eye Disease Classification (CNN)
 <table>
 <tr>
-<td><img src="docs/images/eye_form.png"/></td>
-<td><img src="docs/images/eye_result.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.52.22 PM.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.56.50 PM.png"/></td>
 </tr>
 <tr>
 <td align="center">Image Upload</td>
@@ -104,15 +104,15 @@
 ---
 
 ### 🤖 AI Health Chatbot (Claude AI)
-![Chatbot](docs/images/chatbot.png)
+![Chatbot](docs/images/Screenshot 2026-04-10 at 12.52.33 PM.png)
 
 ---
 
 ### 🌿 Lifestyle Recommender & ⚖️ BMI Calculator
 <table>
 <tr>
-<td><img src="docs/images/lifestyle.png"/></td>
-<td><img src="docs/images/bmi.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.53.37 PM.png"/></td>
+<td><img src="docs/images/Screenshot 2026-04-10 at 12.54.46 PM.png"/></td>
 </tr>
 <tr>
 <td align="center">Personalized Health Plan + Score</td>
@@ -123,7 +123,7 @@
 ---
 
 ### 📋 Prediction History
-![History](docs/images/history.png)
+![History](docs/images/Screenshot 2026-04-10 at 12.54.58 PM.png)
 
 ---
 
