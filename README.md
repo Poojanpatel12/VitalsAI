@@ -1,3 +1,14 @@
+<div align="center">
+
+<img src="docs/images/logo.png" alt="VitalsAI Logo" width="220"/>
+
+# VitalsAI
+### Intelligent Disease Prediction System
+
+</div>
+
+---
+
 # 🏥 VitalsAI — AI-Powered Health Prediction Platform
 
 <div align="center">
@@ -310,7 +321,7 @@ Open **http://localhost:5000**
 |---|---|
 | **Name** | Poojan Patel |
 | **College** | Ahmedabad Institute of Technology |
-| **Department** | Information & Communication Technology (ICT) |
+| **Department** | Computer Engineering (CE) |
 | **University** | Gujarat Technological University (GTU) |
 | **Year** | Final Year — 2026 |
 | **GitHub** | [@Poojanpatel12](https://github.com/Poojanpatel12) |
