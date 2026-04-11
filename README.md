@@ -1,10 +1,8 @@
 <div align="center">
 
-<img src="docs/images/logo.png" alt="VitalsAI Logo" width="220"/>
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=2500&pause=800&color=00D9FF&center=true&vCenter=true&multiline=false&width=860&height=55&lines=VitalsAI+%F0%9F%8F%A5;AI-Powered+Health+Prediction+Platform;Heart+%7C+Brain+%7C+Diabetes+%7C+Kidney+%7C+Eye;Multi-Disease+Risk+Assessment+System;Built+with+ML+%2B+Deep+Learning+%2B+Flask" alt="VitalsAI Animated Title"/>
 
-<!-- ANIMATED TYPING LINES -->
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=2500&pause=800&color=00D9FF&center=true&vCenter=true&multiline=false&width=860&height=55&lines=Border+Surveillance+AI;Integrated+Surveillance+%26+Security;Real-Time+Threat+Detection;AI-Powered+Border+Monitoring" alt="Animated Title"/>
-
+</div>
 # VitalsAI
 ### Intelligent Disease Prediction System
 
