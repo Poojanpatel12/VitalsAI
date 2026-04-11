@@ -1,3 +1,14 @@
+<div align="center">
+
+<img src="docs/images/logo.png" alt="VitalsAI Logo" width="220"/>
+
+# VitalsAI
+### Intelligent Disease Prediction System
+
+</div>
+
+---
+
 # 🏥 VitalsAI — AI-Powered Health Prediction Platform
 
 <div align="center">
