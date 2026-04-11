@@ -321,7 +321,7 @@ Open **http://localhost:5000**
 |---|---|
 | **Name** | Poojan Patel |
 | **College** | Ahmedabad Institute of Technology |
-| **Department** | Information & Communication Technology (ICT) |
+| **Department** | Computer Engineering (CE) |
 | **University** | Gujarat Technological University (GTU) |
 | **Year** | Final Year — 2026 |
 | **GitHub** | [@Poojanpatel12](https://github.com/Poojanpatel12) |
