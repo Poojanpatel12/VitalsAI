@@ -2,6 +2,9 @@
 
 <img src="docs/images/logo.png" alt="VitalsAI Logo" width="220"/>
 
+<!-- ANIMATED TYPING LINES -->
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=2500&pause=800&color=00D9FF&center=true&vCenter=true&multiline=false&width=860&height=55&lines=Border+Surveillance+AI;Integrated+Surveillance+%26+Security;Real-Time+Threat+Detection;AI-Powered+Border+Monitoring" alt="Animated Title"/>
+
 # VitalsAI
 ### Intelligent Disease Prediction System
 
