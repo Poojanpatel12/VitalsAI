@@ -648,6 +648,7 @@ def predict_heart():
         sid = session.get('sid', 'default')
         save_to_history(sid, 'heart', inputs, result)
         return jsonify(result)
+        fetchXAI('heart', payload)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -968,6 +969,175 @@ def status():
         }
     })
 
+# ── XAI Helper ─────────────────────────────────────────────
+def build_explanation(features, values, shap_values):
+    explanation = []
+    for feat, val, sv in zip(features, values, shap_values):
+        explanation.append({
+            'feature':    feat,
+            'value':      round(float(val), 3),
+            'shap_value': round(float(sv), 4),
+            'impact':     'increases risk' if sv > 0 else 'decreases risk',
+            'importance': abs(float(sv))
+        })
+    explanation.sort(key=lambda x: x['importance'], reverse=True)
+    return explanation
+ 
+def get_shap_values(rf_model, X):
+    try:
+        import shap
+        explainer = shap.TreeExplainer(rf_model)
+        shap_vals = explainer.shap_values(X)
+        if isinstance(shap_vals, list):
+            return shap_vals[1][0]
+        return shap_vals[0]
+    except Exception as e:
+        print(f"[SHAP error] {e}")
+        return None
+ 
+# ── XAI — Heart ────────────────────────────────────────────
+@app.route('/api/explain/heart', methods=['POST'])
+def explain_heart():
+    try:
+        m = MODELS.get('heart')
+        if not m: return jsonify({'error': 'Heart model not loaded'}), 500
+        data = request.json
+        bp   = float(data.get('BloodPressure', 120))
+        cho  = float(data.get('Cholesterol', 180))
+        inputs = {
+            'Age':          float(data.get('Age', 0)),
+            'BMI':          float(data.get('BMI', 0)),
+            'HighBP':       1 if bp >= 140 else 0,
+            'HighChol':     1 if cho >= 240 else 0,
+            'Diabetes':     int(data.get('Diabetes', 0)),
+            'Smoker':       int(data.get('Smoker', 0)),
+            'PhysActivity': int(data.get('PhysActivity', 1)),
+            'GenHlth':      int(data.get('GenHlth', 3)),
+            'Sex':          int(data.get('Sex', 0)),
+        }
+        features = m['features']
+        patient  = pd.DataFrame([inputs])
+        rf_model = m['model'].named_estimators_['rf']
+        sv = get_shap_values(rf_model, patient)
+        if sv is None: return jsonify({'error': 'SHAP failed'}), 500
+        explanation = build_explanation(features, patient.values[0], sv)
+        return jsonify({'explanation': explanation, 'top_factors': explanation[:3]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+ 
+# ── XAI — Brain ────────────────────────────────────────────
+@app.route('/api/explain/brain', methods=['POST'])
+def explain_brain():
+    try:
+        m = MODELS.get('brain')
+        if not m: return jsonify({'error': 'Brain model not loaded'}), 500
+        data = request.json
+        row = {
+            'age':                            float(data.get('age', 0)),
+            'hypertension':                   int(data.get('hypertension', 0)),
+            'heart_disease':                  int(data.get('heart_disease', 0)),
+            'avg_glucose_level':              float(data.get('avg_glucose_level', 0)),
+            'bmi':                            float(data.get('bmi', 0)),
+            'gender_Male':                    1 if data.get('gender') == 'Male' else 0,
+            'smoking_status_formerly smoked': 1 if data.get('smoking_status') == 'formerly smoked' else 0,
+            'smoking_status_never smoked':    1 if data.get('smoking_status') == 'never smoked' else 0,
+            'smoking_status_smokes':          1 if data.get('smoking_status') == 'smokes' else 0,
+            'work_type_Private':              1,
+            'work_type_Self-employed':        0,
+            'work_type_children':             0,
+            'ever_married_Yes':               1,
+            'Residence_type_Urban':           1,
+        }
+        features = m['features']
+        patient  = pd.DataFrame([row]).reindex(columns=features, fill_value=0)
+        scaled   = m['scaler'].transform(patient)
+        sel      = m['selector'].transform(scaled)
+        sel_feats = [features[i] for i in m['selector'].get_support(indices=True)]
+        rf_model  = m['model'].named_estimators_['rf']
+        sv = get_shap_values(rf_model, sel)
+        if sv is None: return jsonify({'error': 'SHAP failed'}), 500
+        explanation = build_explanation(sel_feats, sel[0], sv)
+        return jsonify({'explanation': explanation, 'top_factors': explanation[:3]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+ 
+# ── XAI — Diabetes ─────────────────────────────────────────
+@app.route('/api/explain/diabetes', methods=['POST'])
+def explain_diabetes():
+    try:
+        m = MODELS.get('diabetes')
+        if not m: return jsonify({'error': 'Diabetes model not loaded'}), 500
+        data     = request.json
+        features = m['features']
+        inputs   = {f: float(data.get(f, 0)) for f in features}
+        patient  = pd.DataFrame([inputs])
+        scaled   = m['scaler'].transform(patient)
+        rf_model = m['model'].named_estimators_['rf']
+        sv = get_shap_values(rf_model, scaled)
+        if sv is None: return jsonify({'error': 'SHAP failed'}), 500
+        explanation = build_explanation(features, patient.values[0], sv)
+        return jsonify({'explanation': explanation, 'top_factors': explanation[:3]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+ 
+# ── XAI — Kidney ───────────────────────────────────────────
+@app.route('/api/explain/kidney', methods=['POST'])
+def explain_kidney():
+    try:
+        m = MODELS.get('kidney')
+        if not m: return jsonify({'error': 'Kidney model not loaded'}), 500
+        data    = request.json
+        inputs  = {f: float(data.get(f, 0)) for f in m['features']}
+        patient = pd.DataFrame([inputs]).reindex(columns=m['features'], fill_value=0)
+        try:
+            preprocessed = m['model'].named_steps['preprocessor'].transform(patient)
+            rf_model     = m['model'].named_steps['model'].named_estimators_['rf']
+        except:
+            preprocessed = patient.values
+            rf_model     = m['model'].named_estimators_['rf']
+        pred_class = int(m['model'].predict(patient)[0])
+        import shap
+        explainer  = shap.TreeExplainer(rf_model)
+        shap_vals  = explainer.shap_values(preprocessed)
+        if isinstance(shap_vals, list):
+            sv = shap_vals[pred_class][0]
+        else:
+            sv = shap_vals[0]
+        explanation = build_explanation(m['features'], patient.values[0], sv)
+        return jsonify({'explanation': explanation, 'top_factors': explanation[:3]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+ 
+# ── XAI — Eye (Confidence scores as explanation) ───────────
+@app.route('/api/explain/eye', methods=['POST'])
+def explain_eye():
+    try:
+        import tempfile, tensorflow as tf
+        m = MODELS.get('eye')
+        if not m: return jsonify({'error': 'Eye model not loaded'}), 500
+        if 'file' not in request.files:
+            return jsonify({'error': 'No image uploaded'}), 400
+        file = request.files['file']
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            file.save(tmp.name)
+            img   = tf.keras.preprocessing.image.load_img(tmp.name, target_size=(150,150))
+            arr   = tf.keras.preprocessing.image.img_to_array(img) / 255.0
+            arr   = np.expand_dims(arr, 0)
+            proba = m['model'].predict(arr, verbose=0)[0]
+            pred  = int(np.argmax(proba))
+            label = m['reverse'].get(pred, 'Unknown')
+            os.unlink(tmp.name)
+        all_p   = {m['reverse'].get(i,'?'): round(float(p)*100,2) for i,p in enumerate(proba)}
+        sorted_p = sorted(all_p.items(), key=lambda x: x[1], reverse=True)
+        explanation = [{'feature': cls, 'value': pct,
+                        'shap_value': pct/100,
+                        'impact': 'detected' if cls == label else 'not detected',
+                        'importance': pct/100} for cls, pct in sorted_p]
+        return jsonify({'explanation': explanation, 'top_factors': explanation[:3],
+                        'note': 'CNN confidence scores per class'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+ 
 if __name__ == '__main__':
     print("\n" + "="*55)
     print("  VitalsAI — http://localhost:5000")
@@ -978,3 +1148,6 @@ if __name__ == '__main__':
     print("  BMI       — http://localhost:5000/bmi")
     print("="*55 + "\n")
     app.run(debug=True, port=5000)
+
+
+    

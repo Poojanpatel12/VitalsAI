@@ -39,6 +39,19 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
 .bar{background:#38a169;height:10px;border-radius:4px;transition:width .5s}
 .pct{font-size:12px;width:40px;text-align:right;color:#4a5568}
 .info{background:#f0fff4;border-left:4px solid #38a169;padding:12px 16px;border-radius:8px;font-size:13px;color:#276749;margin-bottom:20px;text-align:left}
+
+/* ── XAI Explainable AI ────────────────────────────────── */
+.xai-card{background:var(--surface,#fff);border-radius:16px;padding:24px;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,.07);border-left:4px solid #3182ce}
+.xai-card h3{font-size:15px;margin-bottom:4px;color:var(--text,#1a202c)}
+.xai-sub{font-size:12px;color:#718096;margin-bottom:16px}
+.xai-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.xai-feat{font-size:12px;font-weight:600;width:170px;color:#4a5568;flex-shrink:0}
+.xai-val{font-size:11px;color:#718096;width:45px;text-align:right;flex-shrink:0}
+.xai-bar-wrap{flex:1;background:#e2e8f0;border-radius:4px;height:10px}
+.xai-bar{height:10px;border-radius:4px;transition:width .6s ease}
+.xai-impact{font-size:11px;width:130px;font-weight:600;flex-shrink:0}
+.xai-top{background:#f7fafc;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.xai-top b{color:#2b6cb0}
 </style>
 </head>
 <body>
@@ -63,6 +76,7 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
 <div class="container">
   <div class="info">&#128247; Upload a fundus/eye image. The CNN model will classify it into one of 5 categories: Bulging Eyes, Cataracts, Crossed Eyes, Glaucoma, or Uveitis.</div>
   <div id="result" class="result"></div>
+  <div id="xai-section" style="display:none"></div>
   <div class="lifestyle-card" id="lifestyleCard"><h3>🌱 Personalized Lifestyle Recommendations</h3><div class="ls-grid" id="lsGrid"></div></div>
   <div class="card">
     <h2>Upload Eye Image</h2>
@@ -126,6 +140,7 @@ async function predict() {
     if(data.doctor){const db=document.createElement('div');db.className='doctor-box';db.innerHTML='<div class="doctor-icon">👨‍⚕️</div><div class="doctor-info"><strong>'+data.doctor+'</strong><span>Recommended specialist</span></div>';el.appendChild(db);}
     const pb=document.createElement('button');pb.className='pdf-btn';pb.style.display='block';pb.textContent='📄 Download PDF Report';pb.onclick=()=>downloadPDF('eye',data,{});el.appendChild(pb);
     showLifestyle('eye','default');
+    const fd2=new FormData();fd2.append('file',selectedFile);fetchXAIEye(fd2);
   } catch(e){ alert('Server error: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Classify Eye Disease'; }
 }
@@ -193,7 +208,8 @@ body{background:var(--bg)!important;color:var(--text)!important;transition:backg
 </style>
 
 <!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
-<div class="lifestyle-card" id="lifestyleCard">
+<div id="xai-section" style="display:none"></div>
+  <div class="lifestyle-card" id="lifestyleCard">
   <h3>🌱 Personalized Lifestyle Recommendations</h3>
   <div class="ls-grid" id="lsGrid"></div>
 </div>
@@ -479,6 +495,54 @@ async function downloadPDF(disease, result, inputs){
     const e=await res.json();
     alert('PDF Error: '+e.error);
   }
+}
+
+// ── XAI Functions ───────────────────────────────────────
+async function fetchXAI(disease, payload) {
+  try {
+    const res  = await fetch('/api/explain/' + disease, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.explanation) showXAI(data.explanation, data.note);
+  } catch(e) { console.log('XAI error:', e); }
+}
+async function fetchXAIEye(formData) {
+  try {
+    const res  = await fetch('/api/explain/eye', {method:'POST', body: formData});
+    const data = await res.json();
+    if (data.explanation) showXAI(data.explanation, data.note);
+  } catch(e) { console.log('XAI Eye error:', e); }
+}
+function showXAI(explanation, note) {
+  const el = document.getElementById('xai-section');
+  if (!el) return;
+  const maxImp = Math.max(...explanation.map(e => e.importance)) || 1;
+  const top3   = explanation.slice(0, 3);
+  let topHtml  = '<div class="xai-top"><b>🎯 Top Factors:</b> ';
+  topHtml += top3.map(t =>
+    '<span style="color:' + (t.shap_value>0?'#e53e3e':'#38a169') + ';font-weight:600">' +
+    t.feature.replace(/_/g,' ') + ' (' + t.value + ')</span>'
+  ).join(' &nbsp;·&nbsp; ') + '</div>';
+  let barsHtml = '';
+  explanation.slice(0, 8).forEach(function(item) {
+    const pct   = Math.round((item.importance / maxImp) * 100);
+    const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
+    const arrow = item.shap_value > 0 ? '↑' : '↓';
+    barsHtml += '<div class="xai-row">' +
+      '<span class="xai-feat">' + item.feature.replace(/_/g,' ') + '</span>' +
+      '<span class="xai-val">' + item.value + '</span>' +
+      '<div class="xai-bar-wrap"><div class="xai-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="xai-impact" style="color:' + color + '">' + arrow + ' ' + item.impact + '</span>' +
+      '</div>';
+  });
+  el.innerHTML = '<div class="xai-card">' +
+    '<h3>🔍 Why this prediction? — Explainable AI</h3>' +
+    '<p class="xai-sub">' + (note || 'SHAP values — which factors increased or decreased your risk') + '</p>' +
+    topHtml + barsHtml + '</div>';
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 </script>
 

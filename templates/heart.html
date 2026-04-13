@@ -62,6 +62,19 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
 .pdf-btn{display:none;margin-top:16px;padding:10px 20px;background:#1a365d;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
 [data-theme="dark"] .pdf-btn{background:#1e3a5f}
 .pdf-btn:hover{opacity:.88}
+
+/* ── XAI Explainable AI ────────────────────────────────── */
+.xai-card{background:var(--surface,#fff);border-radius:16px;padding:24px;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,.07);border-left:4px solid #3182ce}
+.xai-card h3{font-size:15px;margin-bottom:4px;color:var(--text,#1a202c)}
+.xai-sub{font-size:12px;color:#718096;margin-bottom:16px}
+.xai-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.xai-feat{font-size:12px;font-weight:600;width:170px;color:#4a5568;flex-shrink:0}
+.xai-val{font-size:11px;color:#718096;width:45px;text-align:right;flex-shrink:0}
+.xai-bar-wrap{flex:1;background:#e2e8f0;border-radius:4px;height:10px}
+.xai-bar{height:10px;border-radius:4px;transition:width .6s ease}
+.xai-impact{font-size:11px;width:130px;font-weight:600;flex-shrink:0}
+.xai-top{background:#f7fafc;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.xai-top b{color:#2b6cb0}
 </style>
 </head>
 <body>
@@ -84,6 +97,7 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
 </header>
 <div class="container">
   <div id="result" class="result"></div>
+  <div id="xai-section" style="display:none"></div>
   <div class="lifestyle-card" id="lifestyleCard"><h3>🌱 Personalized Lifestyle Recommendations</h3><div class="ls-grid" id="lsGrid"></div></div>
   <div class="card">
     <h2>Patient Information</h2>
@@ -136,6 +150,7 @@ async function predict(){
     if(data.doctor){const db=document.createElement('div');db.className='doctor-box';db.innerHTML='<div class="doctor-icon">👨‍⚕️</div><div class="doctor-info"><strong>'+data.doctor+'</strong><span>Recommended specialist</span></div>';el.appendChild(db);}
     const pb=document.createElement('button');pb.className='pdf-btn';pb.style.display='block';pb.textContent='📄 Download PDF Report';pb.onclick=()=>downloadPDF('heart',data,lastInputs||{});el.appendChild(pb);
     showLifestyle('heart',data.risk);
+    fetchXAI('heart', lastInputs);
   }catch(e){alert('Server error: '+e.message);}
   finally{btn.disabled=false;btn.textContent='Predict Heart Disease Risk';}
 }
@@ -210,10 +225,25 @@ body{background:var(--bg)!important;color:var(--text)!important;transition:backg
 [data-theme="dark"] .low .rpct{color:#4ade80!important}
 [data-theme="dark"] .medium .rpct{color:#fb923c!important}
 [data-theme="dark"] .high .rpct{color:#f87171!important}
+
+
+.xai-card{background:var(--surface);border-radius:16px;padding:24px;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,.07);border-left:4px solid #3182ce}
+.xai-card h3{font-size:16px;margin-bottom:4px;color:var(--text)}
+.xai-sub{font-size:12px;color:#718096;margin-bottom:16px}
+.xai-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.xai-feat{font-size:12px;font-weight:600;width:160px;color:#4a5568;flex-shrink:0}
+.xai-val{font-size:11px;color:#718096;width:45px;text-align:right;flex-shrink:0}
+.xai-bar-wrap{flex:1;background:#e2e8f0;border-radius:4px;height:10px}
+.xai-bar{height:10px;border-radius:4px;transition:width .6s ease}
+.xai-impact{font-size:11px;width:130px;font-weight:600;flex-shrink:0}
+.xai-top{background:#f7fafc;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.xai-top b{color:#2b6cb0}
+
 </style>
 
 <!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
-<div class="lifestyle-card" id="lifestyleCard">
+<div id="xai-section" style="display:none"></div>
+  <div class="lifestyle-card" id="lifestyleCard">
   <h3>🌱 Personalized Lifestyle Recommendations</h3>
   <div class="ls-grid" id="lsGrid"></div>
 </div>
@@ -242,6 +272,7 @@ body{background:var(--bg)!important;color:var(--text)!important;transition:backg
     </div>
   </div>
   <button id="chatToggle" onclick="toggleChat()">🤖</button>
+  <div id="xai-section" style="display:none"></div>
 </div>
 
 <!-- ══ SHARED JS ════════════════════════════════════════════ -->
@@ -499,6 +530,164 @@ async function downloadPDF(disease, result, inputs){
     const e=await res.json();
     alert('PDF Error: '+e.error);
   }
+}
+
+// After prediction result shown — fetch explanation
+async function fetchExplanation(inputs) {
+    try {
+        const res = await fetch('/api/explain/heart', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(inputs)
+        });
+        const data = await res.json();
+        if (data.explanation) showXAI(data.explanation);
+    } catch(e) { console.log('XAI error:', e); }
+}
+
+function showXAI(explanation) {
+    const el = document.getElementById('xai-section');
+    if (!el) return;
+
+    let html = `
+        <div class="xai-card">
+            <h3>🔍 Why this prediction?</h3>
+            <p class="xai-sub">SHAP values — which factors affected your result</p>
+            <div class="xai-bars">
+    `;
+
+    const maxImp = Math.max(...explanation.map(e => e.importance));
+
+    explanation.slice(0, 6).forEach(item => {
+        const pct = Math.round((item.importance / maxImp) * 100);
+        const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
+        const arrow = item.shap_value > 0 ? '↑' : '↓';
+        html += `
+            <div class="xai-row">
+                <span class="xai-feat">${item.feature}</span>
+                <span class="xai-val">${item.value}</span>
+                <div class="xai-bar-wrap">
+                    <div class="xai-bar" style="width:${pct}%;background:${color}"></div>
+                </div>
+                <span class="xai-impact" style="color:${color}">
+                    ${arrow} ${item.impact}
+                </span>
+            </div>
+        `;
+    });
+
+    html += `</div></div>`;
+    el.innerHTML = html;
+    el.style.display = 'block';
+}
+
+// ── Fetch XAI explanation (Heart / Brain / Diabetes / Kidney) ──
+async function fetchXAI(Heart, payload) {
+    try {
+        const res  = await fetch(`/api/explain/${disease}`, {
+            method:  'POST',
+            headers: {'Content-Type': 'application/json'},
+            body:    JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.explanation) showXAI(data.explanation, data.note);
+    } catch(e) { console.log('XAI error:', e); }
+}
+fetchXAI('heart', payload);
+// ── Render XAI section ──────────────────────────────────────
+function showXAI(explanation, note) {
+    const el = document.getElementById('xai-section');
+    if (!el) return;
+
+    const maxImp = Math.max(...explanation.map(e => e.importance)) || 1;
+    const top3   = explanation.slice(0, 3);
+
+    // Top 3 summary
+    let topHtml = `<div class="xai-top">
+        <b>🎯 Top Factors:</b> `;
+    topHtml += top3.map(t =>
+        `<span style="color:${t.shap_value>0?'#e53e3e':'#38a169'};font-weight:600">
+            ${t.feature} (${t.value})
+        </span>`
+    ).join(' &nbsp;·&nbsp; ');
+    topHtml += `</div>`;
+
+    // Bar chart
+    let barsHtml = '';
+    explanation.slice(0, 8).forEach(item => {
+        const pct   = Math.round((item.importance / maxImp) * 100);
+        const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
+        const arrow = item.shap_value > 0 ? '↑' : '↓';
+        barsHtml += `
+        <div class="xai-row">
+            <span class="xai-feat">${item.feature.replace(/_/g,' ')}</span>
+            <span class="xai-val">${item.value}</span>
+            <div class="xai-bar-wrap">
+                <div class="xai-bar" style="width:${pct}%;background:${color}"></div>
+            </div>
+            <span class="xai-impact" style="color:${color}">
+                ${arrow} ${item.impact}
+            </span>
+        </div>`;
+    });
+
+    el.innerHTML = `
+    <div class="xai-card">
+        <h3>🔍 Why this prediction? — Explainable AI</h3>
+        <p class="xai-sub">${note || 'SHAP values — which factors increased or decreased your risk'}</p>
+        ${topHtml}
+        ${barsHtml}
+    </div>`;
+    el.style.display = 'block';
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ── XAI Functions ───────────────────────────────────────
+async function fetchXAI(heart, payload) {
+  try {
+    const res  = await fetch('/api/explain/' + disease, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.explanation) showXAI(data.explanation, data.note);
+  } catch(e) { console.log('XAI error:', e); }
+}
+async function fetchXAIEye(formData) {
+  try {
+    const res  = await fetch('/api/explain/eye', {method:'POST', body: formData});
+    const data = await res.json();
+    if (data.explanation) showXAI(data.explanation, data.note);
+  } catch(e) { console.log('XAI Eye error:', e); }
+}
+function showXAI(explanation, note) {
+  const el = document.getElementById('xai-section');
+  if (!el) return;
+  const maxImp = Math.max(...explanation.map(e => e.importance)) || 1;
+  const top3   = explanation.slice(0, 3);
+  let topHtml  = '<div class="xai-top"><b>🎯 Top Factors:</b> ';
+  topHtml += top3.map(t =>
+    '<span style="color:' + (t.shap_value>0?'#e53e3e':'#38a169') + ';font-weight:600">' +
+    t.feature.replace(/_/g,' ') + ' (' + t.value + ')</span>'
+  ).join(' &nbsp;·&nbsp; ') + '</div>';
+  let barsHtml = '';
+  explanation.slice(0, 8).forEach(function(item) {
+    const pct   = Math.round((item.importance / maxImp) * 100);
+    const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
+    const arrow = item.shap_value > 0 ? '↑' : '↓';
+    barsHtml += '<div class="xai-row">' +
+      '<span class="xai-feat">' + item.feature.replace(/_/g,' ') + '</span>' +
+      '<span class="xai-val">' + item.value + '</span>' +
+      '<div class="xai-bar-wrap"><div class="xai-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="xai-impact" style="color:' + color + '">' + arrow + ' ' + item.impact + '</span>' +
+      '</div>';
+  });
+  el.innerHTML = '<div class="xai-card">' +
+    '<h3>🔍 Why this prediction? — Explainable AI</h3>' +
+    '<p class="xai-sub">' + (note || 'SHAP values — which factors increased or decreased your risk') + '</p>' +
+    topHtml + barsHtml + '</div>';
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 </script>
 
