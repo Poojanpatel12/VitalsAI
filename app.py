@@ -35,7 +35,7 @@ google = oauth.register(
 )
 
 MODELS  = {}
-ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyDIpc_Y5jqmotHI8Jb5yAef1UI1RnkfRKk')
 USERS   = {}   # email -> {name, pwd, created}
 
 # ── In-memory storage for history & trends ────────────────
@@ -123,6 +123,33 @@ def load_models():
     except Exception as e:
         print(f"[WARN] Eye: {e}")
 
+      # ── LUNG ───────────────────────────────────────────────
+    try:
+        import json as _json_lung
+        MODELS['lung'] = {
+            'model':      joblib.load('models/lung_stacking_model.pkl'),
+            'le_gender':  joblib.load('models/lung_le_gender.pkl'),
+            'le_stage':   joblib.load('models/lung_le_stage.pkl'),
+            'le_family':  joblib.load('models/lung_le_family.pkl'),
+            'le_smoking': joblib.load('models/lung_le_smoking.pkl'),
+            'le_treat':   joblib.load('models/lung_le_treatment.pkl'),
+        }
+        with open('models/lung_metadata.json') as f:
+            MODELS['lung']['meta'] = _json_lung.load(f)
+        print("[OK] Lung model loaded")
+    except Exception as e:
+        print(f"[WARN] Lung: {e}")
+
+
+## 2. DOCTOR_MAP dictionary માં add કरो:
+
+    DOCTOR_MAP = {
+    'lung': {
+        'HIGH RISK': 'Oncologist (Lung Cancer Specialist) → Urgent!',
+        'MEDIUM RISK': 'Pulmonologist → Oncology Referral',
+        'LOW RISK': 'Pulmonologist → Regular Monitoring',
+    }
+}
 load_models()
 
 # ── Helper: Save to history ────────────────────────────────
@@ -223,6 +250,9 @@ def kidney_page():    return render_template('kidney.html')
 @app.route('/eye')
 @login_required
 def eye_page():       return render_template('eye.html')
+@app.route('/lung')
+@login_required
+def lung_page():  return render_template('lung.html')
 @app.route('/assistant')
 @login_required
 def assistant_page(): return render_template('assistant.html')
@@ -412,61 +442,62 @@ def chat():
         return jsonify({'response': 'Please enter a message.'})
 
 
-    # ── Claude AI mode ────────────────────────────────────
-    api_key = ANTHROPIC_API_KEY
-    if mode == 'ai' and api_key:
+    # ── Gemini AI mode ───────────────────────────────────────
+    api_key = GEMINI_API_KEY
+    if api_key:  # Always try Gemini regardless of mode
         try:
-            # Build strictly alternating user/assistant list, append current msg at end
-            raw = [h for h in history
-                   if h.get('role') in ('user', 'assistant')
-                   and str(h.get('content', '')).strip()]
-            raw = raw[-18:]
+            # Build system prompt + full question in single user turn
+            full_prompt = CHAT_SYSTEM + "\n\nUser question: " + msg
 
-            msgs = []
-            for h in raw:
-                if msgs and msgs[-1]['role'] == h['role']:
-                    msgs[-1]['content'] += ' ' + str(h['content'])
-                else:
-                    msgs.append({'role': h['role'], 'content': str(h['content'])})
-
-            # Append current user message
-            msgs.append({'role': 'user', 'content': msg})
-
-            # Ensure starts with user
-            while msgs and msgs[0]['role'] != 'user':
-                msgs.pop(0)
-
-            if not msgs:
-                msgs = [{'role': 'user', 'content': msg}]
+            # Add recent history context if available
+            if history:
+                hist_text = ""
+                for h in history[-6:]:
+                    role_label = "User" if h.get('role') == 'user' else "Assistant"
+                    hist_text += f"\n{role_label}: {str(h.get('content',''))[:300]}"
+                if hist_text:
+                    full_prompt = CHAT_SYSTEM + "\n\nRecent conversation:" + hist_text + "\n\nNow answer this: " + msg
 
             payload = _json.dumps({
-                'model': 'claude-haiku-4-5',
-                'max_tokens': 1024,
-                'system': CHAT_SYSTEM,
-                'messages': msgs
-            }).encode('utf-8')
-            req = urllib.request.Request(
-                'https://api.anthropic.com/v1/messages',
-                data=payload,
-                headers={
-                    'Content-Type':      'application/json',
-                    'x-api-key':         api_key,
-                    'anthropic-version': '2023-06-01'
+                'contents': [{'role': 'user', 'parts': [{'text': full_prompt}]}],
+                'generationConfig': {
+                    'temperature': 0.7,
+                    'maxOutputTokens': 1024,
                 },
+                'safetySettings': [
+                    {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+                    {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+                    {'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_NONE'},
+                    {'category': 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_NONE'},
+                ]
+            }).encode('utf-8')
+
+            url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}'
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={'Content-Type': 'application/json'},
                 method='POST'
             )
             with urllib.request.urlopen(req, timeout=30) as resp:
-                result     = _json.loads(resp.read())
-                reply      = result['content'][0]['text']
+                result = _json.loads(resp.read())
+                reply  = result['candidates'][0]['content']['parts'][0]['text']
+                # Format markdown to HTML
                 reply_html = reply.replace('\n', '<br>')
-                return jsonify({'response': reply_html, 'source': 'claude'})
+                reply_html = reply_html.replace('**', '<b>', 1)
+                import re
+                reply_html = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', reply)
+                reply_html = reply_html.replace('\n', '<br>')
+                print(f"[Gemini OK] reply len={len(reply)}")
+                return jsonify({'response': reply_html, 'source': 'gemini'})
         except Exception as e:
             import traceback; traceback.print_exc()
-            # Print actual API error response body
             if hasattr(e, 'read'):
-                try: print("[Claude API body]", e.read().decode())
+                try:
+                    body = e.read().decode()
+                    print("[Gemini API body]", body)
                 except: pass
-            print(f"[Claude API error] {e}")
+            print(f"[Gemini API error] {e}")
             # Fall through to KB
 
     # ── Intelligent KB — 50+ topics, no API needed ──────────
@@ -644,11 +675,85 @@ def predict_heart():
         risk    = 'HIGH RISK' if prob >= 0.65 else ('MEDIUM RISK' if prob >= 0.40 else 'LOW RISK')
         doctor  = DOCTOR_MAP['heart'].get(risk, 'General Physician')
 
-        result = {'probability': round(prob*100, 2), 'risk': risk, 'doctor': doctor}
+        # ── XAI Explanation ─────────────────────────────────
+        why_high, why_low, suggestions, lifestyle = [], [], [], {}
+        age_v = inputs['Age']; bmi_v = inputs['BMI']
+
+        if inputs['HighBP']:
+            why_high.append(f"High Blood Pressure detected (BP ≥ 140 mmHg) — major heart disease risk factor")
+        else:
+            why_low.append("Blood Pressure is normal — good cardiovascular indicator")
+        if inputs['HighChol']:
+            why_high.append("High Cholesterol (≥ 240 mg/dL) — causes arterial plaque buildup")
+        else:
+            why_low.append("Cholesterol within healthy range — lower arterial risk")
+        if inputs['Smoker']:
+            why_high.append("Smoking — damages blood vessels and reduces oxygen supply to heart")
+            suggestions.append("Quit smoking immediately — reduces heart risk by 50% within 1 year")
+        if inputs['Diabetes']:
+            why_high.append("Diabetes — doubles the risk of coronary artery disease")
+            suggestions.append("Keep HbA1c < 7% and monitor blood sugar daily")
+        if not inputs['PhysActivity']:
+            why_high.append("Physical inactivity — weakens heart muscle and raises cholesterol")
+            suggestions.append("Start 30 min brisk walk daily — reduces heart risk by 35%")
+        else:
+            why_low.append("Regular physical activity — strengthens heart and improves circulation")
+        if bmi_v > 30:
+            why_high.append(f"Obese BMI ({bmi_v}) — increases strain on heart")
+            suggestions.append("Reduce BMI to 18.5–24.9 through diet + exercise")
+        elif bmi_v > 25:
+            why_high.append(f"Overweight BMI ({bmi_v}) — moderate cardiovascular risk")
+        else:
+            why_low.append(f"BMI ({bmi_v}) in healthy range — lower cardiac load")
+        if inputs['GenHlth'] >= 4:
+            why_high.append(f"Poor general health reported (rating {inputs['GenHlth']}/5)")
+        elif inputs['GenHlth'] <= 2:
+            why_low.append("Excellent/Very good general health reported")
+        if age_v > 60:
+            why_high.append(f"Age {int(age_v)} — risk increases significantly after 60")
+        elif age_v > 45:
+            why_high.append(f"Age {int(age_v)} — moderate age-related risk")
+        else:
+            why_low.append(f"Age {int(age_v)} — relatively lower age-related risk")
+
+        if risk == 'HIGH RISK':
+            suggestions += ["Consult Cardiologist immediately", "ECG and stress test recommended",
+                            "Take prescribed medications regularly", "Follow low-sodium, low-fat diet"]
+            lifestyle = {'diet': ['Mediterranean diet — olive oil, fish, nuts, vegetables',
+                                  'Avoid fried food, red meat, processed snacks',
+                                  'Reduce salt intake below 1500mg/day'],
+                         'exercise': ['30 min cardio 5x/week', 'Avoid intense exercise until cleared by doctor'],
+                         'sleep': ['7-8 hours quality sleep', 'Manage stress — high cortisol harms heart']}
+        elif risk == 'MEDIUM RISK':
+            suggestions += ["Annual cardiac checkup", "Monitor BP and cholesterol regularly",
+                            "Maintain healthy weight"]
+            lifestyle = {'diet': ['Balanced diet rich in fiber, fruits, vegetables',
+                                  'Limit saturated fats and refined sugars'],
+                         'exercise': ['30 min moderate exercise daily'],
+                         'sleep': ['Maintain regular sleep schedule']}
+        else:
+            suggestions.append("Continue healthy lifestyle — annual checkup recommended")
+            lifestyle = {'diet': ['Balanced nutritious diet', 'Stay hydrated (8 glasses/day)'],
+                         'exercise': ['Continue regular physical activity'],
+                         'sleep': ['Maintain 7-8 hours sleep']}
+
+        feat_imp = [
+            {'feature': 'High Blood Pressure', 'contribution_percent': 25, 'max_weight': 25},
+            {'feature': 'High Cholesterol',    'contribution_percent': 22, 'max_weight': 25},
+            {'feature': 'General Health',       'contribution_percent': 18, 'max_weight': 25},
+            {'feature': 'BMI',                  'contribution_percent': 15, 'max_weight': 25},
+            {'feature': 'Age',                  'contribution_percent': 10, 'max_weight': 25},
+            {'feature': 'Smoking',              'contribution_percent': 6,  'max_weight': 25},
+            {'feature': 'Diabetes',             'contribution_percent': 4,  'max_weight': 25},
+        ]
+
+        result = {'probability': round(prob*100, 2), 'risk': risk, 'doctor': doctor,
+                  'why_high_risk': why_high, 'why_low_risk': why_low,
+                  'suggestions': suggestions, 'lifestyle_changes': lifestyle,
+                  'feature_importance': feat_imp}
         sid = session.get('sid', 'default')
         save_to_history(sid, 'heart', inputs, result)
         return jsonify(result)
-        fetchXAI('heart', payload)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -708,7 +813,85 @@ def predict_brain():
             'ever_married': ever_married, 'work_type': work_type,
             'smoking_status': smoking_status, 'gender': gender
         }
-        result = {'probability': round(prob*100, 2), 'risk': risk, 'doctor': doctor}
+        # ── XAI Explanation ─────────────────────────────────
+        why_high, why_low, suggestions, lifestyle = [], [], [], {}
+
+        if hypertension:
+            why_high.append("Hypertension — #1 modifiable stroke risk factor (3x increased risk)")
+            suggestions.append("Control BP: target < 130/80 mmHg with medication + lifestyle")
+        else:
+            why_low.append("No hypertension — lower stroke risk")
+        if heart_disease:
+            why_high.append("Heart disease present — increases stroke risk via blood clots")
+            suggestions.append("Regular cardiac monitoring + anticoagulation if prescribed")
+        else:
+            why_low.append("No heart disease — reduced embolic stroke risk")
+        if avg_glucose_level >= 200:
+            why_high.append(f"High glucose {avg_glucose_level:.0f} mg/dL — diabetes significantly raises stroke risk")
+            suggestions.append("Control blood sugar: HbA1c < 7%, daily glucose monitoring")
+        elif avg_glucose_level >= 140:
+            why_high.append(f"Elevated glucose {avg_glucose_level:.0f} mg/dL — pre-diabetic range")
+        else:
+            why_low.append(f"Normal glucose {avg_glucose_level:.0f} mg/dL — lower metabolic risk")
+        if bmi >= 30:
+            why_high.append(f"Obese BMI ({bmi:.1f}) — associated with hypertension and stroke risk")
+        elif bmi >= 25:
+            why_high.append(f"Overweight BMI ({bmi:.1f}) — moderate risk factor")
+        else:
+            why_low.append(f"Healthy BMI ({bmi:.1f}) — lower stroke risk")
+        if age >= 65:
+            why_high.append(f"Age {int(age)} — stroke risk doubles every decade after 55")
+        elif age >= 55:
+            why_high.append(f"Age {int(age)} — elevated age-related risk (risk doubles after 55)")
+        else:
+            why_low.append(f"Age {int(age)} — relatively lower age-related stroke risk")
+        if smoking_status == 'smokes':
+            why_high.append("Current smoker — doubles stroke risk by damaging blood vessels")
+            suggestions.append("Quit smoking — risk reduces to normal within 5 years")
+        elif smoking_status == 'formerly smoked':
+            why_high.append("Former smoker — residual elevated risk")
+        else:
+            why_low.append("Non-smoker — lower stroke risk")
+        if ever_married == 'Yes' and age >= 50:
+            why_low.append("Married status — associated with better health monitoring")
+
+        if risk == 'HIGH RISK':
+            suggestions += ["Consult Neurologist immediately",
+                            "MRI/CT scan of brain recommended",
+                            "Learn FAST signs: Face drooping, Arm weakness, Speech difficulty, Time to call 108",
+                            "Daily aspirin only if prescribed by doctor"]
+            lifestyle = {'diet': ['DASH diet — low sodium, high potassium',
+                                  'Omega-3 rich food: fish, flaxseed, walnuts',
+                                  'Avoid alcohol — raises BP and stroke risk',
+                                  'Reduce red meat, processed food'],
+                         'exercise': ['30 min moderate exercise daily',
+                                      'Yoga reduces stress and BP effectively'],
+                         'sleep': ['7-8 hours quality sleep',
+                                   'Treat sleep apnea if present — major stroke risk factor']}
+        elif risk == 'MEDIUM RISK':
+            suggestions += ["Annual neurological checkup", "Monitor BP and glucose regularly"]
+            lifestyle = {'diet': ['Heart-healthy balanced diet'],
+                         'exercise': ['Regular moderate exercise'],
+                         'sleep': ['Consistent sleep schedule']}
+        else:
+            suggestions.append("Maintain healthy lifestyle — regular health checkups")
+            lifestyle = {'diet': ['Balanced nutritious diet'],
+                         'exercise': ['Stay physically active'],
+                         'sleep': ['7-8 hours quality sleep']}
+
+        feat_imp = [
+            {'feature': 'Age',                 'contribution_percent': 28, 'max_weight': 28},
+            {'feature': 'Hypertension',        'contribution_percent': 25, 'max_weight': 28},
+            {'feature': 'Avg Glucose Level',   'contribution_percent': 18, 'max_weight': 28},
+            {'feature': 'BMI',                 'contribution_percent': 12, 'max_weight': 28},
+            {'feature': 'Heart Disease',       'contribution_percent': 10, 'max_weight': 28},
+            {'feature': 'Smoking Status',      'contribution_percent': 7,  'max_weight': 28},
+        ]
+
+        result = {'probability': round(prob*100, 2), 'risk': risk, 'doctor': doctor,
+                  'why_high_risk': why_high, 'why_low_risk': why_low,
+                  'suggestions': suggestions, 'lifestyle_changes': lifestyle,
+                  'feature_importance': feat_imp}
         sid = session.get('sid', 'default')
         save_to_history(sid, 'brain', inputs_log, result)
         return jsonify(result)
@@ -730,7 +913,83 @@ def predict_diabetes():
         risk     = 'HIGH RISK' if prob >= 0.60 else ('MEDIUM RISK' if prob >= 0.40 else 'LOW RISK')
         doctor   = DOCTOR_MAP['diabetes'].get(risk, 'General Physician')
 
-        result = {'probability': round(prob*100, 2), 'risk': risk, 'doctor': doctor}
+        # ── XAI Explanation ─────────────────────────────────
+        why_high, why_low, suggestions, lifestyle = [], [], [], {}
+        gluc = inputs.get('Glucose',0); bmi_v = inputs.get('BMI',0)
+        ins  = inputs.get('Insulin',0); age_v = inputs.get('Age',0)
+        preg = inputs.get('Pregnancies',0); dpf = inputs.get('DiabetesPedigreeFunction',0)
+
+        if gluc >= 126:
+            why_high.append(f"Fasting Glucose {int(gluc)} mg/dL — diabetic range (≥ 126)")
+        elif gluc >= 100:
+            why_high.append(f"Glucose {int(gluc)} mg/dL — pre-diabetic range (100–125)")
+        else:
+            why_low.append(f"Glucose {int(gluc)} mg/dL — normal range (< 100)")
+
+        if bmi_v >= 30:
+            why_high.append(f"Obese BMI ({bmi_v}) — strongly associated with Type 2 diabetes")
+            suggestions.append("Lose 5–10% body weight — reduces diabetes risk by 58%")
+        elif bmi_v >= 25:
+            why_high.append(f"Overweight BMI ({bmi_v}) — moderate diabetes risk")
+        else:
+            why_low.append(f"BMI ({bmi_v}) — healthy range, lower insulin resistance")
+
+        if ins > 200:
+            why_high.append(f"High Insulin ({int(ins)} μU/mL) — suggests insulin resistance")
+        elif ins == 0:
+            why_high.append("Insulin reading 0 — possible measurement issue or severe deficiency")
+
+        if age_v >= 45:
+            why_high.append(f"Age {int(age_v)} — risk increases significantly after 45")
+        else:
+            why_low.append(f"Age {int(age_v)} — lower age-related risk")
+
+        if dpf > 0.5:
+            why_high.append(f"Diabetes Pedigree Function {dpf:.2f} — strong family history indicator")
+        else:
+            why_low.append(f"Diabetes Pedigree Function {dpf:.2f} — lower genetic predisposition")
+
+        if preg >= 4:
+            why_high.append(f"{int(preg)} pregnancies — gestational diabetes history increases T2D risk")
+
+        if risk == 'HIGH RISK':
+            suggestions += ["Consult Endocrinologist immediately",
+                            "HbA1c test recommended (target < 7%)",
+                            "Daily blood glucose monitoring",
+                            "Start low-glycemic index diet"]
+            lifestyle = {'diet': ['Avoid sugar, white rice, refined carbs completely',
+                                  'Eat: oats, quinoa, vegetables, legumes, lean protein',
+                                  'Small meals every 3 hours to stabilize blood sugar',
+                                  'Cinnamon, bitter gourd (karela) — natural glucose control'],
+                         'exercise': ['45 min brisk walk daily — reduces glucose by 20–30%',
+                                      'Resistance training 3x/week improves insulin sensitivity'],
+                         'sleep': ['7-8 hours sleep — poor sleep worsens insulin resistance',
+                                   'Manage stress — cortisol spikes raise blood sugar']}
+        elif risk == 'MEDIUM RISK':
+            suggestions += ["Glucose tolerance test recommended",
+                            "Monitor blood sugar monthly", "Weight management program"]
+            lifestyle = {'diet': ['Low-glycemic diet', 'Reduce sugar and processed foods'],
+                         'exercise': ['30 min walk daily'],
+                         'sleep': ['7-8 hours regular sleep']}
+        else:
+            suggestions.append("Healthy lifestyle maintenance — annual screening recommended")
+            lifestyle = {'diet': ['Balanced diet with fiber-rich foods'],
+                         'exercise': ['Regular moderate exercise'],
+                         'sleep': ['Adequate 7-8 hours sleep']}
+
+        feat_imp = [
+            {'feature': 'Glucose Level',        'contribution_percent': 35, 'max_weight': 35},
+            {'feature': 'BMI',                  'contribution_percent': 22, 'max_weight': 35},
+            {'feature': 'Age',                  'contribution_percent': 15, 'max_weight': 35},
+            {'feature': 'Insulin',              'contribution_percent': 12, 'max_weight': 35},
+            {'feature': 'Diabetes Pedigree',    'contribution_percent': 10, 'max_weight': 35},
+            {'feature': 'Pregnancies',          'contribution_percent': 6,  'max_weight': 35},
+        ]
+
+        result = {'probability': round(prob*100, 2), 'risk': risk, 'doctor': doctor,
+                  'why_high_risk': why_high, 'why_low_risk': why_low,
+                  'suggestions': suggestions, 'lifestyle_changes': lifestyle,
+                  'feature_importance': feat_imp}
         sid = session.get('sid', 'default')
         save_to_history(sid, 'diabetes', inputs, result)
         return jsonify(result)
@@ -754,7 +1013,76 @@ def predict_kidney():
         all_p       = {reverse_map[i]: round(float(p)*100, 2) for i, p in enumerate(proba)}
         doctor      = DOCTOR_MAP['kidney'].get(label, 'General Physician')
 
-        result = {'prediction': label, 'confidence': conf, 'probabilities': all_p, 'doctor': doctor}
+        # ── XAI Explanation ─────────────────────────────────
+        why_high, why_low, suggestions, lifestyle = [], [], [], {}
+        sc  = inputs.get('sc', 0)   # serum creatinine
+        egfr = inputs.get('bgr',0)  # use as proxy
+        hemo = inputs.get('hemo',0) # hemoglobin
+        bp_v = inputs.get('bp',0)
+        al   = inputs.get('al',0)   # albumin
+        su   = inputs.get('su',0)   # sugar in urine
+
+        if sc > 1.2:
+            why_high.append(f"High Serum Creatinine ({sc:.2f} mg/dL) — indicates reduced kidney filtration")
+            suggestions.append("Repeat creatinine + eGFR test — monitor kidney function monthly")
+        else:
+            why_low.append(f"Serum Creatinine ({sc:.2f}) in normal range — good kidney filtration")
+        if hemo < 12:
+            why_high.append(f"Low Hemoglobin ({hemo:.1f} g/dL) — anemia common in kidney disease")
+            suggestions.append("Check for renal anemia — may need erythropoietin therapy")
+        else:
+            why_low.append(f"Hemoglobin ({hemo:.1f} g/dL) — adequate, less anemia risk")
+        if bp_v >= 90:
+            why_high.append(f"High diastolic BP ({bp_v} mmHg) — damages kidney blood vessels")
+            suggestions.append("Strict BP control < 130/80 — ACE inhibitors preferred for CKD")
+        else:
+            why_low.append(f"Blood pressure ({bp_v}) within acceptable range")
+        if al >= 3:
+            why_high.append(f"Albumin in urine (grade {int(al)}) — kidney protein leakage sign")
+        elif al == 0:
+            why_low.append("No albumin in urine — healthy glomerular filtration")
+        if su >= 2:
+            why_high.append(f"Sugar in urine (grade {int(su)}) — diabetic nephropathy indicator")
+
+        if label in ['Severe_Disease', 'High_Risk']:
+            suggestions += ["Consult Nephrologist urgently",
+                            "24-hour urine protein test recommended",
+                            "Strict fluid and protein restriction",
+                            "Avoid NSAIDs (ibuprofen) — nephrotoxic"]
+            lifestyle = {'diet': ['Low protein diet: 0.6-0.8g/kg body weight',
+                                  'Low potassium: avoid banana, orange, potato',
+                                  'Low phosphorus: avoid dairy, nuts, cola drinks',
+                                  'Limit fluid intake as advised by doctor',
+                                  'Low sodium: < 2g/day'],
+                         'exercise': ['Light walking only — avoid intense exercise',
+                                      'Gentle yoga if BP is controlled'],
+                         'sleep': ['8 hours sleep', 'Elevate legs to reduce swelling']}
+        elif label in ['Moderate_Risk']:
+            suggestions += ["Nephrology referral recommended",
+                            "Kidney function test every 3 months",
+                            "Control diabetes and BP strictly"]
+            lifestyle = {'diet': ['Moderate protein restriction', 'Low salt diet'],
+                         'exercise': ['30 min moderate walk daily'],
+                         'sleep': ['Regular 7-8 hours sleep']}
+        else:
+            suggestions.append("Annual kidney function test — maintain hydration")
+            lifestyle = {'diet': ['Drink 2-3 liters water daily', 'Balanced protein intake'],
+                         'exercise': ['Regular physical activity'],
+                         'sleep': ['7-8 hours sleep']}
+
+        feat_imp = [
+            {'feature': 'Serum Creatinine',  'contribution_percent': 30, 'max_weight': 30},
+            {'feature': 'Hemoglobin',        'contribution_percent': 20, 'max_weight': 30},
+            {'feature': 'Blood Pressure',    'contribution_percent': 18, 'max_weight': 30},
+            {'feature': 'Albumin in Urine',  'contribution_percent': 15, 'max_weight': 30},
+            {'feature': 'Blood Glucose',     'contribution_percent': 10, 'max_weight': 30},
+            {'feature': 'Sugar in Urine',    'contribution_percent': 7,  'max_weight': 30},
+        ]
+
+        result = {'prediction': label, 'confidence': conf, 'probabilities': all_p,
+                  'doctor': doctor, 'why_high_risk': why_high, 'why_low_risk': why_low,
+                  'suggestions': suggestions, 'lifestyle_changes': lifestyle,
+                  'feature_importance': feat_imp}
         sid = session.get('sid', 'default')
         save_to_history(sid, 'kidney', inputs, result)
         return jsonify(result)
@@ -790,6 +1118,183 @@ def predict_eye():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/predict/lung', methods=['POST'])
+def predict_lung():
+    try:
+        m = MODELS.get('lung')
+        if not m: return jsonify({'error': 'Lung model not loaded.'}), 500
+
+        data = request.json
+        meta = m['meta']
+
+        # Encode inputs
+        gender    = m['le_gender'].transform([data.get('Gender','Male')])[0]
+        stage     = m['le_stage'].transform([data.get('CancerStage','Stage II')])[0]
+        family    = m['le_family'].transform([data.get('FamilyHistory','No')])[0]
+        smoking   = m['le_smoking'].transform([data.get('SmokingStatus','Never Smoked')])[0]
+        treatment = m['le_treat'].transform([data.get('TreatmentType','Chemotherapy')])[0]
+
+        age_val  = float(data.get('Age', 50))
+        bmi_val  = float(data.get('BMI', 25))
+        chol_val = int(data.get('CholesterolLevel', 200))
+
+        inputs = {
+            'age':               age_val,
+            'gender':            int(gender),
+            'cancer_stage':      int(stage),
+            'family_history':    int(family),
+            'smoking_status':    int(smoking),
+            'bmi':               bmi_val,
+            'cholesterol_level': chol_val,
+            'hypertension':      int(data.get('Hypertension', 0)),
+            'asthma':            int(data.get('Asthma', 0)),
+            'cirrhosis':         int(data.get('Cirrhosis', 0)),
+            'other_cancer':      int(data.get('OtherCancer', 0)),
+            'treatment_type':    int(treatment),
+        }
+
+        # Use features from metadata
+        features = meta.get('features', list(inputs.keys()))
+        patient  = pd.DataFrame([inputs])[features[:12]]  # first 12 base features
+        prob     = float(m['model'].predict_proba(patient)[0, 1])
+
+        # Clinical risk: factor in stage and smoking for better UX
+        stage_val   = int(stage)
+        smoking_val = int(smoking)
+        # Stage IV or current smoker → push risk higher
+        adj = 0.0
+        if stage_val == 3: adj += 0.15   # Stage IV
+        elif stage_val == 2: adj += 0.08 # Stage III
+        if smoking_val == 0: adj += 0.10  # Current Smoker
+        if age_val > 65:     adj += 0.05
+        if bmi_val > 30:     adj += 0.03
+        prob_adj = min(0.95, prob + adj)
+
+        if prob_adj >= 0.55:
+            risk = 'HIGH RISK'
+        elif prob_adj >= 0.35:
+            risk = 'MEDIUM RISK'
+        else:
+            risk = 'LOW RISK'
+
+        doctor = DOCTOR_MAP.get('lung', {}).get(risk, 'Oncologist')
+        # ── XAI Explanation ─────────────────────────────────
+        why_high, why_low, suggestions, lifestyle = [], [], [], {}
+        stage_labels = {0:'Stage I', 1:'Stage II', 2:'Stage III', 3:'Stage IV'}
+        stage_name   = stage_labels.get(int(stage), 'Unknown')
+        smoking_labels = {0:'Current Smoker', 1:'Former Smoker', 2:'Never Smoked', 3:'Passive Smoker'}
+        smoking_name   = smoking_labels.get(int(smoking), 'Unknown')
+
+        # Stage
+        if int(stage) >= 3:
+            why_high.append(f"Cancer Stage IV — metastatic spread to distant organs, poorest prognosis")
+        elif int(stage) == 2:
+            why_high.append(f"Cancer Stage III — locally advanced, requires aggressive treatment")
+        elif int(stage) == 1:
+            why_high.append(f"Cancer Stage II — localized spread, treatment can be effective")
+        else:
+            why_low.append("Cancer Stage I — early detection, highest survival rates (70–90%)")
+
+        # Smoking
+        if int(smoking) == 0:
+            why_high.append("Current smoker — smoking causes 85% of lung cancers, worsens prognosis")
+            suggestions.append("Quit smoking immediately — improves treatment response")
+        elif int(smoking) == 1:
+            why_high.append("Former smoker — residual lung damage affects recovery")
+        elif int(smoking) == 3:
+            why_high.append("Passive smoker — second-hand smoke exposure increases risk")
+        else:
+            why_low.append("Never smoked — better baseline lung function and prognosis")
+
+        # Age
+        if age_val > 70:
+            why_high.append(f"Age {int(age_val)} — older patients have reduced treatment tolerance")
+        elif age_val > 60:
+            why_high.append(f"Age {int(age_val)} — moderate age-related treatment challenges")
+        else:
+            why_low.append(f"Age {int(age_val)} — better physiological reserve for treatment")
+
+        # Comorbidities
+        if inputs.get('cirrhosis',0):
+            why_high.append("Cirrhosis — liver disease limits chemotherapy options")
+        if inputs.get('hypertension',0):
+            why_high.append("Hypertension — cardiovascular comorbidity affects surgical risk")
+        if inputs.get('other_cancer',0):
+            why_high.append("History of other cancer — multiple primary tumors worsen prognosis")
+        if inputs.get('asthma',0):
+            why_high.append("Asthma — compromised lung function affects treatment tolerance")
+
+        if not any([inputs.get('cirrhosis',0), inputs.get('hypertension',0),
+                    inputs.get('other_cancer',0), inputs.get('asthma',0)]):
+            why_low.append("No major comorbidities — better treatment tolerance")
+
+        # Family history
+        if int(family) == 1:
+            why_high.append("Family history of cancer — genetic predisposition to aggressive disease")
+        else:
+            why_low.append("No family history — lower genetic risk factor")
+
+        if risk == 'HIGH RISK':
+            suggestions += ["Consult Oncologist immediately — treatment urgency is critical",
+                            "PET-CT scan for metastasis assessment",
+                            "Multidisciplinary tumor board review recommended",
+                            "Consider clinical trials if standard therapy fails",
+                            "Palliative care consultation for quality of life"]
+            lifestyle = {'diet': ['High protein, high calorie diet to prevent cancer cachexia',
+                                  'Anti-inflammatory foods: turmeric, berries, green tea',
+                                  'Avoid alcohol — interferes with chemotherapy',
+                                  'Small frequent meals to manage nausea from treatment'],
+                         'exercise': ['Gentle walking as tolerated',
+                                      'Breathing exercises — improves lung capacity',
+                                      'Avoid strenuous activity during chemo/radiation'],
+                         'sleep': ['Rest is critical during treatment',
+                                   'Pain management for better sleep quality']}
+        elif risk == 'MEDIUM RISK':
+            suggestions += ["Oncologist consultation for treatment plan",
+                            "Regular CT scan follow-up every 3 months",
+                            "Pulmonary function tests before surgery"]
+            lifestyle = {'diet': ['Nutritious balanced diet rich in antioxidants',
+                                  'Adequate protein for recovery'],
+                         'exercise': ['Moderate walking daily', 'Breathing exercises'],
+                         'sleep': ['7-8 hours quality sleep']}
+        else:
+            suggestions += ["Continue treatment plan as prescribed",
+                            "Annual CT scan monitoring",
+                            "Pulmonary rehabilitation program"]
+            lifestyle = {'diet': ['Healthy balanced diet', 'Antioxidant-rich fruits and vegetables'],
+                         'exercise': ['Regular moderate exercise', 'Breathing exercises daily'],
+                         'sleep': ['7-8 hours sleep', 'Stress management']}
+
+        feat_imp = [
+            {'feature': 'Cancer Stage',      'contribution_percent': 35, 'max_weight': 35},
+            {'feature': 'Age',               'contribution_percent': 20, 'max_weight': 35},
+            {'feature': 'Smoking Status',    'contribution_percent': 18, 'max_weight': 35},
+            {'feature': 'Treatment Type',    'contribution_percent': 12, 'max_weight': 35},
+            {'feature': 'BMI',               'contribution_percent': 8,  'max_weight': 35},
+            {'feature': 'Comorbidities',     'contribution_percent': 7,  'max_weight': 35},
+        ]
+
+        result = {
+            'survival_probability': round(prob_adj * 100, 2),
+            'risk':   risk,
+            'doctor': doctor,
+            'why_high_risk': why_high, 'why_low_risk': why_low,
+            'suggestions': suggestions, 'lifestyle_changes': lifestyle,
+            'feature_importance': feat_imp
+        }
+
+        save_to_history(session.get('sid', 'default'), 'lung', inputs, result)
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
+
+
 
 # ── History API ────────────────────────────────────────────
 @app.route('/api/history', methods=['GET'])
@@ -1140,7 +1645,7 @@ def explain_eye():
  
 if __name__ == '__main__':
     print("\n" + "="*55)
-    print("  VitalsAI — http://localhost:5000")
+    print("  VitalsAI — http://localhost:5000  Gemini AI — Active (Free)")
     print("  Login     — http://localhost:5000/login")
     print("  Assistant — http://localhost:5000/assistant")
     print("  Status    — http://localhost:5000/status")

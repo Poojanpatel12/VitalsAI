@@ -33,7 +33,8 @@
     font-family: 'DM Sans', sans-serif;
     background: var(--bg-deep);
     color: var(--text-1);
-    min-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -108,6 +109,7 @@
   .main {
     display: flex;
     flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -119,6 +121,7 @@
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: hidden;
   }
   .sidebar-header {
@@ -160,8 +163,11 @@
   }
   .sidebar-topics {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 14px 12px;
+    -webkit-overflow-scrolling: touch;
   }
   .topic-label {
     font-size: 11px;
@@ -214,6 +220,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: hidden;
     background: var(--bg-deep);
   }
@@ -259,12 +266,15 @@
   /* Messages */
   #messages {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 28px 32px;
     display: flex;
     flex-direction: column;
     gap: 18px;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
   #messages::-webkit-scrollbar { width: 4px; }
   #messages::-webkit-scrollbar-track { background: transparent; }
@@ -505,7 +515,7 @@
     <div class="sidebar-header">
       <h3>Mode</h3>
       <div class="mode-toggle">
-        <button class="mode-btn active" id="btn-ai" onclick="setMode('ai')">🤖 Claude AI</button>
+        <button class="mode-btn active" id="btn-ai" onclick="setMode('ai')">✨ Gemini AI</button>
         <button class="mode-btn" id="btn-local" onclick="setMode('local')">⚡ Quick Mode</button>
       </div>
     </div>
@@ -541,9 +551,9 @@
     <div class="mode-bar">
       <div class="mode-indicator">
         <div class="mode-dot"></div>
-        <span id="mode-label" style="font-size:13px;color:var(--text-2)">Claude AI Mode — Dynamic answers</span>
+        <span id="mode-label" style="font-size:13px;color:var(--text-2)">Gemini AI Mode — Dynamic answers</span>
       </div>
-      <span class="mode-badge ai" id="mode-badge">Claude AI</span>
+      <span class="mode-badge ai" id="mode-badge">Gemini AI</span>
       <div class="mode-bar-right" id="user-name-bar">Welcome</div>
     </div>
 
@@ -553,7 +563,7 @@
       <div class="empty-state" id="welcome-state">
         <div class="big-icon">🏥</div>
         <h2>Vitals AI Health Assistant</h2>
-        <p>Disease ના લક્ષણો, કારણો અને ઉપાય — Gujarati, Hindi, English — કોઈ પણ ભાષામાં પૂછો. Powered by Claude AI.</p>
+        <p>Disease ના લક્ષણો, કારણો અને ઉપાય — Gujarati, Hindi, English — કોઈ પણ ભાષામાં પૂછો. Powered by Gemini AI.</p>
         <div class="empty-chips">
           <button class="chip" onclick="ask('ડાયાબિટીસ ના લક્ષણો, કારણ અને ઉપાય')">🩸 ડાયાબિટીસ</button>
           <button class="chip" onclick="ask('High BP symptoms causes and solution')">❤️ High BP</button>
@@ -639,9 +649,9 @@ function setMode(m) {
   const badge = document.getElementById('mode-badge');
   const label = document.getElementById('mode-label');
   if (m === 'ai') {
-    badge.textContent = 'Claude AI';
+    badge.textContent = 'Gemini AI';
     badge.className = 'mode-badge ai';
-    label.textContent = 'Claude AI Mode — Dynamic, detailed answers';
+    label.textContent = 'Gemini AI Mode — Free & Dynamic answers';
   } else {
     badge.textContent = 'Quick Mode';
     badge.className = 'mode-badge local';
@@ -684,7 +694,7 @@ function addMsg(html, role) {
 
   const meta = document.createElement('div');
   meta.className = 'bubble-meta ' + (role === 'bot' ? 'bot-meta' : '');
-  meta.textContent = now() + (role === 'bot' ? (mode === 'ai' ? ' · Claude AI' : ' · Quick') : '');
+  meta.textContent = now() + (role === 'bot' ? (mode === 'ai' ? ' · Gemini AI' : ' · Quick') : '');
 
   wrap.appendChild(bub);
   wrap.appendChild(meta);

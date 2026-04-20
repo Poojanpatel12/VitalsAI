@@ -52,14 +52,44 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
 .xai-impact{font-size:11px;width:130px;font-weight:600;flex-shrink:0}
 .xai-top{background:#f7fafc;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
 .xai-top b{color:#2b6cb0}
+
+/* ── Custom Validation Popup ───────────────────────────── */
+.val-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.val-overlay.show{opacity:1;pointer-events:all}
+.val-box{background:#fff;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.9);transition:transform .2s}
+.val-overlay.show .val-box{transform:scale(1)}
+.val-icon{font-size:48px;margin-bottom:12px}
+.val-title{font-size:18px;font-weight:700;color:#1a202c;margin-bottom:8px}
+.val-msg{font-size:14px;color:#718096;margin-bottom:20px;line-height:1.6}
+.val-fields{background:#fff5f5;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left}
+.val-fields p{font-size:12px;font-weight:700;color:#c53030;margin-bottom:6px}
+.val-fields ul{list-style:none;padding:0}
+.val-fields ul li{font-size:12px;color:#e53e3e;padding:3px 0}
+.val-fields ul li::before{content:"• ";font-weight:700}
+.val-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;padding:11px 32px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.val-btn:hover{opacity:.9}
 </style>
 </head>
 <body>
+
+<!-- Custom Validation Popup -->
+<div class="val-overlay" id="valPopup">
+  <div class="val-box">
+    <div class="val-icon">⚠️</div>
+    <div class="val-title">Fields Required</div>
+    <div class="val-msg">Please fill in all required fields before predicting.</div>
+    <div class="val-fields" id="valFields" style="display:none">
+      <p>Missing fields:</p>
+      <ul id="valFieldList"></ul>
+    </div>
+    <button class="val-btn" onclick="closeValPopup()">OK, Got it!</button>
+  </div>
+</div>
 <nav>
   <div class="logo">Vitals<span>AI</span></div>
   <div class="nav-links">
     <a href="/">Home</a><a href="/heart">Heart</a><a href="/brain">Brain</a>
-    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye" class="active">Eye</a><a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
+    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye" class="active">Eye</a><a href="/lung">🫁 Lung</a><a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
   </div>
 
   <div class="nav-right">
@@ -114,7 +144,7 @@ function handleFile(file) {
 }
 
 async function predict() {
-  if (!selectedFile) return;
+  if (!selectedFile) { showValPopup(['Eye image — please upload a fundus/eye image first']); return; }
   const btn = document.getElementById('predictBtn');
   btn.disabled = true; btn.textContent = 'Analyzing image...';
   const formData = new FormData();
@@ -544,6 +574,26 @@ function showXAI(explanation, note) {
   el.style.display = 'block';
   el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
+
+// ── Custom Validation Popup ─────────────────────────────
+function showValPopup(missingFields) {
+  const popup = document.getElementById('valPopup');
+  const fieldsDiv = document.getElementById('valFields');
+  const fieldList = document.getElementById('valFieldList');
+  if (missingFields && missingFields.length > 0) {
+    fieldList.innerHTML = missingFields.map(f => '<li>' + f + '</li>').join('');
+    fieldsDiv.style.display = 'block';
+  } else {
+    fieldsDiv.style.display = 'none';
+  }
+  popup.classList.add('show');
+}
+function closeValPopup() {
+  document.getElementById('valPopup').classList.remove('show');
+}
+document.getElementById('valPopup').addEventListener('click', function(e) {
+  if (e.target === this) closeValPopup();
+});
 </script>
 
 </body>

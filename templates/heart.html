@@ -75,14 +75,76 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
 .xai-impact{font-size:11px;width:130px;font-weight:600;flex-shrink:0}
 .xai-top{background:#f7fafc;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
 .xai-top b{color:#2b6cb0}
+
+/* ── Custom Validation Popup ───────────────────────────── */
+.val-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.val-overlay.show{opacity:1;pointer-events:all}
+.val-box{background:#fff;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.9);transition:transform .2s}
+.val-overlay.show .val-box{transform:scale(1)}
+.val-icon{font-size:48px;margin-bottom:12px}
+.val-title{font-size:18px;font-weight:700;color:#1a202c;margin-bottom:8px}
+.val-msg{font-size:14px;color:#718096;margin-bottom:20px;line-height:1.6}
+.val-fields{background:#fff5f5;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left}
+.val-fields p{font-size:12px;font-weight:700;color:#c53030;margin-bottom:6px}
+.val-fields ul{list-style:none;padding:0}
+.val-fields ul li{font-size:12px;color:#e53e3e;padding:3px 0}
+.val-fields ul li::before{content:"• ";font-weight:700}
+.val-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;padding:11px 32px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.val-btn:hover{opacity:.9}
+
+/* ── XAI Explanation Block ── */
+.xai-block{margin-top:20px;display:none}
+.xai-block.show{display:block}
+.xai-section{border-radius:12px;padding:18px;margin-bottom:16px;border:1px solid}
+.xai-section.why-high{background:#fff5f5;border-color:#fed7d7;border-left:4px solid #e53e3e}
+.xai-section.why-low{background:#f0fff4;border-color:#9ae6b4;border-left:4px solid #48bb78}
+.xai-section.suggestions{background:#ebf8ff;border-color:#bee3f8;border-left:4px solid #3182ce}
+.xai-section.lifestyle{background:#faf5ff;border-color:#e9d8fd;border-left:4px solid #805ad5}
+.xai-section h4{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.xai-section.why-high h4{color:#c53030}
+.xai-section.why-low h4{color:#276749}
+.xai-section.suggestions h4{color:#2b6cb0}
+.xai-section.lifestyle h4{color:#553c9a}
+.xai-list{list-style:none}
+.xai-list li{padding:7px 0;font-size:13px;color:#2d3748;border-bottom:1px solid rgba(0,0,0,.06);line-height:1.6}
+.xai-list li:last-child{border-bottom:none}
+.xai-list li::before{margin-right:8px;font-weight:700}
+.xai-section.why-high .xai-list li::before{content:'⚠️'}
+.xai-section.why-low  .xai-list li::before{content:'✅'}
+.xai-section.suggestions .xai-list li::before{content:'→'}
+.feat-bar-row{margin-bottom:10px}
+.feat-bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#4a5568;margin-bottom:4px}
+.feat-bar-track{width:100%;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.feat-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.lc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.lc-cat{background:rgba(255,255,255,.7);border-radius:8px;padding:12px}
+.lc-cat strong{font-size:11px;color:#553c9a;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.lc-cat li{font-size:12px;color:#2d3748;padding:3px 0;list-style:none}
+.lc-cat li::before{content:'• ';color:#805ad5}
+@media(max-width:700px){.lc-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
+
+<!-- Custom Validation Popup -->
+<div class="val-overlay" id="valPopup">
+  <div class="val-box">
+    <div class="val-icon">⚠️</div>
+    <div class="val-title">Fields Required</div>
+    <div class="val-msg">Please fill in all required fields before predicting.</div>
+    <div class="val-fields" id="valFields" style="display:none">
+      <p>Missing fields:</p>
+      <ul id="valFieldList"></ul>
+    </div>
+    <button class="val-btn" onclick="closeValPopup()">OK, Got it!</button>
+  </div>
+</div>
 <nav>
   <a href="/" class="logo">Vitals<span>AI</span></a>
   <div class="nav-center">
     <a href="/">Home</a><a href="/heart" class="active">Heart</a><a href="/brain">Brain</a>
-    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye">Eye</a><a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
+    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye">Eye</a><a href="/lung">🫁 Lung</a><a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
   </div>
   <div class="nav-right">
     <select class="lang-sel" onchange="setLang(this.value)"><option value="en">🇺🇸 EN</option><option value="gu">🇮🇳 GU</option><option value="hi">🇮🇳 HI</option></select>
@@ -121,6 +183,12 @@ let lastResult=null, lastInputs=null;
 async function predict(){
   const btn=document.querySelector('.btn');
   btn.disabled=true; btn.textContent='Analyzing...';
+  // ── Validation ──────────────────────────────────────────
+  const _missing = [];
+  if(!document.getElementById('Age').value) _missing.push('Age');
+  if(!document.getElementById('BMI').value) _missing.push('BMI');
+  if(_missing.length > 0) { showValPopup(_missing); btn.disabled=false; btn.textContent='Predict Heart Disease Risk'; return; }
+  // ────────────────────────────────────────────────────────
   lastInputs={Age:parseFloat(document.getElementById('Age').value)||0,BMI:parseFloat(document.getElementById('BMI').value)||0,BloodPressure:parseFloat(document.getElementById('BloodPressure').value)||120,Cholesterol:parseFloat(document.getElementById('Cholesterol').value)||180,Diabetes:parseInt(document.getElementById('Diabetes').value),Smoker:parseInt(document.getElementById('Smoker').value),PhysActivity:parseInt(document.getElementById('PhysActivity').value),GenHlth:parseInt(document.getElementById('GenHlth').value),Sex:parseInt(document.getElementById('Sex').value)};
   try{
     const res=await fetch('/predict/heart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastInputs)});
@@ -134,6 +202,7 @@ async function predict(){
     const doctorHtml=data.doctor?`<div class="doctor-box"><div class="doctor-icon">👨‍⚕️</div><div class="doctor-info"><strong>${data.doctor}</strong><span>Recommended specialist based on your risk level</span></div></div>`:'';
     el.className=`result ${lv}`;
     el.style.display='block';
+    
     el.innerHTML=`
       <div class="rlabel">${data.risk} ${emoji}</div>
       <div class="rpct">${data.probability}<span>%</span></div>
@@ -582,114 +651,147 @@ function showXAI(explanation) {
 }
 
 // ── Fetch XAI explanation (Heart / Brain / Diabetes / Kidney) ──
-async function fetchXAI(Heart, payload) {
-    try {
-        const res  = await fetch(`/api/explain/${disease}`, {
-            method:  'POST',
-            headers: {'Content-Type': 'application/json'},
-            body:    JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.explanation) showXAI(data.explanation, data.note);
-    } catch(e) { console.log('XAI error:', e); }
-}
-fetchXAI('heart', payload);
-// ── Render XAI section ──────────────────────────────────────
-function showXAI(explanation, note) {
-    const el = document.getElementById('xai-section');
-    if (!el) return;
-
-    const maxImp = Math.max(...explanation.map(e => e.importance)) || 1;
-    const top3   = explanation.slice(0, 3);
-
-    // Top 3 summary
-    let topHtml = `<div class="xai-top">
-        <b>🎯 Top Factors:</b> `;
-    topHtml += top3.map(t =>
-        `<span style="color:${t.shap_value>0?'#e53e3e':'#38a169'};font-weight:600">
-            ${t.feature} (${t.value})
-        </span>`
-    ).join(' &nbsp;·&nbsp; ');
-    topHtml += `</div>`;
-
-    // Bar chart
-    let barsHtml = '';
-    explanation.slice(0, 8).forEach(item => {
-        const pct   = Math.round((item.importance / maxImp) * 100);
-        const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
-        const arrow = item.shap_value > 0 ? '↑' : '↓';
-        barsHtml += `
-        <div class="xai-row">
-            <span class="xai-feat">${item.feature.replace(/_/g,' ')}</span>
-            <span class="xai-val">${item.value}</span>
-            <div class="xai-bar-wrap">
-                <div class="xai-bar" style="width:${pct}%;background:${color}"></div>
-            </div>
-            <span class="xai-impact" style="color:${color}">
-                ${arrow} ${item.impact}
-            </span>
-        </div>`;
-    });
-
-    el.innerHTML = `
-    <div class="xai-card">
-        <h3>🔍 Why this prediction? — Explainable AI</h3>
-        <p class="xai-sub">${note || 'SHAP values — which factors increased or decreased your risk'}</p>
-        ${topHtml}
-        ${barsHtml}
-    </div>`;
-    el.style.display = 'block';
-    el.scrollIntoView({behavior:'smooth', block:'nearest'});
-}
-
-// ── XAI Functions ───────────────────────────────────────
-async function fetchXAI(heart, payload) {
+async function fetchXAI(disease, payload) {
   try {
-    const res  = await fetch('/api/explain/' + disease, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+    const res = await fetch('/api/explain/' + disease, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
     });
     const data = await res.json();
+    if (data.error) { console.log('XAI API error:', data.error); return; }
     if (data.explanation) showXAI(data.explanation, data.note);
   } catch(e) { console.log('XAI error:', e); }
 }
-async function fetchXAIEye(formData) {
-  try {
-    const res  = await fetch('/api/explain/eye', {method:'POST', body: formData});
-    const data = await res.json();
-    if (data.explanation) showXAI(data.explanation, data.note);
-  } catch(e) { console.log('XAI Eye error:', e); }
-}
+
 function showXAI(explanation, note) {
   const el = document.getElementById('xai-section');
-  if (!el) return;
+  if (!el || !explanation || explanation.length === 0) return;
+
   const maxImp = Math.max(...explanation.map(e => e.importance)) || 1;
-  const top3   = explanation.slice(0, 3);
-  let topHtml  = '<div class="xai-top"><b>🎯 Top Factors:</b> ';
+  const top3 = explanation.slice(0, 3);
+
+  let topHtml = '<div class="xai-top"><b>🎯 Top Factors:</b> ';
   topHtml += top3.map(t =>
-    '<span style="color:' + (t.shap_value>0?'#e53e3e':'#38a169') + ';font-weight:600">' +
-    t.feature.replace(/_/g,' ') + ' (' + t.value + ')</span>'
-  ).join(' &nbsp;·&nbsp; ') + '</div>';
+    '<span style="color:' + (t.shap_value > 0 ? '#e53e3e' : '#38a169') + ';font-weight:600">' +
+    t.feature.replace(/_/g, ' ') + ' (' + t.value + ')</span>'
+  ).join(' · ');
+  topHtml += '</div>';
+
   let barsHtml = '';
   explanation.slice(0, 8).forEach(function(item) {
     const pct   = Math.round((item.importance / maxImp) * 100);
     const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
     const arrow = item.shap_value > 0 ? '↑' : '↓';
     barsHtml += '<div class="xai-row">' +
-      '<span class="xai-feat">' + item.feature.replace(/_/g,' ') + '</span>' +
+      '<span class="xai-feat">' + item.feature.replace(/_/g, ' ') + '</span>' +
       '<span class="xai-val">' + item.value + '</span>' +
       '<div class="xai-bar-wrap"><div class="xai-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
       '<span class="xai-impact" style="color:' + color + '">' + arrow + ' ' + item.impact + '</span>' +
       '</div>';
   });
+
   el.innerHTML = '<div class="xai-card">' +
     '<h3>🔍 Why this prediction? — Explainable AI</h3>' +
     '<p class="xai-sub">' + (note || 'SHAP values — which factors increased or decreased your risk') + '</p>' +
     topHtml + barsHtml + '</div>';
   el.style.display = 'block';
-  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  el.scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
+
+// ── Custom Validation Popup ─────────────────────────────
+function showValPopup(missingFields) {
+  const popup = document.getElementById('valPopup');
+  const fieldsDiv = document.getElementById('valFields');
+  const fieldList = document.getElementById('valFieldList');
+  if (missingFields && missingFields.length > 0) {
+    fieldList.innerHTML = missingFields.map(f => '<li>' + f + '</li>').join('');
+    fieldsDiv.style.display = 'block';
+  } else {
+    fieldsDiv.style.display = 'none';
+  }
+  popup.classList.add('show');
+}
+function closeValPopup() {
+  document.getElementById('valPopup').classList.remove('show');
+}
+document.getElementById('valPopup').addEventListener('click', function(e) {
+  if (e.target === this) closeValPopup();
+});
 </script>
 
+
+<div id="xai-heart" class="xai-block" style="max-width:900px;margin:0 auto 32px;padding:0 20px"></div>
+
+<script>
+
+function renderXAI(data, containerId, barColor) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  container.className = 'xai-block show';
+
+  // Why High Risk
+  if (data.why_high_risk && data.why_high_risk.length > 0) {
+    container.innerHTML += `
+      <div class="xai-section why-high">
+        <h4>⚠️ Risk Factors Detected</h4>
+        <ul class="xai-list">${data.why_high_risk.map(e=>`<li>${e}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  // Why Low Risk
+  if (data.why_low_risk && data.why_low_risk.length > 0) {
+    container.innerHTML += `
+      <div class="xai-section why-low">
+        <h4>✅ Positive / Protective Factors</h4>
+        <ul class="xai-list">${data.why_low_risk.map(e=>`<li>${e}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  // Feature Importance
+  if (data.feature_importance && data.feature_importance.length > 0) {
+    let bars = data.feature_importance.map(f => {
+      const pct = Math.round((f.contribution_percent / f.max_weight) * 100);
+      return `<div class="feat-bar-row">
+        <div class="feat-bar-label"><span>${f.feature}</span><span>${f.contribution_percent}%</span></div>
+        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>`;
+    }).join('');
+    container.innerHTML += `
+      <div class="xai-section suggestions" style="background:#f7fafc;border-color:#e2e8f0;border-left-color:#718096">
+        <h4 style="color:#2d3748">📊 Key Contributing Factors</h4>
+        ${bars}
+      </div>`;
+  }
+
+  // Suggestions
+  if (data.suggestions && data.suggestions.length > 0) {
+    container.innerHTML += `
+      <div class="xai-section suggestions">
+        <h4>💊 Recommended Actions</h4>
+        <ul class="xai-list">${data.suggestions.map(s=>`<li>${s}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  // Lifestyle
+  if (data.lifestyle_changes && Object.keys(data.lifestyle_changes).length > 0) {
+    const icons = {diet:'🍎', exercise:'🏃', sleep:'😴', medical:'🏥'};
+    let cats = Object.entries(data.lifestyle_changes).map(([k,v]) =>
+      Array.isArray(v) && v.length > 0
+        ? `<div class="lc-cat"><strong>${icons[k]||'•'} ${k}</strong><ul>${v.map(i=>`<li>${i}</li>`).join('')}</ul></div>`
+        : ''
+    ).join('');
+    container.innerHTML += `
+      <div class="xai-section lifestyle">
+        <h4>🌿 Lifestyle Recommendations</h4>
+        <div class="lc-grid">${cats}</div>
+      </div>`;
+  }
+
+  container.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+</script>
 </body>
 </html>

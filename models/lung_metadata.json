@@ -1,0 +1,71 @@
+{
+  "features": [
+    "age",
+    "gender",
+    "cancer_stage",
+    "family_history",
+    "smoking_status",
+    "bmi",
+    "cholesterol_level",
+    "hypertension",
+    "asthma",
+    "cirrhosis",
+    "other_cancer",
+    "treatment_type"
+  ],
+  "accuracy": 78.01,
+  "roc_auc": 50.0,
+  "threshold": 0.5,
+  "gender_classes": [
+    "Female",
+    "Male"
+  ],
+  "stage_classes": [
+    "Stage I",
+    "Stage II",
+    "Stage III",
+    "Stage IV"
+  ],
+  "family_classes": [
+    "No",
+    "Yes"
+  ],
+  "smoking_classes": [
+    "Current Smoker",
+    "Former Smoker",
+    "Never Smoked",
+    "Passive Smoker"
+  ],
+  "treatment_classes": [
+    "Chemotherapy",
+    "Combined",
+    "Radiation",
+    "Surgery"
+  ],
+  "gender_map": {
+    "Female": 0,
+    "Male": 1
+  },
+  "stage_map": {
+    "Stage I": 0,
+    "Stage II": 1,
+    "Stage III": 2,
+    "Stage IV": 3
+  },
+  "family_map": {
+    "No": 0,
+    "Yes": 1
+  },
+  "smoking_map": {
+    "Current Smoker": 0,
+    "Former Smoker": 1,
+    "Never Smoked": 2,
+    "Passive Smoker": 3
+  },
+  "treatment_map": {
+    "Chemotherapy": 0,
+    "Combined": 1,
+    "Radiation": 2,
+    "Surgery": 3
+  }
+}
