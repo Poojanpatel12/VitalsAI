@@ -35,7 +35,7 @@ google = oauth.register(
 )
 
 MODELS  = {}
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyDIpc_Y5jqmotHI8Jb5yAef1UI1RnkfRKk')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 USERS   = {}   # email -> {name, pwd, created}
 
 # ── In-memory storage for history & trends ────────────────
