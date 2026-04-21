@@ -5,3 +5,8 @@ __pycache__/
 .DS_Store
 models/*.pkl
 models/*.h5
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+instance/
