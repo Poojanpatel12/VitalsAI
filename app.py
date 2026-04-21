@@ -34,6 +34,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
+MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 MODELS  = {}
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 USERS   = {}   # email -> {name, pwd, created}
@@ -63,10 +64,10 @@ def load_models():
     # ── BRAIN ──────────────────────────────────────────────
     try:
         MODELS['brain'] = {
-            'model':    joblib.load('models/brain_ml_model.pkl'),
-            'features': joblib.load('models/brain_features.pkl'),
-            'selector': joblib.load('models/brain_selector.pkl'),
-            'scaler':   joblib.load('models/brain_scaler.pkl'),  # FIX: scaler add karyu
+            'model':    joblib.load(os.path.join(MODELS_DIR, 'brain_ml_model.pkl')),
+            'features': joblib.load(os.path.join(MODELS_DIR, 'brain_features.pkl')),
+            'selector': joblib.load(os.path.join(MODELS_DIR, 'brain_selector.pkl')),
+            'scaler':   joblib.load(os.path.join(MODELS_DIR, 'brain_scaler.pkl')),
             'threshold': 0.15
         }
         print("[OK] Brain model loaded")
@@ -76,8 +77,8 @@ def load_models():
     # ── DIABETES ───────────────────────────────────────────
     try:
         MODELS['diabetes'] = {
-            'model':   joblib.load('models/diabetes_stack_model.pkl'),
-            'scaler':  joblib.load('models/diabetes_scaler.pkl'),
+            'model':   joblib.load(os.path.join(MODELS_DIR, 'diabetes_stack_model.pkl')),
+            'scaler':  joblib.load(os.path.join(MODELS_DIR, 'diabetes_scaler.pkl')),
             'features': ["Pregnancies","Glucose","BloodPressure",
                          "SkinThickness","Insulin","BMI",
                          "DiabetesPedigreeFunction","Age"],
@@ -90,9 +91,9 @@ def load_models():
     # ── KIDNEY ─────────────────────────────────────────────
     try:
         MODELS['kidney'] = {
-            'model':      joblib.load('models/kidney_pipeline.pkl'),
-            'features':   joblib.load('models/kidney_features.pkl'),
-            'target_map': joblib.load('models/kidney_target_map.pkl'),
+            'model':      joblib.load(os.path.join(MODELS_DIR, 'kidney_pipeline.pkl')),
+            'features':   joblib.load(os.path.join(MODELS_DIR, 'kidney_features.pkl')),
+            'target_map': joblib.load(os.path.join(MODELS_DIR, 'kidney_target_map.pkl')),
         }
         print("[OK] Kidney model loaded")
     except Exception as e:
@@ -111,12 +112,12 @@ def load_models():
 
         MODELS['eye'] = {
             'model': tf.keras.models.load_model(
-                'models/eye_cnn_model.h5',
+                os.path.join(MODELS_DIR, 'eye_cnn_model.h5'),
                 custom_objects={'Dense': _PatchedDense},
                 compile=False
             ),
         }
-        with open('models/eye_class_indices.json') as f:
+        with open(os.path.join(MODELS_DIR, 'eye_class_indices.json')) as f:
             ci = json.load(f)
         MODELS['eye']['reverse'] = {v: k for k, v in ci.items()}
         print("[OK] Eye CNN loaded")
@@ -127,14 +128,14 @@ def load_models():
       # ── LUNG ───────────────────────────────────────────────
     try:
         MODELS['lung'] = {
-            'model':      joblib.load('models/lung_stacking_model.pkl'),
-            'le_gender':  joblib.load('models/lung_le_gender.pkl'),
-            'le_stage':   joblib.load('models/lung_le_stage.pkl'),
-            'le_family':  joblib.load('models/lung_le_family.pkl'),
-            'le_smoking': joblib.load('models/lung_le_smoking.pkl'),
-            'le_treat':   joblib.load('models/lung_le_treatment.pkl'),
+            'model':      joblib.load(os.path.join(MODELS_DIR, 'lung_stacking_model.pkl')),
+            'le_gender':  joblib.load(os.path.join(MODELS_DIR, 'lung_le_gender.pkl')),
+            'le_stage':   joblib.load(os.path.join(MODELS_DIR, 'lung_le_stage.pkl')),
+            'le_family':  joblib.load(os.path.join(MODELS_DIR, 'lung_le_family.pkl')),
+            'le_smoking': joblib.load(os.path.join(MODELS_DIR, 'lung_le_smoking.pkl')),
+            'le_treat':   joblib.load(os.path.join(MODELS_DIR, 'lung_le_treatment.pkl')),
         }
-        with open('models/lung_metadata.json') as f:
+        with open(os.path.join(MODELS_DIR, 'lung_metadata.json')) as f:
             MODELS['lung']['meta'] = json.load(f)
         print("[OK] Lung model loaded")
     except Exception as e:
