@@ -149,7 +149,7 @@ Session-based authentication with protected routes requiring login.
 
 MIT License
 
-## Author
+## Contributors
 
 **Poojan Patel**
 - Affiliation: Ahmedabad Institute of Technology
@@ -157,6 +157,13 @@ MIT License
 - University: Gujarat Technological University (GTU)
 - Year: Final Year — 2026
 - GitHub: [@Poojanpatel12](https://github.com/Poojanpatel12)
+
+**Dhyan Patel**
+- Affiliation: Ahmedabad Institute of Technology
+- Department: Computer Engineering
+- University: Gujarat Technological University (GTU)
+- Year: Final Year — 2026
+
 
 ---
 
