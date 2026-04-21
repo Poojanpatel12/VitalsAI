@@ -100,7 +100,7 @@ def load_models():
 
     # ── EYE ────────────────────────────────────────────────
     try:
-        import tensorflow as tf, json as _json
+        import tensorflow as tf
 
         # Fix: quantization_config issue — patch Dense layer
         from tensorflow.keras.layers import Dense as _OrigDense
@@ -117,7 +117,7 @@ def load_models():
             ),
         }
         with open('models/eye_class_indices.json') as f:
-            ci = _json.load(f)
+            ci = json.load(f)
         MODELS['eye']['reverse'] = {v: k for k, v in ci.items()}
         print("[OK] Eye CNN loaded")
         print("[OK] Eye classes:", list(MODELS['eye']['reverse'].values()))
@@ -126,7 +126,6 @@ def load_models():
 
       # ── LUNG ───────────────────────────────────────────────
     try:
-        import json as _json_lung
         MODELS['lung'] = {
             'model':      joblib.load('models/lung_stacking_model.pkl'),
             'le_gender':  joblib.load('models/lung_le_gender.pkl'),
@@ -136,21 +135,10 @@ def load_models():
             'le_treat':   joblib.load('models/lung_le_treatment.pkl'),
         }
         with open('models/lung_metadata.json') as f:
-            MODELS['lung']['meta'] = _json_lung.load(f)
+            MODELS['lung']['meta'] = json.load(f)
         print("[OK] Lung model loaded")
     except Exception as e:
         print(f"[WARN] Lung: {e}")
-
-
-## 2. DOCTOR_MAP dictionary માં add કरो:
-
-    DOCTOR_MAP = {
-    'lung': {
-        'HIGH RISK': 'Oncologist (Lung Cancer Specialist) → Urgent!',
-        'MEDIUM RISK': 'Pulmonologist → Oncology Referral',
-        'LOW RISK': 'Pulmonologist → Regular Monitoring',
-    }
-}
 load_models()
 
 # ── Helper: Save to history ────────────────────────────────
@@ -186,6 +174,11 @@ DOCTOR_MAP = {
         'Crossed_Eyes':  'Ophthalmologist',
         'Uveitis':       'Ophthalmologist — Urgent',
         'Eye_diseases':  'Ophthalmologist (આંખ નિષ્ણાત) — Checkup Needed'
+    },
+    'lung': {
+        'HIGH RISK': 'Oncologist (Lung Cancer Specialist) → Urgent!',
+        'MEDIUM RISK': 'Pulmonologist → Oncology Referral',
+        'LOW RISK': 'Pulmonologist → Regular Monitoring',
     }
 }
 
@@ -1461,7 +1454,7 @@ def get_translations(lang):
 def status():
     return jsonify({
         'loaded':  list(MODELS.keys()),
-        'missing': [d for d in ['heart','brain','diabetes','kidney','eye'] if d not in MODELS],
+        'missing': [d for d in ['heart','brain','diabetes','kidney','eye','lung'] if d not in MODELS],
         'features': {
             'auth':          True,
             'history':       True,
@@ -1654,6 +1647,3 @@ if __name__ == '__main__':
     print("  BMI       — http://localhost:5000/bmi")
     print("="*55 + "\n")
     app.run(debug=True, port=5000)
-
-
-    

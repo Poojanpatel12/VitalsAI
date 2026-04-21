@@ -9,3 +9,5 @@ __pycache__/
 *.sqlite
 *.sqlite3
 instance/
+.claude/
+GEMINI.md
