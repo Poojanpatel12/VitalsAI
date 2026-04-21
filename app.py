@@ -34,6 +34,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
+MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 MODELS  = {}
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 USERS   = {}   # email -> {name, pwd, created}
@@ -63,10 +64,10 @@ def load_models():
     # ── BRAIN ──────────────────────────────────────────────
     try:
         MODELS['brain'] = {
-            'model':    joblib.load('models/brain_ml_model.pkl'),
-            'features': joblib.load('models/brain_features.pkl'),
-            'selector': joblib.load('models/brain_selector.pkl'),
-            'scaler':   joblib.load('models/brain_scaler.pkl'),  # FIX: scaler add karyu
+            'model':    joblib.load(os.path.join(MODELS_DIR, 'brain_ml_model.pkl')),
+            'features': joblib.load(os.path.join(MODELS_DIR, 'brain_features.pkl')),
+            'selector': joblib.load(os.path.join(MODELS_DIR, 'brain_selector.pkl')),
+            'scaler':   joblib.load(os.path.join(MODELS_DIR, 'brain_scaler.pkl')),
             'threshold': 0.15
         }
         print("[OK] Brain model loaded")
@@ -76,8 +77,8 @@ def load_models():
     # ── DIABETES ───────────────────────────────────────────
     try:
         MODELS['diabetes'] = {
-            'model':   joblib.load('models/diabetes_stack_model.pkl'),
-            'scaler':  joblib.load('models/diabetes_scaler.pkl'),
+            'model':   joblib.load(os.path.join(MODELS_DIR, 'diabetes_stack_model.pkl')),
+            'scaler':  joblib.load(os.path.join(MODELS_DIR, 'diabetes_scaler.pkl')),
             'features': ["Pregnancies","Glucose","BloodPressure",
                          "SkinThickness","Insulin","BMI",
                          "DiabetesPedigreeFunction","Age"],
@@ -90,9 +91,9 @@ def load_models():
     # ── KIDNEY ─────────────────────────────────────────────
     try:
         MODELS['kidney'] = {
-            'model':      joblib.load('models/kidney_pipeline.pkl'),
-            'features':   joblib.load('models/kidney_features.pkl'),
-            'target_map': joblib.load('models/kidney_target_map.pkl'),
+            'model':      joblib.load(os.path.join(MODELS_DIR, 'kidney_pipeline.pkl')),
+            'features':   joblib.load(os.path.join(MODELS_DIR, 'kidney_features.pkl')),
+            'target_map': joblib.load(os.path.join(MODELS_DIR, 'kidney_target_map.pkl')),
         }
         print("[OK] Kidney model loaded")
     except Exception as e:
@@ -100,7 +101,7 @@ def load_models():
 
     # ── EYE ────────────────────────────────────────────────
     try:
-        import tensorflow as tf, json as _json
+        import tensorflow as tf
 
         # Fix: quantization_config issue — patch Dense layer
         from tensorflow.keras.layers import Dense as _OrigDense
@@ -111,13 +112,13 @@ def load_models():
 
         MODELS['eye'] = {
             'model': tf.keras.models.load_model(
-                'models/eye_cnn_model.h5',
+                os.path.join(MODELS_DIR, 'eye_cnn_model.h5'),
                 custom_objects={'Dense': _PatchedDense},
                 compile=False
             ),
         }
-        with open('models/eye_class_indices.json') as f:
-            ci = _json.load(f)
+        with open(os.path.join(MODELS_DIR, 'eye_class_indices.json')) as f:
+            ci = json.load(f)
         MODELS['eye']['reverse'] = {v: k for k, v in ci.items()}
         print("[OK] Eye CNN loaded")
         print("[OK] Eye classes:", list(MODELS['eye']['reverse'].values()))
@@ -126,31 +127,19 @@ def load_models():
 
       # ── LUNG ───────────────────────────────────────────────
     try:
-        import json as _json_lung
         MODELS['lung'] = {
-            'model':      joblib.load('models/lung_stacking_model.pkl'),
-            'le_gender':  joblib.load('models/lung_le_gender.pkl'),
-            'le_stage':   joblib.load('models/lung_le_stage.pkl'),
-            'le_family':  joblib.load('models/lung_le_family.pkl'),
-            'le_smoking': joblib.load('models/lung_le_smoking.pkl'),
-            'le_treat':   joblib.load('models/lung_le_treatment.pkl'),
+            'model':      joblib.load(os.path.join(MODELS_DIR, 'lung_stacking_model.pkl')),
+            'le_gender':  joblib.load(os.path.join(MODELS_DIR, 'lung_le_gender.pkl')),
+            'le_stage':   joblib.load(os.path.join(MODELS_DIR, 'lung_le_stage.pkl')),
+            'le_family':  joblib.load(os.path.join(MODELS_DIR, 'lung_le_family.pkl')),
+            'le_smoking': joblib.load(os.path.join(MODELS_DIR, 'lung_le_smoking.pkl')),
+            'le_treat':   joblib.load(os.path.join(MODELS_DIR, 'lung_le_treatment.pkl')),
         }
-        with open('models/lung_metadata.json') as f:
-            MODELS['lung']['meta'] = _json_lung.load(f)
+        with open(os.path.join(MODELS_DIR, 'lung_metadata.json')) as f:
+            MODELS['lung']['meta'] = json.load(f)
         print("[OK] Lung model loaded")
     except Exception as e:
         print(f"[WARN] Lung: {e}")
-
-
-## 2. DOCTOR_MAP dictionary માં add કरो:
-
-    DOCTOR_MAP = {
-    'lung': {
-        'HIGH RISK': 'Oncologist (Lung Cancer Specialist) → Urgent!',
-        'MEDIUM RISK': 'Pulmonologist → Oncology Referral',
-        'LOW RISK': 'Pulmonologist → Regular Monitoring',
-    }
-}
 load_models()
 
 # ── Helper: Save to history ────────────────────────────────
@@ -186,6 +175,11 @@ DOCTOR_MAP = {
         'Crossed_Eyes':  'Ophthalmologist',
         'Uveitis':       'Ophthalmologist — Urgent',
         'Eye_diseases':  'Ophthalmologist (આંખ નિષ્ણાત) — Checkup Needed'
+    },
+    'lung': {
+        'HIGH RISK': 'Oncologist (Lung Cancer Specialist) → Urgent!',
+        'MEDIUM RISK': 'Pulmonologist → Oncology Referral',
+        'LOW RISK': 'Pulmonologist → Regular Monitoring',
     }
 }
 
@@ -1461,7 +1455,7 @@ def get_translations(lang):
 def status():
     return jsonify({
         'loaded':  list(MODELS.keys()),
-        'missing': [d for d in ['heart','brain','diabetes','kidney','eye'] if d not in MODELS],
+        'missing': [d for d in ['heart','brain','diabetes','kidney','eye','lung'] if d not in MODELS],
         'features': {
             'auth':          True,
             'history':       True,
@@ -1654,6 +1648,3 @@ if __name__ == '__main__':
     print("  BMI       — http://localhost:5000/bmi")
     print("="*55 + "\n")
     app.run(debug=True, port=5000)
-
-
-    
