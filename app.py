@@ -50,9 +50,8 @@ def load_models():
 
     # ── HEART ──────────────────────────────────────────────
     try:
-        heart_model_path = os.path.join(MODELS_DIR, 'final_stacking_model.pkl')
         MODELS['heart'] = {
-            'model': joblib.load(heart_model_path),
+            'model': joblib.load('models/final_stacking_model.pkl'),
             'features': ["Age","BMI","HighBP","HighChol","Diabetes",
                          "Smoker","PhysActivity","GenHlth","Sex"],
             'threshold': 0.30
