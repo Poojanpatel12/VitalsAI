@@ -2,6 +2,54 @@
 
 An AI-powered multi-disease health risk prediction platform built with Flask and machine learning models.
 
+<div align="center">
+
+<!-- TOP WAVE BANNER WITH TITLE BAKED IN -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0a0e1a,30:0d1b3e,65:1a3a6b,100:0d47a1&height=240&section=header&text=AI-Powered%20Border%20Surveillance%20System&fontSize=38&fontColor=00D9FF&fontAlignY=42&fontAlign=50&desc=Real-Time%20Anomaly%20Detection%20%7C%20YOLOv8%20%7C%20Azure%20%7C%20Streamlit&descSize=16&descColor=CADCFC&descAlignY=62&descAlign=50" width="100%"/>
+
+<!-- PROJECT LOGO -->
+<br/>
+<img src="dashboard/Border Defence and Surveillance AI logo.png" width="155" alt="Border Defence Project Logo"/>
+
+<br/><br/>
+
+<!-- ANIMATED TYPING LINES -->
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=2500&pause=800&color=00D9FF&center=true&vCenter=true&multiline=false&width=860&height=55&lines=Border+Surveillance+AI;Integrated+Surveillance+%26+Security;Real-Time+Threat+Detection;AI-Powered+Border+Monitoring" alt="Animated Title"/>
+
+<br/><br/>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/YOLOv8-Ultralytics-FF6B35?style=for-the-badge&logo=github&logoColor=white"/>
+  <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Microsoft%20Azure-Cloud-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white"/>
+  <img src="https://img.shields.io/badge/OpenCV-4.x-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/GTU-Internship%202026-00D9FF?style=flat-square"/>
+  <img src="https://img.shields.io/badge/Microsoft%20Elevate-Program-0078D4?style=flat-square&logo=microsoft"/>
+  <img src="https://img.shields.io/badge/AZ--900-Certified%20820%2F1000-0078D4?style=flat-square&logo=microsoftazure"/>
+  <img src="https://img.shields.io/badge/SAL%20Institute-ICT%20Dept-4CAF50?style=flat-square"/>
+  <img src="https://img.shields.io/badge/Status-Completed-brightgreen?style=flat-square"/>
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square"/>
+  <img src="https://img.shields.io/badge/Tests-pytest-yellow?style=flat-square&logo=pytest"/>
+</p>
+
+<br/>
+
+> **🛡️ An end-to-end AI surveillance pipeline** that processes surveillance footage, detects threats using YOLOv8, scores behavioural anomalies, prioritises operational alerts, and surfaces everything in a Streamlit command dashboard — with optional Azure cloud integration throughout.
+
+<br/>
+
+```
+  Live Demo Result (April 2026):  2 persons + 1 vehicle detected · 78% avg confidence · 18-second end-to-end workflow
+```
+
+</div>
+
+---
 ## Overview
 
 VitalsAI provides instant disease risk assessment for five medical conditions. Developed as a final year project at Ahmedabad Institute of Technology (GTU, 2026), it combines machine learning models with a web-based interface for accessible health screening.
