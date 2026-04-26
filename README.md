@@ -2,6 +2,132 @@
 
 An AI-powered multi-disease health risk prediction platform built with Flask and machine learning models.
 
+<div align="center">
+
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
+![Flask](https://img.shields.io/badge/Flask-3.0-black?style=flat-square&logo=flask)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange?style=flat-square&logo=tensorflow)
+![Scikit-Learn](https://img.shields.io/badge/ScikitLearn-1.x-blue?style=flat-square&logo=scikit-learn)
+![Claude AI](https://img.shields.io/badge/Claude_AI-Anthropic-green?style=flat-square)
+![Google OAuth](https://img.shields.io/badge/Google-OAuth2-red?style=flat-square&logo=google)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+
+**AI-powered platform for predicting Heart Disease, Brain Stroke, Diabetes, Kidney Disease & Eye Disease — with an intelligent health chatbot powered by Claude AI.**
+
+*Final Year Project · Ahmedabad Institute of Technology · GTU · 2026*
+
+</div>
+
+---
+
+## 📸 Screenshots
+
+### 🔐 Login Page
+![Login](docs/images/login.png)
+
+### 🏠 Dashboard
+![Dashboard](docs/images/dashboard.png)
+![Dashboard](docs/images/dashboard1.png)
+---
+
+### ❤️ Heart Disease Prediction
+<table>
+<tr>
+<td><img src="docs/images/heart_form.png"/></td>
+<td><img src="docs/images/heart_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Input Form</td>
+<td align="center">Result + Lifestyle Tips + PDF</td>
+</tr>
+</table>
+
+---
+
+### 🧠 Brain Stroke Prediction
+<table>
+<tr>
+<td><img src="docs/images/brain_form.png"/></td>
+<td><img src="docs/images/brain_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Input Form</td>
+<td align="center">Risk Assessment</td>
+</tr>
+</table>
+
+---
+
+### 🩸 Diabetes Prediction
+<table>
+<tr>
+<td><img src="docs/images/diabetes_form.png"/></td>
+<td><img src="docs/images/diabetes_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Clinical Input</td>
+<td align="center">Result + Recommendations</td>
+</tr>
+</table>
+
+---
+
+### 🫘 Kidney Disease Prediction
+<table>
+<tr>
+<td><img src="docs/images/kidney_form.png"/></td>
+<td><img src="docs/images/kidney_result.png"/></td>
+</tr>
+<tr>
+<td align="center">42 Clinical Features</td>
+<td align="center">5-Stage Classification</td>
+</tr>
+</table>
+
+---
+
+### 👁️ Eye Disease Classification (CNN)
+<table>
+<tr>
+<td><img src="docs/images/eye_form.png"/></td>
+<td><img src="docs/images/eye_result.png"/></td>
+</tr>
+<tr>
+<td align="center">Image Upload</td>
+<td align="center">CNN Classification Result</td>
+</tr>
+</table>
+
+---
+
+### 🤖 AI Health Chatbot (Claude AI)
+![Chatbot](docs/images/chatbot.png)
+
+---
+
+### 🌿 Lifestyle Recommender & ⚖️ BMI Calculator
+<table>
+<tr>
+<td><img src="docs/images/lifestyle.png"/></td>
+<td><img src="docs/images/bmi.png"/></td>
+</tr>
+<tr>
+<td align="center">Personalized Health Plan + Score</td>
+<td align="center">BMI with Color Meter</td>
+</tr>
+</table>
+
+---
+
+### 📋 Prediction History
+![History](docs/images/history.png)
+
+---
+
+### 🩸 Assistant
+![assistant](docs/images/assistant.png)
+
 ## Overview
 
 VitalsAI provides instant disease risk assessment for five medical conditions. Developed as a final year project at Ahmedabad Institute of Technology (GTU, 2026), it combines machine learning models with a web-based interface for accessible health screening.
