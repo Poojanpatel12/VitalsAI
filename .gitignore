@@ -4,10 +4,15 @@ __pycache__/
 *.pyc
 .DS_Store
 
+
+
+
 # Database files
 *.db
 *.sqlite
 *.sqlite3
+*.db-shm
+*.db-wal
 instance/
 .claude/
 GEMINI.md
