@@ -1,57 +1,352 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VitalsAI — BMI Calculator</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>VitalsAI — BMI & Health Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
-:root{--bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#1a202c;--text2:#718096;--nav-bg:#fff;--card-shadow:0 2px 12px rgba(0,0,0,.07);--input-bg:#fff;--input-border:#e2e8f0}
-[data-theme="dark"]{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;--nav-bg:#1e293b;--card-shadow:0 2px 12px rgba(0,0,0,.3);--input-bg:#0f172a;--input-border:#334155}
+
+:root{
+  --bg:#09081a;--surface:#13112a;--surface-light:#1c1840;
+  --border:#2a2550;--border-2:#3a3470;
+  --text:#eeeeff;--text2:#8888bb;
+  --v1:#818cf8;--v2:#6366f1;--v3:#a78bfa;--v4:#38bdf8;
+  --green:#34d399;--red:#f87171;--yellow:#fbbf24;
+  --card-shadow:0 8px 32px rgba(0,0,0,0.4);
+  --input-bg:rgba(255,255,255,0.04);
+}
+[data-theme="light"]{
+  --bg:#f5f3ff;--surface:#ffffff;--surface-light:#ede9fe;
+  --border:#ddd6fe;--text:#1e1b4b;--text2:#6d28d9;
+  --input-bg:#f9f8ff;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
-nav{background:var(--nav-bg);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.logo{font-size:20px;font-weight:700;color:#2b6cb0;text-decoration:none}.logo span{color:#e53e3e}
-.nav-center a{text-decoration:none;color:var(--text2);font-size:13px;font-weight:500;padding:6px 13px;border-radius:20px;margin-left:4px}
-.nav-center a:hover,.nav-center a.active{background:#0891b2;color:#fff}
-.nav-right{display:flex;gap:8px;align-items:center}
-.dark-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
-.history-btn{background:#2b6cb0;color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-decoration:none}
-header{background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;padding:24px 40px}
-header h1{font-size:22px;font-weight:700}
-header p{font-size:13px;opacity:.85;margin-top:4px}
-.container{max-width:700px;margin:32px auto;padding:0 24px}
-.card{background:var(--surface);border-radius:16px;padding:32px;box-shadow:var(--card-shadow);margin-bottom:24px}
-.card h2{font-size:18px;font-weight:700;margin-bottom:20px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.fg label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:5px}
-.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid var(--input-border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text)}
-.fg input:focus,.fg select:focus{outline:none;border-color:#0891b2}
-.btn{width:100%;padding:14px;background:#0891b2;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
-.btn:hover{opacity:.88}
-.result{display:none;border-radius:16px;padding:28px;margin-bottom:24px;text-align:center}
-.bmi-num{font-size:72px;font-weight:700;line-height:1}
+html{scroll-behavior:smooth}
+body{font-family:'Poppins','DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;transition:background .3s,color .3s}
+
+/* ── Animated Background ── */
+.bg-gradient{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.blob{position:absolute;filter:blur(80px);opacity:0.25;border-radius:50%;animation:float 8s ease-in-out infinite}
+.blob-1{width:360px;height:360px;background:var(--v2);top:-60px;left:5%;animation-delay:0s}
+.blob-2{width:420px;height:420px;background:var(--v3);bottom:80px;right:3%;animation-delay:2s}
+.blob-3{width:300px;height:300px;background:var(--v4);top:40%;right:18%;animation-delay:4s}
+.blob-4{width:280px;height:280px;background:var(--v1);bottom:15%;left:12%;animation-delay:3s}
+@keyframes float{0%,100%{transform:translate(0,0)}25%{transform:translate(18px,-18px)}50%{transform:translate(-10px,16px)}75%{transform:translate(10px,-10px)}}
+
+/* ── Navigation ── */
+nav,.app-nav{
+  background:rgba(19,17,42,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:14px 28px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px;
+}
+[data-theme="light"] nav,[data-theme="light"] .app-nav{background:rgba(255,255,255,.92);border-bottom:1px solid var(--border)}
+.logo{
+  font-size:22px;font-weight:800;text-decoration:none;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--v1),var(--v3),var(--v4));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.logo span{background:none;-webkit-text-fill-color:var(--v1)}
+.nav-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;   /* 🔥 center align */
+  gap:4px;
+  flex:1;                   /* 🔥 MOST IMPORTANT */
+}
+.nav-links{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.nav-center a,.nav-links a,.dropbtn{
+  text-decoration:none;color:var(--text2);font-size:13px;font-weight:600;
+  padding:7px 13px;border-radius:20px;border:0;background:transparent;
+  font-family:inherit;cursor:pointer;transition:all .2s ease;
+}
+.nav-center a:hover,.nav-center a.active,.nav-links a:hover,.nav-links a.active,.dropbtn:hover,.dropbtn.active{
+  background:linear-gradient(135deg,var(--v2),var(--v3));color:#fff;
+}
+.nav-right{position: absolute;
+  right: 28px;display:flex;gap:8px;align-items:center;margin-left:auto}
+.history-btn{
+  background:linear-gradient(135deg,var(--v2),var(--v3));color:#fff;
+  border:none;padding:7px 15px;border-radius:20px;font-size:12px;font-weight:700;
+  cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all .2s;
+}
+.history-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,0.5)}
+.bmi-btn{
+  background:rgba(99,102,241,0.15);border:1px solid var(--v2);color:var(--v1);
+  padding:7px 15px;border-radius:20px;font-size:12px;font-weight:700;
+  cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all .2s;
+}
+.bmi-btn:hover{background:var(--v2);color:#fff}
+.dark-btn{
+  background:rgba(129,140,248,0.15);border:1px solid var(--v1);color:var(--v1);
+  width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.dark-btn:hover{background:var(--v2);color:#fff;box-shadow:0 0 16px rgba(99,102,241,0.4)}
+
+/* ── Dropdown ── */
+.nav-dropdown{position:relative}
+.dropdown-menu{
+  position:absolute;top:calc(100% + 8px);left:0;
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:0 12px 40px rgba(0,0,0,0.4);border-radius:14px;
+  padding:8px;min-width:220px;display:none;z-index:200;
+}
+.nav-dropdown:hover .dropdown-menu,.nav-dropdown:focus-within .dropdown-menu{display:grid;gap:4px}
+.dropdown-menu a{
+  display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;
+  color:var(--text);text-decoration:none;font-size:13px;font-weight:600;transition:all .2s;
+}
+.dropdown-menu a:hover,.dropdown-menu a.active{background:rgba(129,140,248,0.15);color:var(--v1)}
+
+/* ── Header ── */
+header{
+  background:linear-gradient(135deg,#0c0b2a 0%,#312e81 40%,#6366f1 75%,#a78bfa 100%);
+  color:#fff;padding:40px 32px;position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 70%,rgba(255,255,255,0.1),transparent 50%),
+             radial-gradient(circle at 80% 20%,rgba(0,0,0,0.15),transparent 50%);
+}
+header h1{font-size:28px;font-weight:800;position:relative;z-index:1;margin-bottom:8px}
+header p{font-size:13px;opacity:0.9;position:relative;z-index:1}
+
+/* ── Container & Cards ── */
+.container{max-width:700px;margin:28px auto;padding:0 20px;position:relative;z-index:2}
+.card{
+  background:var(--surface);border-radius:18px;padding:28px;
+  box-shadow:var(--card-shadow);margin-bottom:22px;border:1px solid var(--border);
+  transition:all .3s ease;position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent,rgba(99,102,241,0.08));
+  opacity:0;transition:.3s;pointer-events:none;
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,0.4);border-color:rgba(129,140,248,0.4)}
+.card:hover::before{opacity:1}
+.card h2{
+  font-size:18px;font-weight:800;margin-bottom:20px;
+  background:linear-gradient(135deg,var(--v1),var(--v3),var(--v4));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+/* ── Form ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select{
+  width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:13px;background:var(--input-bg);color:var(--text);
+  transition:all .2s;font-family:inherit;
+}
+.fg input:focus,.fg select:focus{
+  outline:none;border-color:var(--v1);
+  background:rgba(99,102,241,0.08);box-shadow:0 0 0 3px rgba(99,102,241,0.15);
+}
+.fg input::placeholder{color:var(--text2);opacity:0.6}
+
+/* ── Button ── */
+.btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--v2),var(--v3),var(--v4));
+  color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .3s;font-family:inherit;
+  box-shadow:0 4px 24px rgba(99,102,241,0.4);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,0.55)}
+.btn:hover{opacity:1}
+
+/* ── Result ── */
+.result{
+  display:none;border-radius:18px;padding:28px;
+  margin-bottom:22px;text-align:center;border:2px solid;
+  animation:slideUp .5s ease;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.bmi-num{
+  font-size:72px;font-weight:800;line-height:1;
+  background:linear-gradient(135deg,var(--v1),var(--v3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
 .bmi-cat{font-size:20px;font-weight:700;margin:8px 0}
-.bmi-advice{font-size:14px;color:var(--text2);margin-top:8px}
-.bmi-bar{height:14px;border-radius:7px;background:linear-gradient(to right,#3b82f6,#22c55e,#f59e0b,#ef4444,#7f1d1d);position:relative;margin:20px 0 6px}
-.bmi-needle{width:4px;height:22px;background:var(--text);border-radius:2px;position:absolute;top:-4px;transform:translateX(-50%);transition:left .8s ease}
+.bmi-advice{font-size:14px;color:var(--text2);margin-top:8px;line-height:1.6}
+.bmi-bar{height:14px;border-radius:7px;background:linear-gradient(to right,#38bdf8,#34d399,#fbbf24,#f87171,#7f1d1d);position:relative;margin:20px 0 6px}
+.bmi-needle{width:4px;height:22px;background:#fff;border-radius:2px;position:absolute;top:-4px;transform:translateX(-50%);transition:left .8s ease;box-shadow:0 0 8px rgba(255,255,255,0.5)}
 .bmi-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text2)}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
-.info-box{background:var(--bg);border-radius:10px;padding:14px;text-align:center}
-.info-box .val{font-size:22px;font-weight:700;color:#0891b2}
-.info-box .lbl{font-size:12px;color:var(--text2);margin-top:4px}
+.info-box{
+  background:rgba(99,102,241,0.1);border-radius:12px;padding:16px;text-align:center;
+  border:1px solid rgba(129,140,248,0.2);transition:all .2s;
+}
+.info-box:hover{background:rgba(99,102,241,0.18);border-color:var(--v1)}
+.info-box .val{
+  font-size:22px;font-weight:800;
+  background:linear-gradient(135deg,var(--v1),var(--v4));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.info-box .lbl{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600}
+
+/* ── Chatbot ── */
+#chatBubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+#chatToggle{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--v2),var(--v3),var(--v4));
+  border:none;cursor:pointer;font-size:24px;
+  box-shadow:0 4px 20px rgba(99,102,241,0.5);transition:all .3s;
+}
+#chatToggle:hover{transform:scale(1.1)}
+#chatBox{
+  position:absolute;bottom:70px;right:0;width:340px;max-height:480px;
+  background:var(--surface);border-radius:20px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.4);
+  border:1px solid var(--border);display:none;flex-direction:column;overflow:hidden;
+}
+#chatBox.open{display:flex}
+#chatHeader{
+  background:linear-gradient(135deg,var(--v2),var(--v3),var(--v4));
+  padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+#chatHeader .avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
+#chatHeader .info strong{display:block;font-size:14px;color:#fff}
+#chatHeader .info span{font-size:11px;opacity:.8;color:rgba(255,255,255,0.8)}
+#chatClose{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px}
+#chatMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:320px}
+.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
+.msg.bot{background:rgba(99,102,241,0.12);color:var(--text);border:1px solid rgba(129,140,248,0.2);align-self:flex-start}
+.msg.user{background:linear-gradient(135deg,var(--v2),var(--v3));color:#fff;align-self:flex-end}
+.msg.typing{opacity:.6;font-style:italic}
+.quick-chips{padding:8px 14px;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--border)}
+.chip{
+  background:rgba(99,102,241,0.1);border:1px solid rgba(129,140,248,0.3);
+  color:var(--text);padding:5px 11px;border-radius:20px;font-size:11px;
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.chip:hover{background:var(--v2);color:#fff;border-color:var(--v2)}
+#chatInputWrap{display:flex;border-top:1px solid var(--border);flex-shrink:0}
+#chatInput{flex:1;padding:12px 14px;border:none;background:transparent;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+#chatSend{background:linear-gradient(135deg,var(--v2),var(--v3));border:none;color:#fff;padding:12px 16px;cursor:pointer;font-size:15px;font-weight:700}
+
+/* ── User Profile Widget ── */
+.user-profile-wrap{position:relative;display:flex;align-items:center;gap:10px;margin-left:8px}
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--v2),var(--v3));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;cursor:pointer;
+  border:2px solid rgba(129,140,248,0.3);transition:all .3s;
+  font-family:'Space Grotesk',sans-serif;flex-shrink:0;text-transform:uppercase;
+}
+.user-avatar:hover{transform:scale(1.08);box-shadow:0 0 16px rgba(99,102,241,0.4)}
+.user-name-label{font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap}
+.user-dropdown{
+  position:absolute;top:calc(100% + 10px);right:0;min-width:220px;
+  background:linear-gradient(135deg,rgba(19,17,42,.98),rgba(28,24,64,.98));
+  border:1px solid rgba(129,140,248,0.2);border-radius:16px;padding:8px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);backdrop-filter:blur(20px);
+  display:none;z-index:9999;animation:dropIn .2s ease;
+}
+@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.user-dropdown.open{display:block}
+.ud-header{padding:12px 14px 10px;border-bottom:1px solid rgba(129,140,248,0.15);margin-bottom:6px}
+.ud-avatar-big{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--v2),var(--v3));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:#fff;margin:0 auto 10px;
+  font-family:'Space Grotesk',sans-serif;text-transform:uppercase;
+}
+.ud-name{font-size:15px;font-weight:700;color:var(--text);text-align:center;font-family:'Space Grotesk',sans-serif}
+.ud-email{font-size:11px;color:var(--text2);text-align:center;margin-top:2px;word-break:break-all}
+.ud-divider{height:1px;background:rgba(255,255,255,.08);margin:6px 0}
+.ud-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--text);transition:all .2s;text-decoration:none;
+}
+.ud-item:hover{background:rgba(99,102,241,0.12);color:var(--v1)}
+.ud-item i{width:16px;text-align:center;color:var(--v1)}
+.ud-item.logout{color:#f87171}
+.ud-item.logout:hover{background:rgba(248,113,113,.12);color:#ef4444}
+.ud-item.logout i{color:#f87171}
+
+/* ── Utilities ── */
+.form-section-label{
+  grid-column:1/-1;margin:8px 0 0;padding:9px 12px;border-radius:10px;
+  background:rgba(99,102,241,0.1);color:var(--v1);font-size:12px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.6px;border:1px solid rgba(129,140,248,0.2);
+}
+.calorie-result{
+  display:none;margin-top:16px;padding:16px;border-radius:12px;
+  background:rgba(99,102,241,0.1);border:1px solid rgba(129,140,248,0.2);
+}
+.calorie-result strong{display:block;font-size:24px;color:var(--v1);margin-bottom:4px}
+.status-safe{color:var(--green)}.status-risk{color:var(--red)}
+
+@media(max-width:760px){
+  nav,.app-nav{padding:12px 16px;align-items:flex-start}
+  .nav-center,.nav-links{width:100%;order:3}
+  .nav-right{margin-left:auto}
+  .dropdown-menu{position:static;box-shadow:none;margin-top:6px}
+  .form-grid{grid-template-columns:1fr}
+  .card{padding:20px}
+  header{padding:28px 20px}
+  header h1{font-size:22px}
+  .blob{filter:blur(60px)}
+  .blob-1,.blob-3{width:200px;height:200px}
+  .blob-2,.blob-4{width:250px;height:250px}
+}
+
 </style>
 </head>
 <body>
-<nav>
+<div class="bg-gradient">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<nav class="app-nav">
   <a href="/" class="logo">Vitals<span>AI</span></a>
-  <div class="nav-center">
-    <a href="/">Home</a><a href="/heart">Heart</a><a href="/brain">Brain</a>
-    <a href="/diabetes">Diabetes</a><a href="/kidney">Kidney</a><a href="/eye">Eye</a><a href="/lung">🫁 Lung</a><a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
-    <a href="/bmi" class="active">BMI</a>
+  <div class="nav-center nav-links">
+    <a href="/" class=""><i class="fa-solid fa-house"></i> Home</a>
+    <div class="nav-dropdown">
+      <button class="dropbtn"><i class="fa-solid fa-stethoscope"></i> Predictions <i class="fa-solid fa-chevron-down"></i></button>
+      <div class="dropdown-menu">
+        <a href="/heart" class=""><i class="fa-solid fa-heart-pulse"></i> Heart Disease</a>
+        <a href="/brain" class=""><i class="fa-solid fa-brain"></i> Brain / Stroke</a>
+        <a href="/diabetes" class=""><i class="fa-solid fa-droplet"></i> Diabetes</a>
+        <a href="/kidney" class=""><i class="fa-solid fa-prescription-bottle-medical"></i> Kidney</a>
+        <a href="/eye" class=""><i class="fa-solid fa-eye"></i> Eye</a>
+        <a href="/lung" class=""><i class="fa-solid fa-lungs"></i> Lung</a>
+      </div>
+    </div>
+    <a href="/lifestyle" class=""><i class="fa-solid fa-seedling"></i> Health Tips</a>
+    <a href="/assistant" class=""><i class="fa-solid fa-robot"></i> Assistant</a>
+    <a href="/#about-contact"><i class="fa-solid fa-address-card"></i> About & Contact</a>
   </div>
   <div class="nav-right">
-    <a href="/history" class="history-btn">📋 History</a>
-    <button class="dark-btn" onclick="toggleDark()" id="darkBtn">🌙</button>
+    <a href="/bmi" class="bmi-btn active"><i class="fa-solid fa-calculator"></i> Tracker</a>
+    <a href="/history" class="history-btn "><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+    <button class="dark-btn" onclick="toggleDark && toggleDark()" id="darkBtn" title="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+  
+    <!-- User Profile Widget (injected by VitalsAI auth system) -->
+    <div class="user-profile-wrap" id="userProfileWrap" style="display:none">
+      <span class="user-name-label" id="navUserName"></span>
+      <div class="user-avatar" id="navAvatar" onclick="toggleUserDropdown()">?</div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="ud-header">
+          <div class="ud-avatar-big" id="dropAvatar">?</div>
+          <div class="ud-name" id="dropName">Loading...</div>
+          <div class="ud-email" id="dropEmail"></div>
+        </div>
+        <a class="ud-item" href="/history"><i class="fa-solid fa-clock-rotate-left"></i> Prediction History</a>
+        <a class="ud-item" href="/bmi"><i class="fa-solid fa-calculator"></i> Health Tracker</a>
+        <div class="ud-divider"></div>
+        <div class="ud-item logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+      </div>
+    </div>
   </div>
 </nav>
 <header>
@@ -63,10 +358,10 @@ header p{font-size:13px;opacity:.85;margin-top:4px}
   <div class="card">
     <h2>Enter Your Details</h2>
     <div class="form-grid">
-      <div class="fg"><label>Weight (kg)</label><input type="number" id="weight" placeholder="e.g. 70" step="0.1"></div>
-      <div class="fg"><label>Height (cm)</label><input type="number" id="height" placeholder="e.g. 170" step="0.1"></div>
-      <div class="fg"><label>Age</label><input type="number" id="age" placeholder="e.g. 25"></div>
-      <div class="fg"><label>Gender</label><select id="gender"><option value="male">Male</option><option value="female">Female</option></select></div>
+      <div class="fg"><label>Weight (kg)</label><input required type="number" id="weight" placeholder="e.g. 70" step="0.1"></div>
+      <div class="fg"><label>Height (cm)</label><input required type="number" id="height" placeholder="e.g. 170" step="0.1"></div>
+      <div class="fg"><label>Age</label><input required type="number" id="age" placeholder="e.g. 25"></div>
+      <div class="fg"><label>Gender</label><select required id="gender"><option value="male">Male</option><option value="female">Female</option></select></div>
     </div>
     <button class="btn" onclick="calcBMI()">Calculate BMI</button>
   </div>
@@ -107,71 +402,7 @@ const saved=localStorage.getItem('theme');if(saved==='dark'){document.documentEl
 </script>
 
 <!-- ══ DARK MODE CSS ══════════════════════════════════════ -->
-<style>
-:root{--bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#1a202c;--text2:#718096;--nav-bg:#fff;--input-bg:#fff;--input-border:#e2e8f0}
-[data-theme="dark"]{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;--nav-bg:#1e293b;--input-bg:#0f172a;--input-border:#334155}
-body{background:var(--bg)!important;color:var(--text)!important;transition:background .2s,color .2s}
 
-/* ── Chatbot Bubble ── */
-#chatBubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-#chatToggle{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2b6cb0,#1a365d);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 16px rgba(43,108,176,.4);transition:transform .2s}
-#chatToggle:hover{transform:scale(1.1)}
-#chatBox{width:340px;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;display:none;flex-direction:column;max-height:500px}
-#chatBox.open{display:flex}
-#chatHeader{background:linear-gradient(135deg,#2b6cb0,#1a365d);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}
-#chatHeader .avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
-#chatHeader .info strong{display:block;font-size:14px}
-#chatHeader .info span{font-size:11px;opacity:.8}
-#chatClose{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px}
-#chatMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:320px}
-.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
-.msg.bot{background:var(--bg);color:var(--text);border-bottom-left-radius:4px;align-self:flex-start}
-.msg.user{background:#2b6cb0;color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
-.msg.typing{opacity:.6;font-style:italic}
-#chatInputWrap{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
-#chatInput{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--input-bg);color:var(--text);font-family:inherit;outline:none}
-#chatInput:focus{border-color:#2b6cb0}
-#chatSend{background:#2b6cb0;color:#fff;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:14px}
-.quick-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
-.chip{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;font-family:inherit}
-.chip:hover{background:#2b6cb0;color:#fff;border-color:#2b6cb0}
-
-/* ── Lifestyle Card ── */
-.lifestyle-card{background:var(--surface);border-radius:16px;padding:24px;margin-top:20px;border:2px solid #48bb78;display:none}
-[data-theme="dark"] .lifestyle-card{border-color:#16a34a}
-.lifestyle-card h3{font-size:16px;font-weight:700;margin-bottom:16px;color:#276749}
-[data-theme="dark"] .lifestyle-card h3{color:#4ade80}
-.ls-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.ls-item{background:var(--bg);border-radius:12px;padding:14px;text-align:center}
-.ls-icon{font-size:28px;margin-bottom:6px}
-.ls-title{font-size:12px;font-weight:700;margin-bottom:4px}
-.ls-tips{font-size:11px;color:var(--text2);line-height:1.5;text-align:left}
-
-/* ── Doctor Box ── */
-.doctor-box{background:var(--bg);border-radius:12px;padding:16px;margin-top:16px;display:flex;align-items:center;gap:12px}
-.doctor-icon{font-size:32px}
-.doctor-info strong{display:block;font-size:14px;font-weight:700}
-.doctor-info span{font-size:12px;color:var(--text2)}
-
-/* ── PDF btn ── */
-.pdf-btn{display:none;margin-top:12px;padding:10px 20px;background:#1a365d;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
-[data-theme="dark"] .pdf-btn{background:#1e3a5f}
-.pdf-btn:hover{opacity:.88}
-
-/* ── Dark result boxes ── */
-[data-theme="dark"] .low{background:#052e16!important;border-color:#16a34a!important}
-[data-theme="dark"] .medium,.medium{background:#1c1007!important;border-color:#d97706!important}
-[data-theme="dark"] .high{background:#1c0a0a!important;border-color:#dc2626!important}
-[data-theme="dark"] .low .rpct{color:#4ade80!important}
-[data-theme="dark"] .medium .rpct{color:#fb923c!important}
-[data-theme="dark"] .high .rpct{color:#f87171!important}
-</style>
-
-<!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
-<div class="lifestyle-card" id="lifestyleCard">
-  <h3>🌱 Personalized Lifestyle Recommendations</h3>
-  <div class="ls-grid" id="lsGrid"></div>
-</div>
 
 <!-- ══ AI CHATBOT ══════════════════════════════════════════ -->
 <div id="chatBubble">
@@ -192,7 +423,7 @@ body{background:var(--bg)!important;color:var(--text)!important;transition:backg
       <button class="chip" onclick="askQuick('Aankh ni kaळji kevi rite rakhvi?')">👁️ Eye care</button>
     </div>
     <div id="chatInputWrap">
-      <input id="chatInput" placeholder="Type your health question..." onkeydown="if(event.key==='Enter')sendChat()">
+      <input required id="chatInput" placeholder="Type your health question..." onkeydown="if(event.key==='Enter')sendChat()">
       <button id="chatSend" onclick="sendChat()">➤</button>
     </div>
   </div>
@@ -454,6 +685,82 @@ async function downloadPDF(disease, result, inputs){
     const e=await res.json();
     alert('PDF Error: '+e.error);
   }
+}
+</script>
+
+<script src="/static/js/vitals_dynamic_chatbot.js"></script>
+
+<script>
+// ── VitalsAI Auth System ───────────────────────────────────
+(async function initAuth() {
+  try {
+    const res  = await fetch('/api/me');
+    const data = await res.json();
+
+    if (!data.logged_in) {
+      // Not logged in — redirect to login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    const name  = data.name  || 'User';
+    const email = data.email || '';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // Show profile widget
+    const wrap = document.getElementById('userProfileWrap');
+    if (wrap) wrap.style.display = 'flex';
+
+    // Set initials + name
+    const navAvatar  = document.getElementById('navAvatar');
+    const dropAvatar = document.getElementById('dropAvatar');
+    const navName    = document.getElementById('navUserName');
+    const dropName   = document.getElementById('dropName');
+    const dropEmail  = document.getElementById('dropEmail');
+
+    if (navAvatar)  navAvatar.textContent  = initials;
+    if (dropAvatar) dropAvatar.textContent = initials;
+    if (navName)    navName.textContent    = name.split(' ')[0]; // first name only
+    if (dropName)   dropName.textContent   = name;
+    if (dropEmail)  dropEmail.textContent  = email;
+
+    // Color avatar based on name (consistent per user)
+    const colors = [
+      'linear-gradient(135deg,#00d9ff,#ff00ff)',
+      'linear-gradient(135deg,#ff1654,#ff6b35)',
+      'linear-gradient(135deg,#00ff88,#00d9ff)',
+      'linear-gradient(135deg,#c77dff,#ff00ff)',
+      'linear-gradient(135deg,#ffec19,#ff6b35)',
+    ];
+    const colorIdx = name.charCodeAt(0) % colors.length;
+    const gradient = colors[colorIdx];
+    if (navAvatar)  navAvatar.style.background  = gradient;
+    if (dropAvatar) dropAvatar.style.background = gradient;
+
+  } catch(e) {
+    console.error('Auth check failed:', e);
+  }
+})();
+
+function toggleUserDropdown() {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('userProfileWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.remove('open');
+  }
+});
+
+async function logoutUser() {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+  window.location.href = '/login';
 }
 </script>
 

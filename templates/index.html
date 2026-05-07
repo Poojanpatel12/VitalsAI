@@ -1,355 +1,2934 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VitalsAI</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#1a202c;--text2:#718096;
-  --primary:#2b6cb0;--accent:#e53e3e;--nav-bg:#fff;--card-shadow:0 2px 12px rgba(0,0,0,.07);
-  --input-bg:#fff;--input-border:#e2e8f0;--tag-bg:#ebf8ff;--tag-text:#2b6cb0;
-}
-[data-theme="dark"]{
-  --bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;
-  --primary:#60a5fa;--accent:#f87171;--nav-bg:#1e293b;--card-shadow:0 2px 12px rgba(0,0,0,.3);
-  --input-bg:#0f172a;--input-border:#334155;--tag-bg:#1e3a5f;--tag-text:#60a5fa;
-}
-*{box-sizing:border-box;margin:0;padding:0;transition:background .2s,color .2s,border-color .2s}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VitalsAI</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-/* ── NAV ── */
-nav{background:var(--nav-bg);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
-.logo{font-size:20px;font-weight:700;color:var(--primary);text-decoration:none}.logo span{color:var(--accent)}
-.nav-center{display:flex;gap:4px;align-items:center}
-.nav-center a{text-decoration:none;color:var(--text2);font-size:13px;font-weight:500;padding:6px 13px;border-radius:20px;transition:.15s}
-.nav-center a:hover,.nav-center a.active{background:var(--primary);color:#fff}
-.nav-right{display:flex;gap:8px;align-items:center}
+  <style>
+    :root {
+      --bg: #0a0e27;
+      --surface: #1a1f3a;
+      --surface-light: #25304a;
+      --border: #2d3a5a;
+      --text: #f0f4ff;
+      --text-muted: #9ca3b5;
 
-/* ── CONTROLS ── */
-.lang-sel{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
-.dark-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
-.dark-btn:hover{background:var(--border)}
-.history-btn{background:var(--primary);color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px}
-.bmi-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px}
+      /* Accent colors */
+      --red: #ff1654;
+      --pink: #ff6b9d;
+      --purple: #c77dff;
+      --blue: #00d9ff;
+      --cyan: #00f5ff;
+      --green: #00ff88;
+      --yellow: #ffec19;
+      --orange: #ff6b35;
+      --magenta: #ff00ff;
+      --teal: #00ffcc;
 
-/* ── HERO ── */
-.hero{background:linear-gradient(135deg,#2b6cb0,#1a365d);color:#fff;text-align:center;padding:64px 20px;position:relative;overflow:hidden}
-[data-theme="dark"] .hero{background:linear-gradient(135deg,#1e3a5f,#0f172a)}
-.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
-.hero h1{font-size:42px;font-weight:700;margin-bottom:12px;position:relative}
-.hero p{font-size:16px;opacity:.85;max-width:520px;margin:0 auto 20px;position:relative}
-.badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 16px;font-size:12px;display:inline-block;position:relative}
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --card-shadow-hover: 0 20px 64px rgba(0, 0, 0, 0.5);
+    }
 
-/* ── CONTAINER ── */
-.container{max-width:1080px;margin:40px auto;padding:0 24px}
-.section-title{font-size:20px;font-weight:700;margin-bottom:24px;color:var(--text)}
+    [data-theme="light"] {
+      --bg: #f5f7ff;
+      --surface: #ffffff;
+      --surface-light: #f9f9ff;
+      --border: #e5e9f5;
+      --text: #0a0e27;
+      --text-muted: #6b7280;
+    }
 
-/* ── CARDS ── */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
-.card{background:var(--surface);border-radius:16px;padding:28px;box-shadow:var(--card-shadow);text-decoration:none;color:inherit;border-top:4px solid transparent;transition:transform .2s,box-shadow .2s;display:block}
-.card:hover{transform:translateY(-5px);box-shadow:0 12px 32px rgba(0,0,0,.12)}
-.card.heart{border-color:#e53e3e}.card.brain{border-color:#3182ce}
-.card.diabetes{border-color:#d69e2e}.card.kidney{border-color:#805ad5}.card.eye{border-color:#38a169}
-.card-icon{font-size:38px;margin-bottom:14px}
-.card h3{font-size:17px;font-weight:700;margin-bottom:6px}
-.card p{font-size:13px;color:var(--text2);line-height:1.6}
-.tag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;margin-top:14px;font-weight:600}
-.tag.ml{background:var(--tag-bg);color:var(--tag-text)}.tag.dl{background:#f0fff4;color:#276749}
-[data-theme="dark"] .tag.dl{background:#0d3321;color:#68d391}
-.tag.both{background:#faf5ff;color:#553c9a}
-[data-theme="dark"] .tag.both{background:#2d1f4f;color:#b794f4}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* ── TECH BOX ── */
-.tech-box{background:var(--surface);border-radius:16px;padding:32px;margin-top:40px;box-shadow:var(--card-shadow)}
-.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:18px}
-.tech-item{background:var(--bg);border-radius:10px;padding:14px}
-.tech-item strong{display:block;font-size:13px;margin-bottom:4px}
-.tech-item span{font-size:12px;color:var(--text2);line-height:1.5}
+    html {
+      scroll-behavior: smooth;
+    }
 
-/* ── STATS BANNER ── */
-.stats{display:flex;gap:20px;justify-content:center;padding:24px 20px;flex-wrap:wrap}
-.stat{text-align:center;background:var(--surface);border-radius:14px;padding:16px 28px;box-shadow:var(--card-shadow)}
-.stat-num{font-size:28px;font-weight:700;color:var(--primary)}
-.stat-label{font-size:12px;color:var(--text2);margin-top:2px}
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: all 0.4s ease;
+      overflow-x: hidden;
+    }
 
-footer{text-align:center;padding:30px;color:var(--text2);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
-</style>
-</head>
-<body>
-<nav>
-  <a href="/" class="logo">Vitals<span>AI</span></a>
-  <div class="nav-center">
-    <a href="/" class="active">Home</a>
-    <a href="/heart">Heart</a>
-    <a href="/brain">Brain</a>
-    <a href="/diabetes">Diabetes</a>
-    <a href="/kidney">Kidney</a>
-    <a href="/eye">Eye</a>
-    <a href="/lung">🫁 Lung</a>
-    <a href="/assistant">🤖 Assistant</a><a href="/lifestyle">🌿 Lifestyle</a>
-  </div>
-  <div class="nav-right">
-    <select class="lang-sel" id="langSelect" onchange="changeLanguage(this.value)">
-      <option value="en">🇺🇸 English</option>
-      <option value="gu">🇮🇳 ગુજરાતી</option>
-      <option value="hi">🇮🇳 हिन्दी</option>
-    </select>
+    /* ──────── ANIMATED BACKGROUND ──────── */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
 
+    .blob {
+      position: absolute;
+      filter: blur(80px);
+      opacity: 0.3;
+      border-radius: 50%;
+      animation: float 8s ease-in-out infinite;
+    }
 
-    <a href="/bmi" class="bmi-btn">🧮 BMI</a>
-    <a href="/history" class="history-btn">📋 History</a>
-    <button class="dark-btn" onclick="toggleDark()" id="darkBtn">🌙</button>
-  </div>
-</nav>
+    .blob-1 {
+      width: 300px;
+      height: 300px;
+      background: var(--red);
+      top: -50px;
+      left: 10%;
+      animation-delay: 0s;
+    }
 
-<div class="hero">
-  <h1>🤖 VitalsAI</h1>
-  <p>Intelligent early disease detection using Machine Learning and Deep Learning</p>
-  <span class="badge">Stacking Ensemble + Neural Networks + CNN</span>
-</div>
+    .blob-2 {
+      width: 400px;
+      height: 400px;
+      background: var(--purple);
+      bottom: 100px;
+      right: 5%;
+      animation-delay: 2s;
+    }
 
-<div class="stats">
-  <div class="stat"><div class="stat-num">5</div><div class="stat-label">Disease Modules</div></div>
-  <div class="stat"><div class="stat-num">42+</div><div class="stat-label">Clinical Features</div></div>
-  <div class="stat"><div class="stat-num">99%+</div><div class="stat-label">Eye CNN Accuracy</div></div>
-  <div class="stat"><div class="stat-num">5</div><div class="stat-label">Languages</div></div>
-</div>
+    .blob-3 {
+      width: 350px;
+      height: 350px;
+      background: var(--cyan);
+      top: 50%;
+      right: 20%;
+      animation-delay: 4s;
+    }
 
-<div class="container">
-  <div class="section-title">Select Prediction Module</div>
-  <div class="grid">
-    <a href="/heart" class="card heart"><div class="card-icon">❤️</div><h3>Heart Disease</h3><p>Predict cardiovascular risk using BP, BMI, cholesterol, lifestyle factors.</p><span class="tag ml">ML — Stacking Ensemble</span></a>
-    <a href="/brain" class="card brain"><div class="card-icon">🧠</div><h3>Brain / Stroke</h3><p>Assess stroke risk using age, glucose, BMI, hypertension and lifestyle.</p><span class="tag ml">ML — Stacking Ensemble</span></a>
-    <a href="/diabetes" class="card diabetes"><div class="card-icon">💉</div><h3>Diabetes</h3><p>Classify diabetes risk using glucose, insulin, BMI, age and clinical features.</p><span class="tag ml">ML — Stacking Ensemble</span></a>
-    <a href="/kidney" class="card kidney"><div class="card-icon">🦀</div><h3>Kidney Disease</h3><p>Detect CKD stage using creatinine, eGFR, hemoglobin and 42 clinical markers.</p><span class="tag both">ML + Pipeline</span></a>
-    <a href="/eye" class="card eye"><div class="card-icon">👁️</div><h3>Eye Disease</h3><p>Classify eye conditions from fundus images using CNN deep learning.</p><span class="tag dl">DL — CNN (EfficientNetB3)</span></a>
-    <a href="/bmi" class="card" style="border-color:#0891b2"><div class="card-icon">🧮</div><h3>BMI Calculator</h3><p>Calculate your Body Mass Index with personalized health advice and ideal weight.</p><span class="tag" style="background:#ecfeff;color:#0891b2">Health Tool</span></a>
-  </div>
+    .blob-4 {
+      width: 280px;
+      height: 280px;
+      background: var(--green);
+      bottom: 20%;
+      left: 15%;
+      animation-delay: 3s;
+    }
 
-  <div class="tech-box">
-    <div class="section-title">🔧 Technology Stack</div>
-    <div class="tech-grid">
-      <div class="tech-item"><strong>ML Models</strong><span>Random Forest, XGBoost, Gradient Boosting, Stacking</span></div>
-      <div class="tech-item"><strong>Deep Learning</strong><span>TensorFlow/Keras, EfficientNetB3 (Eye CNN)</span></div>
-      <div class="tech-item"><strong>Imbalance</strong><span>SMOTE oversampling + class_weight balanced</span></div>
-      <div class="tech-item"><strong>Backend</strong><span>Flask REST API + joblib + reportlab</span></div>
-      <div class="tech-item"><strong>Features</strong><span>Dark Mode · Multi-lang · PDF Reports · History</span></div>
-      <div class="tech-item"><strong>Pipeline</strong><span>Scikit-learn Pipeline + SelectKBest</span></div>
-    </div>
-  </div>
-</div>
+    @keyframes float {
 
-<footer>VitalsAI — Python · Flask · Scikit-learn · XGBoost · TensorFlow</footer>
-
-<script>
-function toggleDark(){
-  const t=document.documentElement;
-  const isDark=t.getAttribute('data-theme')==='dark';
-  t.setAttribute('data-theme',isDark?'light':'dark');
-  document.getElementById('darkBtn').textContent=isDark?'🌙':'☀️';
-  localStorage.setItem('theme',isDark?'light':'dark');
-}
-function setLang(l){
-  fetch(`/api/translations/${l}`).then(r=>r.json()).then(t=>{
-    localStorage.setItem('lang',l);
-    localStorage.setItem('translations',JSON.stringify(t));
-  });
-}
-// Restore theme
-const saved=localStorage.getItem('theme');
-if(saved==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('darkBtn').textContent='☀️';}
-</script>
-
-<!-- ══ DARK MODE CSS ══════════════════════════════════════ -->
-<style>
-:root{--bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#1a202c;--text2:#718096;--nav-bg:#fff;--input-bg:#fff;--input-border:#e2e8f0}
-[data-theme="dark"]{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;--nav-bg:#1e293b;--input-bg:#0f172a;--input-border:#334155}
-body{background:var(--bg)!important;color:var(--text)!important;transition:background .2s,color .2s}
-
-/* ── Chatbot Bubble ── */
-#chatBubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-#chatToggle{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2b6cb0,#1a365d);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 16px rgba(43,108,176,.4);transition:transform .2s}
-#chatToggle:hover{transform:scale(1.1)}
-#chatBox{width:340px;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;display:none;flex-direction:column;max-height:500px}
-#chatBox.open{display:flex}
-#chatHeader{background:linear-gradient(135deg,#2b6cb0,#1a365d);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}
-#chatHeader .avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
-#chatHeader .info strong{display:block;font-size:14px}
-#chatHeader .info span{font-size:11px;opacity:.8}
-#chatClose{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px}
-#chatMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:320px}
-.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
-.msg.bot{background:var(--bg);color:var(--text);border-bottom-left-radius:4px;align-self:flex-start}
-.msg.user{background:#2b6cb0;color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
-.msg.typing{opacity:.6;font-style:italic}
-#chatInputWrap{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
-#chatInput{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--input-bg);color:var(--text);font-family:inherit;outline:none}
-#chatInput:focus{border-color:#2b6cb0}
-#chatSend{background:#2b6cb0;color:#fff;border:none;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:14px}
-.quick-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
-.chip{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;font-family:inherit}
-.chip:hover{background:#2b6cb0;color:#fff;border-color:#2b6cb0}
-
-/* ── Lifestyle Card ── */
-.lifestyle-card{background:var(--surface);border-radius:16px;padding:24px;margin-top:20px;border:2px solid #48bb78;display:none}
-[data-theme="dark"] .lifestyle-card{border-color:#16a34a}
-.lifestyle-card h3{font-size:16px;font-weight:700;margin-bottom:16px;color:#276749}
-[data-theme="dark"] .lifestyle-card h3{color:#4ade80}
-.ls-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.ls-item{background:var(--bg);border-radius:12px;padding:14px;text-align:center}
-.ls-icon{font-size:28px;margin-bottom:6px}
-.ls-title{font-size:12px;font-weight:700;margin-bottom:4px}
-.ls-tips{font-size:11px;color:var(--text2);line-height:1.5;text-align:left}
-
-/* ── Doctor Box ── */
-.doctor-box{background:var(--bg);border-radius:12px;padding:16px;margin-top:16px;display:flex;align-items:center;gap:12px}
-.doctor-icon{font-size:32px}
-.doctor-info strong{display:block;font-size:14px;font-weight:700}
-.doctor-info span{font-size:12px;color:var(--text2)}
-
-/* ── PDF btn ── */
-.pdf-btn{display:none;margin-top:12px;padding:10px 20px;background:#1a365d;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
-[data-theme="dark"] .pdf-btn{background:#1e3a5f}
-.pdf-btn:hover{opacity:.88}
-
-/* ── Dark result boxes ── */
-[data-theme="dark"] .low{background:#052e16!important;border-color:#16a34a!important}
-[data-theme="dark"] .medium,.medium{background:#1c1007!important;border-color:#d97706!important}
-[data-theme="dark"] .high{background:#1c0a0a!important;border-color:#dc2626!important}
-[data-theme="dark"] .low .rpct{color:#4ade80!important}
-[data-theme="dark"] .medium .rpct{color:#fb923c!important}
-[data-theme="dark"] .high .rpct{color:#f87171!important}
-</style>
-
-<!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
-<div class="lifestyle-card" id="lifestyleCard">
-  <h3>🌱 Personalized Lifestyle Recommendations</h3>
-  <div class="ls-grid" id="lsGrid"></div>
-</div>
-
-<!-- ══ AI CHATBOT ══════════════════════════════════════════ -->
-<div id="chatBubble">
-  <div id="chatBox">
-    <div id="chatHeader">
-      <div class="avatar">🤖</div>
-      <div class="info"><strong>VitalsAI Assistant</strong><span>Health advisor · Always online</span></div>
-      <button id="chatClose" onclick="toggleChat()">✕</button>
-    </div>
-    <div id="chatMessages">
-      <div class="msg bot">નમસ્તે! 👋 હું VitalsAI Health Assistant છું.<br>Health વિશે કોઈ પણ સવાલ પૂછો — ગુજરાતી, Hindi, અથવા English માં!</div>
-    </div>
-    <div class="quick-chips">
-      <button class="chip" onclick="askQuick('BP high hoy to shu karvu?')">❤️ High BP</button>
-      <button class="chip" onclick="askQuick('Diabetes control kevi rite karvu?')">💉 Diabetes</button>
-      <button class="chip" onclick="askQuick('Stroke ni nishaniyo shun che?')">🧠 Stroke signs</button>
-      <button class="chip" onclick="askQuick('Kidney health mate su karvu?')">🦀 Kidney</button>
-      <button class="chip" onclick="askQuick('Aankh ni kaळji kevi rite rakhvi?')">👁️ Eye care</button>
-    </div>
-    <div id="chatInputWrap">
-      <input id="chatInput" placeholder="Type your health question..." onkeydown="if(event.key==='Enter')sendChat()">
-      <button id="chatSend" onclick="sendChat()">➤</button>
-    </div>
-  </div>
-  <button id="chatToggle" onclick="toggleChat()">🤖</button>
-</div>
-
-<!-- ══ SHARED JS ════════════════════════════════════════════ -->
-<script>
-// ── Dark Mode ─────────────────────────────────────────────
-function toggleDark(){
-  const t=document.documentElement;
-  const d=t.getAttribute('data-theme')==='dark';
-  t.setAttribute('data-theme',d?'light':'dark');
-  const b=document.getElementById('darkBtn');
-  if(b)b.textContent=d?'🌙':'☀️';
-  localStorage.setItem('vitals_theme',d?'light':'dark');
-}
-(function(){
-  const s=localStorage.getItem('vitals_theme');
-  if(s==='dark'){
-    document.documentElement.setAttribute('data-theme','dark');
-    const b=document.getElementById('darkBtn');
-    if(b)b.textContent='☀️';
-  }
-})();
-
-// ── Language ──────────────────────────────────────────────
-function setLang(l){
-  localStorage.setItem('vitals_lang',l);
-  const m={en:'Language set to English',gu:'ભાષા ગુજરાતી સેટ થઈ',hi:'भाषा हिंदी सेट हो गई'};
-  addMsg('bot', m[l]||'');
-}
-(function(){
-  const l=localStorage.getItem('vitals_lang');
-  const s=document.getElementById('langSel');
-  if(l&&s)s.value=l;
-})();
-
-// લેન્ગ્વેજ બદલવા માટેનું ફંક્શન
-async function changeLanguage(lang) {
-  try {
-    const response = await fetch(`/api/translations/${lang}`);
-    const translations = await response.json();
-
-    // હવે આ ટ્રાન્સલેશન ડેટાનો ઉપયોગ કરીને HTML ના એલિમેન્ટ્સ બદલો
-    // ઉદાહરણ તરીકે:
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (translations[key]) {
-        el.innerText = translations[key];
+      0%,
+      100% {
+        transform: translate(0, 0);
       }
-    });
-    
-    // લોકલ સ્ટોરેજમાં સેવ કરો જેથી પેજ રિફ્રેશ થાય તો પણ લેન્ગ્વેજ જળવાઈ રહે
-    localStorage.setItem('selectedLang', lang);
-  } catch (error) {
-    console.error("Translation error:", error);
+
+      25% {
+        transform: translate(20px, -20px);
+      }
+
+      50% {
+        transform: translate(-10px, 20px);
+      }
+
+      75% {
+        transform: translate(10px, -10px);
+      }
+    }
+
+    /* ──────── NAVIGATION ──────── */
+    nav {
+      background: rgba(26, 31, 58, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    [data-theme="light"] nav {
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      letter-spacing: -1.5px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-center a,
+    .nav-center button {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .nav-center a:hover,
+    .nav-center button:hover,
+    .nav-center a.active,
+    .nav-center button.active {
+      color: var(--cyan);
+      background: rgba(0, 217, 255, 0.15);
+      border: 1px solid var(--cyan);
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .dark-btn {
+      background: rgba(0, 217, 255, 0.2);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .dark-btn:hover {
+      background: var(--cyan);
+      color: var(--bg);
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 12px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      min-width: 280px;
+      display: none;
+      z-index: 200;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .nav-dropdown {
+      position: relative;
+    }
+
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown:focus-within .dropdown-menu {
+      display: grid;
+      gap: 6px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .dropdown-menu a:hover {
+      background: rgba(0, 217, 255, 0.15);
+      color: var(--cyan);
+      padding-left: 18px;
+    }
+
+
+    .hero-home {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    }
+
+    .hero {
+      position: relative;
+      padding: 120px 24px;
+      text-align: center;
+      overflow: hidden;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    user agent stylesheet section {
+      display: block;
+      unicode-bidi: isolate;
+    }
+
+    /* ──────── HERO SECTIONS ──────── */
+    .hero {
+      position: relative;
+      padding: 120px 24px;
+      text-align: center;
+      overflow: hidden;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+      margin: 0 auto;
+      animation: fadeInUp 1s ease 0.2s both;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-badge {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .hero h1 {
+      font-size: 64px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .hero p {
+      font-size: 18px;
+      opacity: 0.95;
+      margin-bottom: 32px;
+      line-height: 1.8;
+    }
+
+    /* ──────── HOME HERO ──────── */
+    .hero-home {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    }
+
+    .hero-home .hero-overlay {
+      background:
+        radial-gradient(circle at 20% 50%, rgba(255, 22, 84, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 217, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 0%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── HEART HERO ──────── */
+    .hero-heart {
+      background: linear-gradient(135deg, #2a0a10 0%, #3d1a2a 50%, #2a1a3a 100%);
+    }
+
+    .hero-heart .hero-overlay {
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255, 22, 84, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255, 107, 157, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── BRAIN HERO ──────── */
+    .hero-brain {
+      background: linear-gradient(135deg, #1a0a2e 0%, #2d1a4d 50%, #1a2a4e 100%);
+    }
+
+    .hero-brain .hero-overlay {
+      background:
+        radial-gradient(circle at 30% 40%, rgba(199, 125, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(0, 213, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── DIABETES HERO ──────── */
+    .hero-diabetes {
+      background: linear-gradient(135deg, #2a1a0a 0%, #3d2a1a 50%, #2a2a1a 100%);
+    }
+
+    .hero-diabetes .hero-overlay {
+      background:
+        radial-gradient(circle at 25% 35%, rgba(255, 235, 25, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 75% 65%, rgba(255, 107, 53, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── KIDNEY HERO ──────── */
+    .hero-kidney {
+      background: linear-gradient(135deg, #0a2a3a 0%, #1a3a4e 50%, #0a3a5a 100%);
+    }
+
+    .hero-kidney .hero-overlay {
+      background:
+        radial-gradient(circle at 30% 30%, rgba(0, 217, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(0, 255, 204, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── EYE HERO ──────── */
+    .hero-eye {
+      background: linear-gradient(135deg, #0a2a1a 0%, #1a4a3a 50%, #0a3a2a 100%);
+    }
+
+    .hero-eye .hero-overlay {
+      background:
+        radial-gradient(circle at 25% 40%, rgba(0, 255, 136, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 75% 60%, rgba(0, 217, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 30%, rgba(255, 235, 25, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── LUNG HERO ──────── */
+    .hero-lung {
+      background: linear-gradient(135deg, #1a1a2a 0%, #2a2a3a 50%, #1a2a4a 100%);
+    }
+
+    .hero-lung .hero-overlay {
+      background:
+        radial-gradient(circle at 20% 35%, rgba(100, 200, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 80% 65%, rgba(100, 255, 200, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── CONTAINER ──────── */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section {
+      padding: 80px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .section-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 48px;
+      color: var(--text);
+      letter-spacing: -1px;
+      font-family: 'Space Grotesk', sans-serif;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ──────── GRID & CARDS ──────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+
+    .card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: var(--card-shadow);
+      text-decoration: none;
+      color: inherit;
+      border: 1px solid var(--border);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(0, 217, 255, 0.1));
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-12px) scale(1.02);
+      box-shadow: var(--card-shadow-hover);
+      border-color: var(--cyan);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      animation: heartbeat 2s ease-in-out infinite;
+    }
+
+    @keyframes heartbeat {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    .card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .card p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      flex-grow: 1;
+      margin-bottom: 16px;
+    }
+
+    .card-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin-top: 12px;
+      width: fit-content;
+    }
+
+    .card-btn:hover {
+      transform: translateX(6px);
+      box-shadow: 0 8px 24px rgba(0, 217, 255, 0.3);
+    }
+
+    /* ──────── COLORED SECTIONS ──────── */
+    .section-heart {
+      background: linear-gradient(135deg, rgba(255, 22, 84, 0.1), rgba(255, 107, 157, 0.1), rgba(199, 125, 255, 0.1));
+      border-top: 3px solid var(--red);
+      border-bottom: 3px solid var(--pink);
+    }
+
+    .section-brain {
+      background: linear-gradient(135deg, rgba(199, 125, 255, 0.1), rgba(0, 213, 255, 0.1), rgba(0, 255, 136, 0.1));
+      border-top: 3px solid var(--purple);
+      border-bottom: 3px solid var(--cyan);
+    }
+
+    .section-diabetes {
+      background: linear-gradient(135deg, rgba(255, 235, 25, 0.1), rgba(255, 107, 53, 0.1), rgba(0, 255, 200, 0.1));
+      border-top: 3px solid var(--yellow);
+      border-bottom: 3px solid var(--orange);
+    }
+
+    .section-kidney {
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 255, 204, 0.1), rgba(199, 125, 255, 0.1));
+      border-top: 3px solid var(--cyan);
+      border-bottom: 3px solid var(--teal);
+    }
+
+    .section-eye {
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 217, 255, 0.1), rgba(255, 235, 25, 0.1));
+      border-top: 3px solid var(--green);
+      border-bottom: 3px solid var(--yellow);
+    }
+
+    .section-lung {
+      background: linear-gradient(135deg, rgba(100, 200, 255, 0.1), rgba(100, 255, 200, 0.1), rgba(199, 125, 255, 0.1));
+      border-top: 3px solid var(--blue);
+      border-bottom: 3px solid var(--teal);
+    }
+
+    /* ──────── INFO GRID ──────── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .info-panel {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .info-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--orange));
+    }
+
+    .info-panel h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text);
+      margin-top: 8px;
+    }
+
+    .info-panel p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .info-panel ul {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0 0;
+    }
+
+    .info-panel li {
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 8px 0;
+      padding-left: 28px;
+      position: relative;
+    }
+
+    .info-panel li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    /* ──────── SYMPTOMS GRID ──────── */
+    .symptoms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 48px;
+    }
+
+    .symptom-item {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .symptom-item:hover {
+      border-color: var(--cyan);
+      background: rgba(0, 217, 255, 0.1);
+      transform: translateY(-6px);
+    }
+
+    .symptom-item i {
+      font-size: 36px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .symptom-item strong {
+      display: block;
+      font-size: 15px;
+      margin-top: 12px;
+      color: var(--text);
+    }
+
+    /* ──────── RISK CARDS ──────── */
+    .risk-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .risk-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .risk-low {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .risk-medium {
+      background: rgba(255, 235, 25, 0.2);
+      color: var(--yellow);
+      border: 1px solid var(--yellow);
+    }
+
+    .risk-high {
+      background: rgba(255, 22, 84, 0.2);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+
+    .risk-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      margin-top: 8px;
+    }
+
+    .risk-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    /* ──────── STATS ──────── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin: 60px 0;
+    }
+
+    .stat {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--card-shadow);
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(199, 125, 255, 0.2));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .stat:hover {
+      transform: scale(1.05);
+      border-color: var(--cyan);
+    }
+
+    .stat:hover::before {
+      opacity: 1;
+    }
+
+    .stat-num {
+      font-size: 40px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* ──────── TECHNOLOGY ──────── */
+    .tech-box {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 48px;
+      margin-top: 60px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tech-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(0, 217, 255, 0.05));
+      pointer-events: none;
+    }
+
+    .tech-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 32px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tech-item {
+      background: var(--surface-light);
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .tech-item:hover {
+      border-color: var(--cyan);
+      background: rgba(0, 217, 255, 0.1);
+      transform: translateY(-6px);
+    }
+
+    .tech-item strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tech-item span {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ──────── FOOTER ──────── */
+    footer {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+      font-size: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 80px;
+      background: var(--surface);
+      position: relative;
+      z-index: 2;
+    }
+
+    footer p {
+      margin-bottom: 12px;
+    }
+
+    footer a {
+      color: var(--cyan);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--magenta);
+    }
+
+    /* ──────── PAGE VISIBILITY ──────── */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* ──────── RESPONSIVE ──────── */
+    @media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-// પેજ લોડ થાય ત્યારે છેલ્લે સિલેક્ટ કરેલી લેન્ગ્વેજ સેટ કરવી
-window.onload = () => {
-  const savedLang = localStorage.getItem('selectedLang') || 'en';
-  document.getElementById('langSelect').value = savedLang;
-  changeLanguage(savedLang);
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+      .logo {
+        flex: 1;
+        font-size: 20px;
+      }
+
+      .nav-center {
+        width: 100%;
+        order: 3;
+        margin-top: 12px;
+        gap: 8px;
+      }
+
+      .hero {
+        padding: 80px 20px;
+        min-height: 400px;
+      }
+
+      .hero h1 {
+        font-size: 42px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .section {
+        padding: 60px 0;
+      }
+
+      .section-title {
+        font-size: 32px;
+        margin-bottom: 32px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .symptoms-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tech-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 24px;
+      }
+
+      .tech-box {
+        padding: 32px;
+      }
+
+      .blob {
+        filter: blur(60px);
+      }
+
+      .blob-1 {
+        width: 200px;
+        height: 200px;
+      }
+
+      .blob-2 {
+        width: 250px;
+        height: 250px;
+      }
+
+      .blob-3 {
+        width: 220px;
+        height: 220px;
+      }
+
+      .blob-4 {
+        width: 180px;
+        height: 180px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 32px;
+      }
+
+      .hero p {
+        font-size: 14px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .section-title {
+        font-size: 24px;
+      }
+
+      .symptoms-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-num {
+        font-size: 28px;
+      }
+    }
+
+
+    .vibrant-text {
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px)
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none
+    }
+
+    .logo span {
+      color: var(--accent)
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 4px;
+      align-items: center
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 13px;
+      border-radius: 20px;
+      transition: .15s
+    }
+
+    .nav-center a:hover,
+    .nav-center a.active {
+      background: var(--primary);
+      color: #fff
+    }
+
+    .nav-right {position: absolute;
+  right: 28px;
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    /* ── CONTROLS ── */
+    .lang-sel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif
+    }
+
+    .dark-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .dark-btn:hover {
+      background: var(--border)
+    }
+
+    .history-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .bmi-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #2b6cb0, #1a365d);
+      color: #fff;
+      text-align: center;
+      padding: 64px 20px;
+      position: relative;
+      overflow: hidden
+    }
+
+    [data-theme="dark"] .hero {
+      background: linear-gradient(135deg, #1e3a5f, #0f172a)
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+    }
+
+    .hero h1 {
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      position: relative
+    }
+
+    .hero p {
+      font-size: 16px;
+      opacity: .85;
+      max-width: 520px;
+      margin: 0 auto 20px;
+      position: relative
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, .15);
+      border: 1px solid rgba(255, 255, 255, .3);
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 12px;
+      display: inline-block;
+      position: relative
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 24px
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--text)
+    }
+
+    /* ── CARDS ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--card-shadow);
+      text-decoration: none;
+      color: inherit;
+      border-top: 4px solid transparent;
+      transition: transform .2s, box-shadow .2s;
+      display: block
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .12)
+    }
+
+    .card.heart {
+      border-color: #e53e3e
+    }
+
+    .card.brain {
+      border-color: #3182ce
+    }
+
+    .card.diabetes {
+      border-color: #d69e2e
+    }
+
+    .card.kidney {
+      border-color: #805ad5
+    }
+
+    .card.eye {
+      border-color: #38a169
+    }
+
+    .card-icon {
+      font-size: 38px;
+      margin-bottom: 14px
+    }
+
+    .card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px
+    }
+
+    .card p {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-top: 14px;
+      font-weight: 600
+    }
+
+    .tag.ml {
+      background: var(--tag-bg);
+      color: var(--tag-text)
+    }
+
+    .tag.dl {
+      background: #f0fff4;
+      color: #276749
+    }
+
+    [data-theme="dark"] .tag.dl {
+      background: #0d3321;
+      color: #68d391
+    }
+
+    .tag.both {
+      background: #faf5ff;
+      color: #553c9a
+    }
+
+    [data-theme="dark"] .tag.both {
+      background: #2d1f4f;
+      color: #b794f4
+    }
+
+    /* ── TECH BOX ── */
+    .tech-box {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 40px;
+      box-shadow: var(--card-shadow)
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 18px
+    }
+
+    .tech-item {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px
+    }
+
+    .tech-item strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px
+    }
+
+    .tech-item span {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5
+    }
+
+    /* ── STATS BANNER ── */
+    .stats {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      padding: 24px 20px;
+      flex-wrap: wrap
+    }
+
+    .stat {
+      text-align: center;
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 16px 28px;
+      box-shadow: var(--card-shadow)
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary)
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: var(--text2);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      margin-top: 40px
+    }
+
+
+    /* VitalsAI enhanced navigation and responsive utilities */
+    .app-nav {
+      gap: 16px;
+      flex-wrap: wrap
+    }
+
+    .nav-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;   /* 🔥 center align */
+  gap:4px;
+  flex:1;                   /* 🔥 MOST IMPORTANT */
+}
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap
+    }
+
+    .nav-center a,
+    .nav-links a,
+    .dropbtn {
+      text-decoration: none;
+      color: var(--text2, #4a5568);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 20px;
+      border: 0;
+      background: transparent;
+      font-family: inherit;
+      cursor: pointer;
+      line-height: 1.2
+    }
+
+    .nav-center a:hover,
+    .nav-center a.active,
+    .nav-links a:hover,
+    .nav-links a.active,
+    .dropbtn:hover,
+    .dropbtn.active {
+      background: var(--primary, #2b6cb0);
+      color: #fff
+    }
+
+    .nav-dropdown {
+      position: relative
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, .14);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 230px;
+      display: none;
+      z-index: 200
+    }
+
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown:focus-within .dropdown-menu {
+      display: grid;
+      gap: 4px
+    }
+
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 8px;
+      margin: 0;
+      color: var(--text, #1a202c)
+    }
+
+    .nav-right a.active {
+      outline: 2px solid rgba(43, 108, 176, .25)
+    }
+
+    .bmi-btn,
+    .history-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .form-section-label {
+      grid-column: 1/-1;
+      margin: 8px 0 0;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: var(--bg, #f0f4f8);
+      color: var(--text, #1a202c);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .6px
+    }
+
+    .symptom-note {
+      grid-column: 1/-1;
+      font-size: 12px;
+      color: var(--text2, #718096);
+      line-height: 1.5;
+      margin-top: -4px
+    }
+
+    .quick-actions,
+    .how-grid,
+    .tips-grid,
+    .about-contact-grid,
+    .tracker-grid {
+      display: grid;
+      gap: 16px
+    }
+
+    .quick-actions {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      margin-bottom: 32px
+    }
+
+    .quick-action {
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 16px;
+      text-decoration: none;
+      color: var(--text, #1a202c);
+      box-shadow: var(--card-shadow, 0 2px 12px rgba(0, 0, 0, .07));
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700
+    }
+
+    .quick-action i {
+      font-size: 22px;
+      color: var(--primary, #2b6cb0)
+    }
+
+    .how-grid,
+    .tips-grid,
+    .about-contact-grid,
+    .tracker-grid {
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      margin-bottom: 34px
+    }
+
+    .info-panel {
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: var(--card-shadow, 0 2px 12px rgba(0, 0, 0, .07))
+    }
+
+    .info-panel i {
+      font-size: 22px;
+      color: var(--primary, #2b6cb0);
+      margin-bottom: 10px
+    }
+
+    .info-panel h3 {
+      font-size: 15px;
+      margin-bottom: 6px
+    }
+
+    .info-panel p {
+      font-size: 13px;
+      color: var(--text2, #718096);
+      line-height: 1.55
+    }
+
+    .card .card-icon i {
+      font-size: 36px
+    }
+
+    .calorie-result {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--bg, #f0f4f8);
+      border: 1px solid var(--border, #e2e8f0)
+    }
+
+    .calorie-result strong {
+      display: block;
+      font-size: 24px;
+      color: #0891b2;
+      margin-bottom: 4px
+    }
+
+    .status-safe {
+      color: #276749
+    }
+
+    .status-risk {
+      color: #c53030
+    }
+
+    @media(max-width:760px) {
+
+      nav,
+      .app-nav {
+        padding: 12px 16px;
+        align-items: flex-start
+      }
+
+      .nav-center,
+      .nav-links {
+        width: 100%;
+        order: 3
+      }
+
+      .nav-right {
+        margin-left: auto
+      }
+
+      .dropdown-menu {
+        position: static;
+        box-shadow: none;
+        margin-top: 6px
+      }
+
+      .form-grid,
+      .form-grid.three,
+      .result-grid,
+      .main {
+        grid-template-columns: 1fr !important
+      }
+
+      .card,
+      .form-card {
+        padding: 22px
+      }
+    }
+  
+  /* ── User Profile Widget ─────────────────────────────── */
+  .user-profile-wrap{position:relative;display:flex;align-items:center;gap:10px;margin-left:8px}
+  .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00d9ff,#ff00ff);
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;
+    color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .3s;
+    font-family:'Space Grotesk',sans-serif;flex-shrink:0;text-transform:uppercase}
+  .user-avatar:hover{transform:scale(1.08);box-shadow:0 0 16px rgba(0,217,255,.4)}
+  .user-name-label{font-size:13px;font-weight:600;color:var(--text,#f0f4ff);white-space:nowrap;
+    max-width:100px;overflow:hidden;text-overflow:ellipsis}
+  .user-dropdown{position:absolute;top:calc(100% + 10px);right:0;min-width:220px;
+    background:linear-gradient(135deg,rgba(26,31,58,.98),rgba(42,42,80,.98));
+    border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:8px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);backdrop-filter:blur(20px);
+    display:none;z-index:9999;animation:dropIn .2s ease}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .user-dropdown.open{display:block}
+  .ud-header{padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:6px}
+  .ud-avatar-big{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#00d9ff,#ff00ff);
+    display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;
+    color:#fff;margin:0 auto 10px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase}
+  .ud-name{font-size:15px;font-weight:700;color:#f0f4ff;text-align:center;font-family:'Space Grotesk',sans-serif}
+  .ud-email{font-size:11px;color:#9ca3b5;text-align:center;margin-top:2px;word-break:break-all}
+  .ud-divider{height:1px;background:rgba(255,255,255,.08);margin:6px 0}
+  .ud-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+    cursor:pointer;font-size:13px;font-weight:600;color:#f0f4ff;transition:all .2s;text-decoration:none}
+  .ud-item:hover{background:rgba(0,217,255,.12);color:#00d9ff}
+  .ud-item i{width:16px;text-align:center;color:#00d9ff}
+  .ud-item.logout{color:#ff6b9d}
+  .ud-item.logout:hover{background:rgba(255,22,84,.12);color:#ff1654}
+  .ud-item.logout i{color:#ff6b9d}
+
+  
+/* ════════════════════════════════════════════════════════
+   🚨 EMERGENCY SYSTEM — VitalsAI
+   ════════════════════════════════════════════════════════ */
+
+.em-fab {
+  position: fixed;
+  bottom: 10px;
+  left: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.em-fab-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff1654, #ff6b35);
+  border: none;
+  cursor: pointer;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(255, 22, 84, 0.5);
+  animation: emPulse 2s ease-in-out infinite;
+  transition: transform 0.2s;
+}
+.em-fab-btn:hover { transform: scale(1.12); }
+
+
+.em-medical-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #fff;
+  border-left: 4px solid #ff1654;
+}
+
+.em-fab-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #ff1654;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(255, 22, 84, 0.1);
+  border: 1px solid rgba(255, 22, 84, 0.3);
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+@keyframes emPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(255, 22, 84, 0.5); }
+  50%       { box-shadow: 0 4px 40px rgba(255, 22, 84, 0.8), 0 0 0 10px rgba(255,22,84,0.1); }
+}
+
+/* ── Emergency Overlay ── */
+.em-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  padding: 16px;
+}
+.em-overlay.open { display: flex; }
+
+/* ── Emergency Panel ── */
+.em-panel {
+  background: linear-gradient(145deg, #0f0a18, #1a0f2a);
+  border: 1px solid rgba(255, 22, 84, 0.4);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: emSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 0 60px rgba(255, 22, 84, 0.3);
+}
+.em-panel::-webkit-scrollbar { width: 4px; }
+.em-panel::-webkit-scrollbar-thumb { background: rgba(255,22,84,0.4); border-radius: 4px; }
+
+@keyframes emSlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.em-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,22,84,0.2);
+  position: sticky;
+  top: 0;
+  background: linear-gradient(145deg, #0f0a18, #1a0f2a);
+  z-index: 2;
+  border-radius: 24px 24px 0 0;
+}
+.em-topbar-icon { font-size: 32px; animation: emPulse 1.5s infinite; }
+.em-topbar h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ff1654;
+  flex: 1;
+}
+.em-topbar p { font-size: 12px; color: #9ca3b5; margin-top: 2px; }
+.em-close-btn {
+  background: rgba(255,22,84,0.15);
+  border: 1px solid rgba(255,22,84,0.3);
+  color: #ff1654;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.em-close-btn:hover { background: #ff1654; color: #fff; }
+
+.em-body { padding: 16px 20px 24px; }
+
+/* ── Call Buttons ── */
+.em-call-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.em-call-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+  font-family: 'Poppins', sans-serif;
+  text-decoration: none;
+  transition: all 0.2s;
+  animation: emPulse 2s infinite;
+}
+.em-call-btn:hover { transform: scale(1.05); }
+.em-call-btn .num { font-size: 22px; font-weight: 900; }
+.em-call-btn .lbl { font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+.em-call-btn.ambulance { background: linear-gradient(135deg, #ff1654, #ff6b35); color: #fff; }
+.em-call-btn.police    { background: linear-gradient(135deg, #1a56db, #00d9ff); color: #fff; animation-delay: 0.3s; }
+.em-call-btn.fire      { background: linear-gradient(135deg, #f59e0b, #ff6b35); color: #fff; animation-delay: 0.6s; }
+
+/* ── Section ── */
+.em-section { margin-bottom: 16px; }
+.em-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ff1654;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.em-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,22,84,0.2);
+}
+
+/* ── Hospital ── */
+.em-hospital-box {
+  background: rgba(0,217,255,0.08);
+  border: 1px solid rgba(0,217,255,0.2);
+  border-radius: 14px;
+  padding: 14px;
+}
+.em-loc-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0,217,255,0.2), rgba(0,255,204,0.2));
+  border: 1px solid rgba(0,217,255,0.4);
+  color: #00d9ff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.em-loc-btn:hover { background: rgba(0,217,255,0.3); }
+#em-hosp-result {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #f0f4ff;
+  line-height: 1.6;
+}
+.em-hosp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  margin-top: 8px;
+  border: 1px solid rgba(0,217,255,0.15);
+  text-decoration: none;
+}
+.em-hosp-item:hover { background: rgba(0,217,255,0.1); }
+.em-hosp-item i { color: #00d9ff; font-size: 16px; flex-shrink: 0; }
+.em-hosp-item div { flex: 1; }
+.em-hosp-item strong { font-size: 13px; color: #f0f4ff; display: block; }
+.em-hosp-item span  { font-size: 11px; color: #9ca3b5; }
+.em-open-maps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: #00d9ff;
+  border-radius: 10px;
+  color: #0a0e27;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.em-open-maps:hover { background: #00f5ff; }
+
+/* ── Voice command ── */
+.em-voice-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(199,125,255,0.15);
+  border: 1px solid rgba(199,125,255,0.35);
+  color: #c77dff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.em-voice-btn:hover { background: rgba(199,125,255,0.25); }
+.em-voice-btn.listening {
+  background: rgba(255,22,84,0.2);
+  border-color: #ff1654;
+  color: #ff1654;
+  animation: emPulse 1s infinite;
+}
+#em-voice-result {
+  margin-top: 8px;
+  font-size: 13px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(199,125,255,0.2);
+  color: #f0f4ff;
+  display: none;
+}
+
+/* ── Symptom Check ── */
+.em-symptom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.em-sym-btn {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,22,84,0.25);
+  background: rgba(255,22,84,0.08);
+  color: #f0f4ff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.em-sym-btn:hover, .em-sym-btn.sel {
+  background: rgba(255,22,84,0.25);
+  border-color: #ff1654;
+  color: #ff6b9d;
+}
+#em-sym-result {
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  display: none;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+#em-sym-result.critical {
+  background: rgba(255,22,84,0.15);
+  border: 2px solid #ff1654;
+  color: #ff1654;
+}
+#em-sym-result.moderate {
+  background: rgba(255,107,53,0.15);
+  border: 2px solid #ff6b35;
+  color: #ff6b35;
+}
+#em-sym-result.stable {
+  background: rgba(0,255,136,0.1);
+  border: 2px solid #00ff88;
+  color: #00ff88;
+}
+
+/* ── First Aid ── */
+.em-aid-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.em-aid-tab {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,22,84,0.25);
+  background: transparent;
+  color: #9ca3b5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.em-aid-tab.active, .em-aid-tab:hover {
+  background: rgba(255,22,84,0.2);
+  border-color: #ff1654;
+  color: #ff6b9d;
+}
+.em-aid-content {
+  background: rgba(255,22,84,0.06);
+  border: 1px solid rgba(255,22,84,0.15);
+  border-radius: 14px;
+  padding: 14px;
+  display: none;
+  animation: fadeIn 0.25s ease;
+}
+.em-aid-content.active { display: block; }
+.em-aid-content h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ff6b9d;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.em-aid-content ol {
+  padding-left: 18px;
+  color: #f0f4ff;
+}
+.em-aid-content ol li {
+  font-size: 13px;
+  padding: 4px 0;
+  line-height: 1.6;
+}
+.em-aid-content .warn {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(255,235,25,0.1);
+  border-left: 3px solid #ffec19;
+  border-radius: 0 8px 8px 0;
+  font-size: 12px;
+  color: #ffec19;
+}
+
+/* ── Emergency Contact ── */
+.em-contact-form { display: flex; flex-direction: column; gap: 10px; }
+.em-contact-input {
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0,217,255,0.25);
+  background: rgba(255,255,255,0.05);
+  color: #f0f4ff;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  width: 100%;
+}
+.em-contact-input:focus {
+  outline: none;
+  border-color: #00d9ff;
+  box-shadow: 0 0 0 3px rgba(0,217,255,0.1);
+}
+.em-contact-save {
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00d9ff, #00ff88);
+  color: #0a0e27;
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.em-contact-save:hover { transform: scale(1.02); }
+.em-contact-actions { display: flex; gap: 8px; }
+.em-contact-call, .em-contact-sms {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.2s;
+}
+.em-contact-call { background: linear-gradient(135deg,#ff1654,#ff6b35); color: #fff; }
+.em-contact-sms  { background: rgba(0,217,255,0.15); border: 1px solid rgba(0,217,255,0.3); color: #00d9ff; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 480px) {
+  .em-call-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .em-panel { border-radius: 20px; }
+  .em-symptom-grid { grid-template-columns: 1fr 1fr; }
+}
+
+</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+  <!-- Animated Background -->
+  <div class="bg-gradient">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+  </div>
+  <nav class="app-nav">
+    <a href="active" class="logo" onclick="showPage('home'); return false;">⚡ VitalsAI</a>
+    <div class="nav-center nav-links">
+      <a href="/" class="active"><i class="fa-solid fa-house"></i> Home</a>
+      <div class="nav-dropdown">
+        <button class="dropbtn"><i class="fa-solid fa-stethoscope"></i> Predictions <i
+            class="fa-solid fa-chevron-down"></i></button>
+        <div class="dropdown-menu">
+          <a href="/heart" onclick="showPage('heart'); return false;" class="nav-link" data-page="heart"><i
+              class="fa-solid fa-heart"></i> Heart Disease</a>
+          <a href="/brain" onclick="showPage('brain'); return false;" class="nav-link" data-page="brain"><i
+              class="fa-solid fa-brain"></i> Brain / Stroke</a>
+          <a href="/diabetes" onclick="showPage('diabetes'); return false;" class="nav-link" data-page="diabetes"><i
+              class="fa-solid fa-droplet"></i> Diabetes</a>
+          <a href="/kidney" onclick="showPage('kidney'); return false;" class="nav-link" data-page="kidney"><i
+              class="fa-solid fa-prescription-bottle-medical"></i> Kidney</a>
+          <a href="/eye" onclick="showPage('eye'); return false;" class="nav-link" data-page="eye"><i
+              class="fa-solid fa-eye"></i> Eye</a>
+          <a href="/lung" onclick="showPage('lung'); return false;" class="nav-link" data-page="lung"><i
+              class="fa-solid fa-lungs"></i> Lung</a>
+        </div>
+      </div>
+      <a href="/lifestyle" class=""><i class="fa-solid fa-seedling"></i> Health Tips</a>
+      <a href="/assistant" class=""><i class="fa-solid fa-robot"></i> Assistant</a>
+      <a href="/about-contact" onclick="showPage('about-contact'); return false;" class="nav-link"
+        data-page="about-contact"><i class="fa-solid fa-address-card"></i> About & Contact</a>
+
+    </div>
+    </div>
+    <div class="nav-right">
+      <a href="/bmi" class="bmi-btn "><i class="fa-solid fa-calculator"></i> Tracker</a>
+      <a href="/history" class="history-btn nav-link" onclick="showPage('history'); return false;" data-page="history">
+        <i class="fa-solid fa-clock-rotate-left"></i> History
+      </a>
+      <button class="dark-btn" onclick="toggleDark && toggleDark()" id="darkBtn" title="Toggle dark mode"><i
+          class="fa-solid fa-moon"></i></button>
+    
+    <!-- User Profile Widget (injected by VitalsAI auth system) -->
+    <div class="user-profile-wrap" id="userProfileWrap" style="display:none">
+      <span class="user-name-label" id="navUserName"></span>
+      <div class="user-avatar" id="navAvatar" onclick="toggleUserDropdown()">?</div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="ud-header">
+          <div class="ud-avatar-big" id="dropAvatar">?</div>
+          <div class="ud-name" id="dropName">Loading...</div>
+          <div class="ud-email" id="dropEmail"></div>
+        </div>
+        <a class="ud-item" href="/history"><i class="fa-solid fa-clock-rotate-left"></i> Prediction History</a>
+        <a class="ud-item" href="/bmi"><i class="fa-solid fa-calculator"></i> Health Tracker</a>
+        <div class="ud-divider"></div>
+        <div class="ud-item logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+      </div>
+    </div>
+  </div>
+
+  </nav>
+
+
+  <!-- HOME PAGE -->
+  <div id="home" class="page active">
+    <section class="hero hero-home">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-badge"
+          style="background: rgba(0, 217, 255, 0.2); border-color: var(--cyan); color: var(--cyan);">
+          <i class="fa-solid fa-sparkles"></i> AI-Powered Health Intelligence
+        </div>
+        <h1>Predict Your Health Future</h1>
+        <p>Advanced AI models analyze your vital signs to detect health risks before they become critical. Get
+          personalized health insights powered by machine learning.</p>
+      </div>
+    </section>
+
+
+
+    <section class="section">
+        <div class="container">
+          <h2 class="section-title">Health Risk Assessments</h2>
+          <div class="grid">
+            <a href="/heart" class="card heart">
+              <div onclick="showPage('heart')">
+                <div class="card-icon">❤️</div>
+                <h3>Heart Disease</h3>
+                <p>Evaluate your cardiovascular risk with our advanced screening model.
+                <p>Predict cardiovascular risk using BP, BMI, cholesterol, lifestyle factors.</p>
+                <span class="tag ml">ML — Stacking Ensemble</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+            <a href="/brain" class="card brain">
+              <div onclick="showPage('brain')">
+                <div class="card-icon">🧠</div>
+                <h3>Brain & Stroke</h3>
+                <p>Screen for neurological risks and stroke probability in minutes.
+                <p>Assess stroke risk using age, glucose, BMI, hypertension and lifestyle.</p>
+                <span class="tag ml">ML — Stacking Ensemble</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+            <a href="/diabetes" class="card diabetes">
+              <div onclick="showPage('diabetes')">
+                <div class="card-icon">💉</div>
+                <h3>Diabetes Risk</h3>
+                <p>Get a comprehensive diabetes risk assessment based on your profile.
+                <p>Classify diabetes risk using glucose, insulin, BMI, age and clinical features.</p>
+                <span class="tag ml">ML — Stacking Ensemble</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+            <a href="/kidney" class="card kidney">
+              <div onclick="showPage('kidney')">
+                <div class="card-icon">💧</div>
+                <h3>Kidney Health</h3>
+                <p>Monitor kidney function and detect early signs of disease.
+                <p>Detect CKD stage using creatinine, eGFR, hemoglobin and 42 clinical markers.</p>
+                <span class="tag both">ML + Pipeline</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+            <a href="/eye" class="card eye">
+              <div onclick="showPage('eye')">
+                <div class="card-icon">👁️</div>
+                <h3>Eye Health</h3>
+                <p>Preserve your vision with early detection of eye conditions.
+                <p>Classify eye conditions from fundus images using CNN deep learning.</p>
+                <span class="tag dl">DL — CNN (EfficientNetB3)</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+            <a href="/lung" class="card lung" style="border-color:#c05621">
+              <div onclick="showPage('lung')">
+                <div class="card-icon">🫁</div>
+                <h3>Lung Health</h3>
+                <p>Evaluate respiratory health and detect lung disease early.
+                <p>Estimate lung cancer survival probability using stage, treatment, smoking and clinical features.</p>
+                <span class="tag ml">ML — Stacking Ensemble</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+            <a href="/bmi" class="card bmi" style="border-color:#0891b2">
+              <div onclick="showPage('bmi')">
+                <div class="card-icon">🧮</div>
+                <h3>BMI Calculator</h3>
+                <p>Calculate your Body Mass Index with personalized health advice and ideal weight.
+                  <span class="tag"
+                    style="background:#ecfeff;color:#0891b2">Health Tool</span>
+                </p>
+                <button class="card-btn"><i class="fa-solid fa-arrow-right"></i> Assess Risk</button>
+              </div>
+            </a>
+
+
+          </div>
+    </section>
+
+
+
+
+
+
+
+<section class="section" style="background: rgba(0, 217, 255, 0.05); border-top: 3px solid var(--cyan);">
+    <div class="section-title">How VitalsAI Works</div>
+    <div class="how-grid">
+      <div class="info-panel"><i class="fa-solid fa-keyboard"></i>
+        <h3>1. Input Data</h3>
+        <p>Enter personal details, vital signs, lifestyle habits, and symptoms.</p>
+      </div>
+      <div class="info-panel"><i class="fa-solid fa-microchip"></i>
+        <h3>2. AI Processing</h3>
+        <p>ML and deep learning models analyze your submitted clinical data.</p>
+      </div>
+      <div class="info-panel"><i class="fa-solid fa-gauge-high"></i>
+        <h3>3. Risk Score</h3>
+        <p>Clear Safe or At Risk status with a graphical probability meter.</p>
+      </div>
+      <div class="info-panel"><i class="fa-solid fa-file-pdf"></i>
+        <h3>4. Report</h3>
+        <p>Download a PDF report and review personalized lifestyle suggestions.</p>
+      </div>
+    </div>
+</section>
+
+    <section class="section" style="background: rgba(0, 217, 255, 0.05); border-top: 3px solid var(--cyan);">
+    <div class="tech-box">
+      <div class="section-title">🔧 Technology Stack</div>
+      <div class="tech-grid">
+        <div class="tech-item"><strong>ML Models</strong><span>Random Forest, XGBoost, Gradient Boosting,
+            Stacking</span></div>
+        <div class="tech-item"><strong>Deep Learning</strong><span>TensorFlow/Keras, EfficientNetB3 (Eye CNN)</span>
+        </div>
+        <div class="tech-item"><strong>Imbalance</strong><span>SMOTE oversampling + class_weight balanced</span></div>
+        <div class="tech-item"><strong>Backend</strong><span>Flask REST API + joblib + reportlab</span></div>
+        <div class="tech-item"><strong>Features</strong><span>Dark Mode · Multi-lang · PDF Reports · History</span>
+        </div>
+        <div class="tech-item"><strong>Pipeline</strong><span>Scikit-learn Pipeline + SelectKBest</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+  
+
+
+    <section class="section" style="background: rgba(0, 217, 255, 0.05); border-top: 3px solid var(--cyan);">
+      <div class="container">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-num">98%</div>
+            <div class="stat-label">Accuracy Rate</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">150K+</div>
+            <div class="stat-label">Users Protected</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">6</div>
+            <div class="stat-label">Disease Models</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">24/7</div>
+            <div class="stat-label">AI Support</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p><strong>⚡ VitalsAI</strong> — AI-Powered Health Intelligence Platform</p>
+    <p style="margin-bottom: 16px; color: var(--text-muted);">© 2024 VitalsAI Inc. All rights reserved. | <a
+        href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Contact</a></p>
+    <p style="font-size: 12px; margin-bottom: 0;">Built with ❤️ to empower millions to take control of their health</p>
+    <p style="font-size: 12px; margin-bottom: 0;">VitalsAI — Python · Flask · Scikit-learn · XGBoost · TensorFlow</p>
+  </footer>
+
+  <script>
+    function toggleDark() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = (currentTheme === 'light') ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+    function setLang(l) {
+      fetch(`/api/translations/${l}`).then(r => r.json()).then(t => {
+        localStorage.setItem('lang', l);
+        localStorage.setItem('translations', JSON.stringify(t));
+      });
+    }
+    // Restore theme
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); document.getElementById('darkBtn').textContent = '☀️'; }
+  </script>
+
+  <!-- ══ DARK MODE CSS ══════════════════════════════════════ -->
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --surface: #fff;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --text2: #718096;
+      --nav-bg: #fff;
+      --input-bg: #fff;
+      --input-border: #e2e8f0
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text2: #94a3b8;
+      --nav-bg: #1e293b;
+      --input-bg: #0f172a;
+      --input-border: #334155
+    }
+
+    body {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      transition: background .2s, color .2s
+    }
+
+    /* ── Chatbot Bubble ── */
+    #chatBubble {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px
+    }
+
+    #chatToggle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2b6cb0, #1a365d);
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      box-shadow: 0 4px 16px rgba(43, 108, 176, .4);
+      transition: transform .2s
+    }
+
+    #chatToggle:hover {
+      transform: scale(1.1)
+    }
+
+    #chatBox {
+      width: 340px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .15);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      max-height: 500px
+    }
+
+    #chatBox.open {
+      display: flex
+    }
+
+    #chatHeader {
+      background: linear-gradient(135deg, #2b6cb0, #1a365d);
+      color: #fff;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    #chatHeader .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px
+    }
+
+    #chatHeader .info strong {
+      display: block;
+      font-size: 14px
+    }
+
+    #chatHeader .info span {
+      font-size: 11px;
+      opacity: .8
+    }
+
+    #chatClose {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px
+    }
+
+    #chatMessages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 320px
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .msg.bot {
+      background: var(--bg);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start
+    }
+
+    .msg.user {
+      background: #2b6cb0;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end
+    }
+
+    .msg.typing {
+      opacity: .6;
+      font-style: italic
+    }
+
+    #chatInputWrap {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px
+    }
+
+    #chatInput {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-family: inherit;
+      outline: none
+    }
+
+    #chatInput:focus {
+      border-color: #2b6cb0
+    }
+
+    #chatSend {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 14px
+    }
+
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 16px 12px
+    }
+
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit
+    }
+
+    .chip:hover {
+      background: #2b6cb0;
+      color: #fff;
+      border-color: #2b6cb0
+    }
+
+    /* ── Lifestyle Card ── */
+    .lifestyle-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 20px;
+      border: 2px solid #48bb78;
+      display: none
+    }
+
+    [data-theme="dark"] .lifestyle-card {
+      border-color: #16a34a
+    }
+
+    .lifestyle-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #276749
+    }
+
+    [data-theme="dark"] .lifestyle-card h3 {
+      color: #4ade80
+    }
+
+    .ls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px
+    }
+
+    .ls-item {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center
+    }
+
+    .ls-icon {
+      font-size: 28px;
+      margin-bottom: 6px
+    }
+
+    .ls-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .ls-tips {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.5;
+      text-align: left
+    }
+
+    /* ── Doctor Box ── */
+    .doctor-box {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .doctor-icon {
+      font-size: 32px
+    }
+
+    .doctor-info strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700
+    }
+
+    .doctor-info span {
+      font-size: 12px;
+      color: var(--text2)
+    }
+
+    /* ── PDF btn ── */
+    .pdf-btn {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: #1a365d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%
+    }
+
+    [data-theme="dark"] .pdf-btn {
+      background: #1e3a5f
+    }
+
+    .pdf-btn:hover {
+      opacity: .88
+    }
+
+    /* ── Dark result boxes ── */
+    [data-theme="dark"] .low {
+      background: #052e16 !important;
+      border-color: #16a34a !important
+    }
+
+    [data-theme="dark"] .medium,
+    .medium {
+      background: #1c1007 !important;
+      border-color: #d97706 !important
+    }
+
+    [data-theme="dark"] .high {
+      background: #1c0a0a !important;
+      border-color: #dc2626 !important
+    }
+[data-theme="light"] .history-btn {
+  background: #2b6cb0;
+  color: white;
+}
+
+/* DARK MODE */
+[data-theme="dark"] .history-btn {
+  background: #3b82f6;
+  color: white;
+}
+    [data-theme="dark"] .low .rpct {
+      color: #4ade80 !important
+    }
+
+    [data-theme="dark"] .medium .rpct {
+      color: #fb923c !important
+    }
+
+    [data-theme="dark"] .high .rpct {
+      color: #f87171 !important
+    }
+  </style>
+
+  <!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
+  <div class="lifestyle-card" id="lifestyleCard">
+    <h3>🌱 Personalized Lifestyle Recommendations</h3>
+    <div class="ls-grid" id="lsGrid"></div>
+  </div>
+
+  <!-- ══ AI CHATBOT ══════════════════════════════════════════ -->
+  <div id="chatBubble">
+    <div id="chatBox">
+      <div id="chatHeader">
+        <div class="avatar">🤖</div>
+        <div class="info"><strong>VitalsAI Assistant</strong><span>Health advisor · Always online</span></div>
+        <button id="chatClose" onclick="toggleChat()">✕</button>
+      </div>
+      <div id="chatMessages">
+        <div class="msg bot">નમસ્તે! 👋 હું VitalsAI Health Assistant છું.<br>Health વિશે કોઈ પણ સવાલ પૂછો — ગુજરાતી,
+          Hindi, અથવા English માં!</div>
+      </div>
+      <div class="quick-chips">
+        <button class="chip" onclick="askQuick('BP high hoy to shu karvu?')">❤️ High BP</button>
+        <button class="chip" onclick="askQuick('Diabetes control kevi rite karvu?')">💉 Diabetes</button>
+        <button class="chip" onclick="askQuick('Stroke ni nishaniyo shun che?')">🧠 Stroke signs</button>
+        <button class="chip" onclick="askQuick('Kidney health mate su karvu?')">🦀 Kidney</button>
+        <button class="chip" onclick="askQuick('Aankh ni kaळji kevi rite rakhvi?')">👁️ Eye care</button>
+      </div>
+      <div id="chatInputWrap">
+        <input id="chatInput" placeholder="Type your health question..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button id="chatSend" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+    <button id="chatToggle" onclick="toggleChat()">🤖</button>
+  </div>
+
+  <!-- ══ SHARED JS ════════════════════════════════════════════ -->
+  <script>
+    // ── Dark Mode ─────────────────────────────────────────────
+    function toggleDark() {
+      const t = document.documentElement;
+      const d = t.getAttribute('data-theme') === 'dark';
+      t.setAttribute('data-theme', d ? 'light' : 'dark');
+      const b = document.getElementById('darkBtn');
+      if (b) b.textContent = d ? '🌙' : '☀️';
+      localStorage.setItem('vitals_theme', d ? 'light' : 'dark');
+    }
+    (function () {
+      const s = localStorage.getItem('vitals_theme');
+      if (s === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        const b = document.getElementById('darkBtn');
+        if (b) b.textContent = '☀️';
+      }
+    })();
+
+    // ── Language ──────────────────────────────────────────────
+    function setLang(l) {
+      localStorage.setItem('vitals_lang', l);
+      const m = { en: 'Language set to English', gu: 'ભાષા ગુજરાતી સેટ થઈ', hi: 'भाषा हिंदी सेट हो गई' };
+      addMsg('bot', m[l] || '');
+    }
+    (function () {
+      const l = localStorage.getItem('vitals_lang');
+      const s = document.getElementById('langSel');
+      if (l && s) s.value = l;
+    })();
+
+    // લેન્ગ્વેજ બદલવા માટેનું ફંક્શન
+    async function changeLanguage(lang) {
+      try {
+        const response = await fetch(`/api/translations/${lang}`);
+        const translations = await response.json();
+
+        // હવે આ ટ્રાન્સલેશન ડેટાનો ઉપયોગ કરીને HTML ના એલિમેન્ટ્સ બદલો
+        // ઉદાહરણ તરીકે:
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (translations[key]) {
+            el.innerText = translations[key];
+          }
+        });
+
+        // લોકલ સ્ટોરેજમાં સેવ કરો જેથી પેજ રિફ્રેશ થાય તો પણ લેન્ગ્વેજ જળવાઈ રહે
+        localStorage.setItem('selectedLang', lang);
+      } catch (error) {
+        console.error("Translation error:", error);
+      }
+    }
+
+    // પેજ લોડ થાય ત્યારે છેલ્લે સિલેક્ટ કરેલી લેન્ગ્વેજ સેટ કરવી
+    window.onload = () => function() {
+       const savedLang = localStorage.getItem('selectedLang') || 'en';
+      document.getElementById('langSelect').value = savedLang;
+      changeLanguage(savedLang);
+       document.body.addEventListener('click', requestSensorPermission, { once: true });
+  const page = new URLSearchParams(window.location.search).get('page');
+  if (page) {
+    showPage(page);
+    document.body.addEventListener('click', requestSensorPermission, { once: true });
+
+      loadEmContact();
+  loadMedicalID();
+  }
 };
 
-// ── Chatbot ───────────────────────────────────────────────
-let chatOpen=false;
-function toggleChat(){
-  chatOpen=!chatOpen;
-  document.getElementById('chatBox').classList.toggle('open',chatOpen);
-}
-function addMsg(role,text){
-  const el=document.getElementById('chatMessages');
-  const div=document.createElement('div');
-  div.className='msg '+role;
-  div.innerHTML=text;
-  el.appendChild(div);
-  el.scrollTop=el.scrollHeight;
-  return div;
-}
-function askQuick(q){
-  document.getElementById('chatInput').value=q;
-  sendChat();
-}
+    // ── Chatbot ───────────────────────────────────────────────
+    let chatOpen = false;
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      document.getElementById('chatBox').classList.toggle('open', chatOpen);
+    }
+    function addMsg(role, text) {
+      const el = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.innerHTML = text;
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
+      return div;
+    }
+    function askQuick(q) {
+      document.getElementById('chatInput').value = q;
+      sendChat();
+    }
 
-// ── Rule-based health knowledge base ─────────────────────
-const KB={
-  bp:['bp','blood pressure','હાઈ bp','ઉચ્ચ રક્તચાપ','हाई बीपी','hypertension'],
-  diabetes:['diabetes','sugar','ડાયાબિટીસ','ગ્લુકોઝ','मधुमेह','glucose'],
-  stroke:['stroke','brain','મગજ','સ્ટ્રોક','ब्रेन','nishani','signs','symptoms'],
-  kidney:['kidney','renal','કિડની','creatinine','egfr','gfr'],
-  eye:['eye','aanakh','આંખ','glaucoma','cataract','vision','drishti'],
-  heart:['heart','hridaya','હૃદય','cardiac','chest pain','cardiovascular'],
-  bmi:['bmi','weight','vajan','વજન','obese','obesity','fat'],
-  diet:['diet','food','khaanu','ખાવું','nutrition','khana'],
-  exercise:['exercise','vyayam','yoga','walk','walking','fitnes'],
-  sleep:['sleep','undo','ઊંઘ','insomnia','neend'],
-};
-const ANSWERS={
-  bp:`<b>🫀 High BP માટે:</b><br>
+    // ── Rule-based health knowledge base ─────────────────────
+    const KB = {
+      bp: ['bp', 'blood pressure', 'હાઈ bp', 'ઉચ્ચ રક્તચાપ', 'हाई बीपी', 'hypertension'],
+      diabetes: ['diabetes', 'sugar', 'ડાયાબિટીસ', 'ગ્લુકોઝ', 'मधुमेह', 'glucose'],
+      stroke: ['stroke', 'brain', 'મગજ', 'સ્ટ્રોક', 'ब्रेन', 'nishani', 'signs', 'symptoms'],
+      kidney: ['kidney', 'renal', 'કિડની', 'creatinine', 'egfr', 'gfr'],
+      eye: ['eye', 'aanakh', 'આંખ', 'glaucoma', 'cataract', 'vision', 'drishti'],
+      heart: ['heart', 'hridaya', 'હૃદય', 'cardiac', 'chest pain', 'cardiovascular'],
+      bmi: ['bmi', 'weight', 'vajan', 'વજન', 'obese', 'obesity', 'fat'],
+      diet: ['diet', 'food', 'khaanu', 'ખાવું', 'nutrition', 'khana'],
+      exercise: ['exercise', 'vyayam', 'yoga', 'walk', 'walking', 'fitnes'],
+      sleep: ['sleep', 'undo', 'ઊંઘ', 'insomnia', 'neend'],
+    };
+    const ANSWERS = {
+      bp: `<b>🫀 High BP માટે:</b><br>
 • DASH diet follow કરો (ઓછું મીઠું)<br>
 • રોજ 30 min walking<br>
 • Stress management — meditation<br>
@@ -357,7 +2936,7 @@ const ANSWERS={
 • BP monitor daily<br>
 • <b>⚠️ 140/90 થી વધારે હોય તો Doctor ને મળો</b>`,
 
-  diabetes:`<b>💉 Diabetes Control:</b><br>
+      diabetes: `<b>💉 Diabetes Control:</b><br>
 • Refined sugar/carbs ઓછા<br>
 • Glycemic index ઓછો food<br>
 • રોજ 45 min moderate exercise<br>
@@ -365,7 +2944,7 @@ const ANSWERS={
 • HbA1c દર 3 months check<br>
 • <b>⚠️ Fasting glucose >126 mg/dL — Doctor</b>`,
 
-  stroke:`<b>🧠 Stroke ની નિશાની (FAST):</b><br>
+      stroke: `<b>🧠 Stroke ની નિશાની (FAST):</b><br>
 • <b>F</b>ace drooping (ચહેરો ટેઢો)<br>
 • <b>A</b>rm weakness (હાથ નબળો)<br>
 • <b>S</b>peech difficulty (બોલવામાં તકલીફ)<br>
@@ -373,7 +2952,7 @@ const ANSWERS={
 Risk factors: BP, diabetes, smoking, stress<br>
 <b>⚠️ Emergency: 108 call કરો!</b>`,
 
-  kidney:`<b>🦀 Kidney Health:</b><br>
+      kidney: `<b>🦀 Kidney Health:</b><br>
 • પૂરતું પાણી પીઓ (2-3L/day)<br>
 • Salt/protein ઓછું<br>
 • BP & sugar control<br>
@@ -381,7 +2960,7 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Annual creatinine/eGFR test<br>
 • <b>eGFR < 60 — Nephrologist</b>`,
 
-  eye:`<b>👁️ Eye Care:</b><br>
+      eye: `<b>👁️ Eye Care:</b><br>
 • Screen time ઓછો (20-20-20 rule)<br>
 • UV sunglasses<br>
 • Green vegetables, carrots, fish<br>
@@ -389,7 +2968,7 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Diabetes patients — every 6 months<br>
 • <b>⚠️ Vision loss/pain — Ophthalmologist</b>`,
 
-  heart:`<b>❤️ Heart Health:</b><br>
+      heart: `<b>❤️ Heart Health:</b><br>
 • Mediterranean diet<br>
 • Saturated fat ઓછું<br>
 • 150 min/week aerobic exercise<br>
@@ -397,7 +2976,7 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Smoking quit<br>
 • <b>⚠️ Chest pain — Emergency!</b>`,
 
-  bmi:`<b>🧮 Healthy Weight:</b><br>
+      bmi: `<b>🧮 Healthy Weight:</b><br>
 • BMI 18.5-24.9 = Normal<br>
 • Calorie deficit for weight loss<br>
 • Protein intake વધારો<br>
@@ -405,7 +2984,7 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Crash diets avoid<br>
 • <b>BMI calculator: <a href="/bmi" style="color:#2b6cb0">/bmi</a></b>`,
 
-  diet:`<b>🍎 Healthy Diet Tips:</b><br>
+      diet: `<b>🍎 Healthy Diet Tips:</b><br>
 • Half plate vegetables/fruits<br>
 • Whole grains prefer<br>
 • Processed food avoid<br>
@@ -413,7 +2992,7 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Breakfast skip ન કરો<br>
 • Portion control practice`,
 
-  exercise:`<b>🏃 Exercise Guide:</b><br>
+      exercise: `<b>🏃 Exercise Guide:</b><br>
 • 150 min/week moderate cardio<br>
 • 2x/week strength training<br>
 • Daily 10,000 steps goal<br>
@@ -421,7 +3000,7 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Sedentary work — hourly break<br>
 • Start slow, build gradually`,
 
-  sleep:`<b>😴 Better Sleep:</b><br>
+      sleep: `<b>😴 Better Sleep:</b><br>
 • 7-9 hours daily<br>
 • Fixed sleep schedule<br>
 • Screen off 1hr before bed<br>
@@ -429,77 +3008,77 @@ Risk factors: BP, diabetes, smoking, stress<br>
 • Caffeine after 2pm avoid<br>
 • Stress journaling before sleep`,
 
-  default:`<b>🤖 VitalsAI Assistant:</b><br>
+      default: `<b>🤖 VitalsAI Assistant:</b><br>
 હું આ topics પર help કરી શકું:<br>
 ❤️ Heart · 🧠 Brain/Stroke · 💉 Diabetes<br>
 🦀 Kidney · 👁️ Eye · 🧮 BMI<br>
 🍎 Diet · 🏃 Exercise · 😴 Sleep<br><br>
 Quick buttons ક્લિક કરો અથવા સવાલ type કરો!`
-};
+    };
 
-async function sendChat(){
-  const inp=document.getElementById('chatInput');
-  const q=inp.value.trim();
-  if(!q)return;
-  inp.value='';
-  addMsg('user',q);
-  const typing=addMsg('bot','<span class="typing">Thinking...</span>');
-  setTimeout(()=>{
-    const ql=q.toLowerCase();
-    let ans=ANSWERS.default;
-    for(const [k,kws] of Object.entries(KB)){
-      if(kws.some(kw=>ql.includes(kw))){ans=ANSWERS[k];break;}
+    async function sendChat() {
+      const inp = document.getElementById('chatInput');
+      const q = inp.value.trim();
+      if (!q) return;
+      inp.value = '';
+      addMsg('user', q);
+      const typing = addMsg('bot', '<span class="typing">Thinking...</span>');
+      setTimeout(() => {
+        const ql = q.toLowerCase();
+        let ans = ANSWERS.default;
+        for (const [k, kws] of Object.entries(KB)) {
+          if (kws.some(kw => ql.includes(kw))) { ans = ANSWERS[k]; break; }
+        }
+        typing.innerHTML = ans;
+        document.getElementById('chatMessages').scrollTop = 99999;
+      }, 800);
     }
-    typing.innerHTML=ans;
-    document.getElementById('chatMessages').scrollTop=99999;
-  },800);
-}
 
-// ── Lifestyle Recommendations ─────────────────────────────
-const LS_DATA={
-  heart:{
-    LOW:{diet:'Mediterranean diet, omega-3 fish, nuts, olive oil',exercise:'30 min brisk walk daily + yoga',sleep:'7-8 hours, fixed schedule'},
-    MEDIUM:{diet:'Low sodium (<1500mg), avoid fried food, more fiber',exercise:'45 min cardio 5x/week + strength 2x',sleep:'8 hours, stress management'},
-    HIGH:{diet:'Strict DASH diet, no alcohol, no processed meat',exercise:'Light walk only — Doctor clearance first',sleep:'8-9 hours, no caffeine after noon'}
-  },
-  brain:{
-    LOW:{diet:'Mediterranean diet, leafy greens, berries, fish',exercise:'Aerobic exercise 30 min daily + brain games',sleep:'7-9 hours, consistent wake time'},
-    MEDIUM:{diet:'Low sodium, no alcohol, omega-3 rich food',exercise:'Moderate cardio, yoga for BP control',sleep:'8 hours, stress journaling'},
-    HIGH:{diet:'Strict low-sodium, blood thinner foods (garlic, turmeric)',exercise:'Light walks only — medical clearance needed',sleep:'9 hours, no screen before bed'}
-  },
-  diabetes:{
-    LOW:{diet:'Low glycemic foods, vegetables, whole grains',exercise:'45 min walk daily, yoga',sleep:'7-8 hours, consistent timing'},
-    MEDIUM:{diet:'No sugar/refined carbs, high protein, fiber-rich',exercise:'60 min moderate exercise daily',sleep:'8 hours — poor sleep raises glucose'},
-    HIGH:{diet:'Diabetic diet strictly, small frequent meals',exercise:'30 min light walk — monitor glucose before/after',sleep:'8-9 hours, manage stress'}
-  },
-  kidney:{
-    No_Disease:{diet:'Adequate water (2L+), balanced protein, low salt',exercise:'30 min walk daily',sleep:'7-8 hours'},
-    Low_Risk:{diet:'Low protein (0.8g/kg), low potassium foods',exercise:'Light aerobic exercise, no heavy lifting',sleep:'8 hours, avoid NSAIDs'},
-    Moderate_Risk:{diet:'Renal diet — restrict phosphorus/potassium/sodium',exercise:'Gentle walking, aqua therapy',sleep:'8-9 hours, dialysis schedule if needed'},
-    High_Risk:{diet:'Strict renal diet — Dietitian consultation required',exercise:'Light movement only — Nephrologist guidance',sleep:'9 hours, fluid restriction'},
-    Severe_Disease:{diet:'Dialysis-specific diet — No self-medication',exercise:'Rest + gentle physiotherapy only',sleep:'9+ hours, complete medical supervision'}
-  },
-  eye:{
-    default:{diet:'Lutein/zeaxanthin rich: spinach, kale, eggs, fish',exercise:'Eye exercises, 20-20-20 rule (every 20min look 20ft away 20sec)',sleep:'7-8 hours, eye rest essential'}
-  }
-};
+    // ── Lifestyle Recommendations ─────────────────────────────
+    const LS_DATA = {
+      heart: {
+        LOW: { diet: 'Mediterranean diet, omega-3 fish, nuts, olive oil', exercise: '30 min brisk walk daily + yoga', sleep: '7-8 hours, fixed schedule' },
+        MEDIUM: { diet: 'Low sodium (<1500mg), avoid fried food, more fiber', exercise: '45 min cardio 5x/week + strength 2x', sleep: '8 hours, stress management' },
+        HIGH: { diet: 'Strict DASH diet, no alcohol, no processed meat', exercise: 'Light walk only — Doctor clearance first', sleep: '8-9 hours, no caffeine after noon' }
+      },
+      brain: {
+        LOW: { diet: 'Mediterranean diet, leafy greens, berries, fish', exercise: 'Aerobic exercise 30 min daily + brain games', sleep: '7-9 hours, consistent wake time' },
+        MEDIUM: { diet: 'Low sodium, no alcohol, omega-3 rich food', exercise: 'Moderate cardio, yoga for BP control', sleep: '8 hours, stress journaling' },
+        HIGH: { diet: 'Strict low-sodium, blood thinner foods (garlic, turmeric)', exercise: 'Light walks only — medical clearance needed', sleep: '9 hours, no screen before bed' }
+      },
+      diabetes: {
+        LOW: { diet: 'Low glycemic foods, vegetables, whole grains', exercise: '45 min walk daily, yoga', sleep: '7-8 hours, consistent timing' },
+        MEDIUM: { diet: 'No sugar/refined carbs, high protein, fiber-rich', exercise: '60 min moderate exercise daily', sleep: '8 hours — poor sleep raises glucose' },
+        HIGH: { diet: 'Diabetic diet strictly, small frequent meals', exercise: '30 min light walk — monitor glucose before/after', sleep: '8-9 hours, manage stress' }
+      },
+      kidney: {
+        No_Disease: { diet: 'Adequate water (2L+), balanced protein, low salt', exercise: '30 min walk daily', sleep: '7-8 hours' },
+        Low_Risk: { diet: 'Low protein (0.8g/kg), low potassium foods', exercise: 'Light aerobic exercise, no heavy lifting', sleep: '8 hours, avoid NSAIDs' },
+        Moderate_Risk: { diet: 'Renal diet — restrict phosphorus/potassium/sodium', exercise: 'Gentle walking, aqua therapy', sleep: '8-9 hours, dialysis schedule if needed' },
+        High_Risk: { diet: 'Strict renal diet — Dietitian consultation required', exercise: 'Light movement only — Nephrologist guidance', sleep: '9 hours, fluid restriction' },
+        Severe_Disease: { diet: 'Dialysis-specific diet — No self-medication', exercise: 'Rest + gentle physiotherapy only', sleep: '9+ hours, complete medical supervision' }
+      },
+      eye: {
+        default: { diet: 'Lutein/zeaxanthin rich: spinach, kale, eggs, fish', exercise: 'Eye exercises, 20-20-20 rule (every 20min look 20ft away 20sec)', sleep: '7-8 hours, eye rest essential' }
+      }
+    };
 
-function showLifestyle(disease, riskOrPrediction){
-  const card=document.getElementById('lifestyleCard');
-  const grid=document.getElementById('lsGrid');
-  if(!card||!grid)return;
-  
-  let ls=null;
-  const risk=riskOrPrediction||'';
-  
-  if(disease==='kidney'||disease==='eye'){
-    ls=LS_DATA[disease]?.[risk]||LS_DATA[disease]?.default||LS_DATA.heart.LOW;
-  } else {
-    const lvl=risk.includes('HIGH')?'HIGH':risk.includes('MEDIUM')?'MEDIUM':'LOW';
-    ls=LS_DATA[disease]?.[lvl]||LS_DATA.heart.LOW;
-  }
-  
-  grid.innerHTML=`
+    function showLifestyle(disease, riskOrPrediction) {
+      const card = document.getElementById('lifestyleCard');
+      const grid = document.getElementById('lsGrid');
+      if (!card || !grid) return;
+
+      let ls = null;
+      const risk = riskOrPrediction || '';
+
+      if (disease === 'kidney' || disease === 'eye') {
+        ls = LS_DATA[disease]?.[risk] || LS_DATA[disease]?.default || LS_DATA.heart.LOW;
+      } else {
+        const lvl = risk.includes('HIGH') ? 'HIGH' : risk.includes('MEDIUM') ? 'MEDIUM' : 'LOW';
+        ls = LS_DATA[disease]?.[lvl] || LS_DATA.heart.LOW;
+      }
+
+      grid.innerHTML = `
     <div class="ls-item">
       <div class="ls-icon">🍎</div>
       <div class="ls-title">Diet</div>
@@ -516,30 +3095,662 @@ function showLifestyle(disease, riskOrPrediction){
       <div class="ls-tips">${ls.sleep}</div>
     </div>
   `;
-  card.style.display='block';
-  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ── PDF Download ──────────────────────────────────────────
+    async function downloadPDF(disease, result, inputs) {
+      const name = prompt('Patient name:', 'Patient') || 'Patient';
+      const age = prompt('Patient age:', '') || 'N/A';
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ disease, result, inputs, patient_name: name, patient_age: age })
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `VitalsAI_${disease}_report.pdf`; a.click();
+      } else {
+        const e = await res.json();
+        alert('PDF Error: ' + e.error);
+      }
+
+    }
+
+  </script>
+
+  <script src="/static/js/vitals_dynamic_chatbot.js"></script>
+
+<script>
+// ── VitalsAI Auth System ───────────────────────────────────
+(async function initAuth() {
+  try {
+    const res  = await fetch('/api/me');
+    const data = await res.json();
+
+    if (!data.logged_in) {
+      // Not logged in — redirect to login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    const name  = data.name  || 'User';
+    const email = data.email || '';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // Show profile widget
+    const wrap = document.getElementById('userProfileWrap');
+    if (wrap) wrap.style.display = 'flex';
+
+    // Set initials + name
+    const navAvatar  = document.getElementById('navAvatar');
+    const dropAvatar = document.getElementById('dropAvatar');
+    const navName    = document.getElementById('navUserName');
+    const dropName   = document.getElementById('dropName');
+    const dropEmail  = document.getElementById('dropEmail');
+
+    if (navAvatar)  navAvatar.textContent  = initials;
+    if (dropAvatar) dropAvatar.textContent = initials;
+    if (navName)    navName.textContent    = name.split(' ')[0]; // first name only
+    if (dropName)   dropName.textContent   = name;
+    if (dropEmail)  dropEmail.textContent  = email;
+
+    // Color avatar based on name (consistent per user)
+    const colors = [
+      'linear-gradient(135deg,#00d9ff,#ff00ff)',
+      'linear-gradient(135deg,#ff1654,#ff6b35)',
+      'linear-gradient(135deg,#00ff88,#00d9ff)',
+      'linear-gradient(135deg,#c77dff,#ff00ff)',
+      'linear-gradient(135deg,#ffec19,#ff6b35)',
+    ];
+    const colorIdx = name.charCodeAt(0) % colors.length;
+    const gradient = colors[colorIdx];
+    if (navAvatar)  navAvatar.style.background  = gradient;
+    if (dropAvatar) dropAvatar.style.background = gradient;
+
+  } catch(e) {
+    console.error('Auth check failed:', e);
+  }
+})();
+
+function toggleUserDropdown() {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.toggle('open');
 }
 
-// ── PDF Download ──────────────────────────────────────────
-async function downloadPDF(disease, result, inputs){
-  const name=prompt('Patient name:','Patient')||'Patient';
-  const age=prompt('Patient age:','')||'N/A';
-  const res=await fetch('/api/report',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({disease,result,inputs,patient_name:name,patient_age:age})
-  });
-  if(res.ok){
-    const blob=await res.blob();
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`VitalsAI_${disease}_report.pdf`;a.click();
-  } else {
-    const e=await res.json();
-    alert('PDF Error: '+e.error);
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('userProfileWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.remove('open');
   }
+});
+
+async function logoutUser() {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+  window.location.href = '/login';
 }
 </script>
 
+
+<!-- ══════════════════════════════════════════
+  🚨 EMERGENCY FLOATING BUTTON
+═══════════════════════════════════════════ -->
+<div class="em-fab">
+  <button class="em-fab-btn" onclick="openEmergency()" title="Emergency Help">🚨</button>
+  <span class="em-fab-label">Emergency</span>
+</div>
+
+<!-- ══════════════════════════════════════════
+  🚨 EMERGENCY FULL SCREEN PANEL
+═══════════════════════════════════════════ -->
+<div class="em-overlay" id="emOverlay" onclick="emOverlayClick(event)">
+  <div class="em-panel" id="emPanel">
+
+    <!-- Top Bar -->
+    <div class="em-topbar">
+      <span class="em-topbar-icon">🚨</span>
+      <div>
+        <h2>Emergency Help</h2>
+        <p>Minimum clicks — Maximum help. Stay calm.</p>
+      </div>
+      <button class="em-close-btn" onclick="closeEmergency()">✕</button>
+    </div>
+
+    <div class="em-body">
+
+      <!-- ① One-Click Emergency Calls -->
+      <div class="em-section">
+        <div class="em-section-title">📞 Emergency Calls</div>
+        <div class="em-call-grid">
+          <a href="tel:108" class="em-call-btn ambulance">
+            <span>🚑</span>
+            <span class="num">108</span>
+            <span class="lbl">Ambulance</span>
+          </a>
+          <a href="tel:100" class="em-call-btn police">
+            <span>🚔</span>
+            <span class="num">100</span>
+            <span class="lbl">Police</span>
+          </a>
+          <a href="tel:101" class="em-call-btn fire">
+            <span>🔥</span>
+            <span class="num">101</span>
+            <span class="lbl">Fire</span>
+          </a>
+        </div>
+        <div class="em-section-title">🆔 Medical ID (Quick Info)</div>
+  <div class="em-hospital-box">
+    <div class="em-contact-form">
+      <input class="em-contact-input" type="text" id="emBloodGroup" placeholder="Blood Group (e.g. O+)" value="">
+      <input class="em-contact-input" type="text" id="emAllergies" placeholder="Allergies (e.g. Penicillin, Peanuts)" value="">
+      <input class="em-contact-input" type="text" id="emConditions" placeholder="Chronic Diseases (e.g. Diabetes, Asthma)" value="">
+      <button class="em-contact-save" onclick="saveMedicalID()">💾 Save Medical ID</button>
+    </div>
+  </div>
+</div>
+      </div>
+
+      <!-- ② Location + Nearest Hospital -->
+      <div class="em-section">
+        <div class="em-section-title">📍 Nearest Hospital</div>
+        <div class="em-hospital-box">
+          <button class="em-loc-btn" onclick="findNearbyHospital()" id="emLocBtn">
+            📍 Find Nearest Hospital (GPS)
+          </button>
+          <div id="em-hosp-result"></div>
+        </div>
+      </div>
+
+      <!-- ③ Voice Command -->
+      <div class="em-section">
+        <div class="em-section-title">🎤 Voice Command</div>
+        <button class="em-voice-btn" id="emVoiceBtn" onclick="startEmergencyVoice()">
+          🎙️ Bolo — "Heart attack" / "Accident" / "Burn"
+        </button>
+        <div id="em-voice-result"></div>
+      </div>
+
+      <!-- ④ Symptom → Decision -->
+      <div class="em-section">
+        <div class="em-section-title">🧠 Symptom Check</div>
+        <div class="em-symptom-grid" id="emSymGrid">
+          <button class="em-sym-btn" onclick="toggleSym(this,'chest_pain')">💔 Chest Pain</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'sweating')">😰 Sweating</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'breath')">😮‍💨 Breathlessness</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'faint')">😵 Fainting</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'bleed')">🩸 Bleeding</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'stroke')">🧠 Sudden Weakness</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'burn')">🔥 Burn</button>
+          <button class="em-sym-btn" onclick="toggleSym(this,'vomit')">🤢 Vomiting</button>
+        </div>
+        <div id="em-sym-result"></div>
+      </div>
+
+      <!-- ⑤ First Aid -->
+      <div class="em-section">
+        <div class="em-section-title">📋 First Aid Guide</div>
+        <div class="em-aid-tabs">
+          <button class="em-aid-tab active" onclick="showAid('heart',this)">❤️ Heart</button>
+          <button class="em-aid-tab" onclick="showAid('stroke',this)">🧠 Stroke</button>
+          <button class="em-aid-tab" onclick="showAid('burn',this)">🔥 Burn</button>
+          <button class="em-aid-tab" onclick="showAid('bleed',this)">🩸 Bleed</button>
+          <button class="em-aid-tab" onclick="showAid('choke',this)">😮 Choke</button>
+        </div>
+        <div class="em-aid-content active" id="aid-heart">
+          <h4>❤️ Heart Attack</h4>
+          <ol>
+            <li>Sit or lie down — keep calm</li>
+            <li>Loosen tight clothing</li>
+            <li>Chew 1 aspirin (325mg) if available</li>
+            <li>Do NOT eat or drink anything</li>
+            <li>If unconscious — start CPR</li>
+            <li><strong>Call 108 immediately</strong></li>
+          </ol>
+          <div class="warn">⚠️ CPR: 30 chest compressions + 2 rescue breaths. Repeat.</div>
+        </div>
+        <div class="em-aid-content" id="aid-stroke">
+          <h4>🧠 Stroke — FAST Test</h4>
+          <ol>
+            <li><strong>F</strong>ace: Ask to smile — drooping?</li>
+            <li><strong>A</strong>rm: Raise both — one weak?</li>
+            <li><strong>S</strong>peech: Repeat sentence — slurred?</li>
+            <li><strong>T</strong>ime: If yes to any — Call 108 NOW</li>
+            <li>Lay patient on side, head slightly elevated</li>
+            <li>Do NOT give food/water</li>
+          </ol>
+          <div class="warn">⚠️ Every minute counts. Brain cells die fast.</div>
+        </div>
+        <div class="em-aid-content" id="aid-burn">
+          <h4>🔥 Burn Injury</h4>
+          <ol>
+            <li>Cool under cold running water 10-20 min</li>
+            <li>Remove jewelry/clothing near burn</li>
+            <li>Cover with clean cloth or bandage</li>
+            <li>Do NOT use ice, butter, or toothpaste</li>
+            <li>Do NOT break blisters</li>
+            <li>For severe burns — Call 108</li>
+          </ol>
+          <div class="warn">⚠️ If burn is larger than palm — seek emergency help.</div>
+        </div>
+        <div class="em-aid-content" id="aid-bleed">
+          <h4>🩸 Bleeding</h4>
+          <ol>
+            <li>Apply firm pressure with clean cloth</li>
+            <li>Elevate the wound above heart level</li>
+            <li>Do NOT remove cloth — add more if soaked</li>
+            <li>Keep pressing for 10-15 minutes</li>
+            <li>For deep wounds — do NOT remove object</li>
+            <li>Call 108 for severe bleeding</li>
+          </ol>
+          <div class="warn">⚠️ If blood soaks through quickly — call 108 immediately.</div>
+        </div>
+        <div class="em-aid-content" id="aid-choke">
+          <h4>😮 Choking</h4>
+          <ol>
+            <li>Ask "Are you choking?" — if yes, act fast</li>
+            <li>Encourage coughing forcefully</li>
+            <li>Give 5 firm back blows between shoulder blades</li>
+            <li>Give 5 abdominal thrusts (Heimlich maneuver)</li>
+            <li>Alternate back blows and thrusts</li>
+            <li>If unconscious — start CPR, Call 108</li>
+          </ol>
+          <div class="warn">⚠️ For infants — use gentler back blows only.</div>
+        </div>
+      </div>
+
+      <!-- ⑥ Emergency Contact -->
+      <div class="em-section">
+        <div class="em-section-title">👨‍👩‍👧 Family Emergency Contact</div>
+        <div class="em-contact-form">
+          <input class="em-contact-input" type="text" id="emContactName"
+            placeholder="Family member name" value="">
+          <input class="em-contact-input" type="tel" id="emContactNum"
+            placeholder="Phone number (e.g. 9876543210)" value="">
+          <button class="em-contact-save" onclick="saveEmContact()">💾 Save Contact</button>
+          <div class="em-contact-actions" id="emContactActions" style="display:none">
+            <a class="em-contact-call" id="emCallFamily" href="#">
+              📞 Call Family
+            </a>
+            <button class="em-contact-sms" onclick="sendEmSMS()">
+              💬 Send SOS SMS
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="em-section" style="text-align: center;">
+  <button class="em-voice-btn" style="background: #ff1654; color: white; border: none;" onclick="playSiren()">
+    📢 PLAY LOUD SIREN
+  </button>
+  <!-- Automatic Emergency Alert -->
+<div id="autoEmergencyAlert" style="display:none; position:fixed; inset:0; z-index:10001; background:rgba(255,0,0,0.9); color:white; text-align:center; padding-top:100px; font-family: 'Poppins', sans-serif;">
+  <h1 style="font-size:40px;">🚨 EMERGENCY DETECTED!</h1>
+  <p style="font-size:20px;">We detected a hard fall/impact.</p>
+  <div id="autoTimer" style="font-size:60px; font-weight:bold; margin:20px 0;">10</div>
+  <p>Siren will start and SOS will be sent if you don't stop it.</p>
+  <button onclick="cancelAutoEmergency()" style="padding:20px 40px; font-size:20px; border-radius:50px; border:none; cursor:pointer; background:white; color:red; font-weight:bold;">I AM OK / CANCEL</button>
+</div>
+
+</div>
+
+    </div><!-- end em-body -->
+  </div><!-- end em-panel -->
+</div><!-- end em-overlay -->
+
+<script>
+
+// ══════════════════════════════════════════════════════════════
+//  🚨 EMERGENCY SYSTEM — VitalsAI
+// ══════════════════════════════════════════════════════════════
+
+// ── Open / Close ─────────────────────────────────────────────
+function openEmergency() {
+  document.getElementById('emOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadEmContact();
+  loadMedicalID(); 
+}
+function closeEmergency() {
+  document.getElementById('emOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function emOverlayClick(e) {
+  if (e.target === document.getElementById('emOverlay')) closeEmergency();
+}
+// ESC key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeEmergency();
+});
+
+// ── ② GPS + Nearest Hospital ─────────────────────────────────
+function findNearbyHospital() {
+  const btn = document.getElementById('emLocBtn');
+  const res = document.getElementById('em-hosp-result');
+  btn.textContent = '📡 Getting location...';
+  btn.disabled = true;
+
+  if (!navigator.geolocation) {
+    res.innerHTML = '<a class="em-open-maps" href="https://www.google.com/maps/search/hospital+near+me" target="_blank">🗺️ Open Google Maps — Hospital Near Me</a>';
+    btn.textContent = '📍 Find Nearest Hospital (GPS)';
+    btn.disabled = false;
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const mapsUrl = `https://www.google.com/maps/search/hospital/@${lat},${lng},14z`;
+      res.innerHTML = `
+        <div style="font-size:12px;color:#9ca3b5;margin:8px 0">
+          📍 Location found: ${lat.toFixed(4)}, ${lng.toFixed(4)}
+        </div>
+        <a class="em-hosp-item" href="${mapsUrl}" target="_blank">
+          <i class="fa-solid fa-hospital"></i>
+          <div>
+            <strong>Find Nearest Hospitals</strong>
+            <span>Opens Google Maps with hospitals near you</span>
+          </div>
+        </a>
+        <a class="em-open-maps" href="${mapsUrl}" target="_blank">
+          🗺️ Open Google Maps Now
+        </a>`;
+      btn.textContent = '✅ Location Found!';
+      btn.disabled = false;
+    },
+    function(err) {
+      res.innerHTML = '<a class="em-open-maps" href="https://www.google.com/maps/search/hospital+near+me" target="_blank">🗺️ Open Google Maps — Hospital Near Me</a>';
+      btn.textContent = '📍 Find Nearest Hospital (GPS)';
+      btn.disabled = false;
+    },
+    { timeout: 8000, enableHighAccuracy: true }
+  );
+}
+
+// ── ③ Voice Command ───────────────────────────────────────────
+const VOICE_MAP = {
+  'heart attack': { action: 'CRITICAL', guide: 'heart', msg: '🔴 Heart Attack detected! Calling 108 recommended. Showing CPR guide.' },
+  'heart':        { action: 'CRITICAL', guide: 'heart', msg: '🔴 Heart issue! See First Aid guide below.' },
+  'stroke':       { action: 'CRITICAL', guide: 'stroke', msg: '🔴 Stroke detected! Call 108 immediately.' },
+  'accident':     { action: 'CRITICAL', guide: 'bleed', msg: '🔴 Accident! See bleeding guide. Call 108.' },
+  'burn':         { action: 'MODERATE', guide: 'burn',  msg: '🟡 Burn injury. Cool with water. See guide.' },
+  'bleeding':     { action: 'CRITICAL', guide: 'bleed', msg: '🔴 Bleeding! Apply pressure immediately.' },
+  'choke':        { action: 'CRITICAL', guide: 'choke', msg: '🔴 Choking! Perform Heimlich. Call 108.' },
+  'unconscious':  { action: 'CRITICAL', guide: 'heart', msg: '🔴 Unconscious! Start CPR. Call 108 now.' },
+};
+
+let emListening = false;
+function startEmergencyVoice() {
+  const btn = document.getElementById('emVoiceBtn');
+  const res = document.getElementById('em-voice-result');
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    res.style.display = 'block';
+    res.textContent = '⚠️ Voice not supported. Use Chrome browser.';
+    return;
+  }
+  if (emListening) return;
+  const recog = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recog.lang = 'en-IN';
+  recog.onstart = () => {
+    emListening = true;
+    btn.classList.add('listening');
+    btn.textContent = '🔴 Listening... say the emergency';
+  };
+  recog.onresult = (e) => {
+    const said = e.results[0][0].transcript.toLowerCase();
+    res.style.display = 'block';
+    let handled = false;
+    for (const [kw, info] of Object.entries(VOICE_MAP)) {
+      if (said.includes(kw)) {
+        res.innerHTML = `🎤 Heard: "<strong>${said}</strong>"<br>${info.msg}`;
+        if (info.guide) showAid(info.guide, null);
+        handled = true;
+        break;
+      }
+    }
+    if (!handled) {
+      res.innerHTML = `🎤 Heard: "<strong>${said}</strong>"<br>Not recognized. Try: "heart attack", "stroke", "burn", "accident"`;
+    }
+  };
+  recog.onend = () => {
+    emListening = false;
+    btn.classList.remove('listening');
+    btn.textContent = '🎙️ Bolo — "Heart attack" / "Accident" / "Burn"';
+  };
+  recog.start();
+}
+
+// ── ④ Symptom Check ───────────────────────────────────────────
+const selectedSyms = new Set();
+const SYM_RULES = [
+  { syms: ['chest_pain','sweating'],      level: 'critical', msg: '🔴 HIGH RISK — Possible Heart Attack!<br>Call 108 immediately. Sit down, chew aspirin.' },
+  { syms: ['chest_pain','breath'],        level: 'critical', msg: '🔴 CRITICAL — Possible Heart Attack or PE!<br>Call 108 immediately.' },
+  { syms: ['faint','stroke'],             level: 'critical', msg: '🔴 CRITICAL — Possible Stroke!<br>Call 108. Do FAST test.' },
+  { syms: ['chest_pain'],                 level: 'critical', msg: '🔴 HIGH RISK — Chest pain needs immediate attention.<br>Call 108.' },
+  { syms: ['stroke'],                     level: 'critical', msg: '🔴 CRITICAL — Stroke symptoms!<br>Call 108 immediately.' },
+  { syms: ['bleed','faint'],              level: 'critical', msg: '🔴 CRITICAL — Severe bleeding with fainting.<br>Apply pressure. Call 108.' },
+  { syms: ['bleed'],                      level: 'moderate', msg: '🟡 MODERATE — Bleeding. Apply firm pressure.<br>Call 108 if severe.' },
+  { syms: ['burn'],                       level: 'moderate', msg: '🟡 MODERATE — Burn. Cool with cold water 15 min.<br>See first aid guide.' },
+  { syms: ['breath'],                     level: 'moderate', msg: '🟡 MODERATE — Breathing difficulty.<br>Sit upright. Call 108 if worsening.' },
+  { syms: ['vomit'],                      level: 'stable',   msg: '🟢 Vomiting. Stay hydrated. Rest.<br>See doctor if persistent.' },
+  { syms: ['sweating'],                   level: 'stable',   msg: '🟢 Sweating. Could be heat or stress.<br>Monitor other symptoms.' },
+];
+
+function toggleSym(btn, sym) {
+  if (selectedSyms.has(sym)) { selectedSyms.delete(sym); btn.classList.remove('sel'); }
+  else { selectedSyms.add(sym); btn.classList.add('sel'); }
+  checkSymptoms();
+}
+
+function checkSymptoms() {
+  const res = document.getElementById('em-sym-result');
+  if (selectedSyms.size === 0) { res.style.display = 'none'; return; }
+  for (const rule of SYM_RULES) {
+    if (rule.syms.every(s => selectedSyms.has(s))) {
+      res.style.display = 'block';
+      res.className = 'em-sym-result ' + rule.level;
+      res.innerHTML = rule.msg + '<br><small style="opacity:.7;font-size:11px">⚕️ This is not a diagnosis. Consult a doctor.</small>';
+      return;
+    }
+  }
+  res.style.display = 'block';
+  res.className = 'em-sym-result stable';
+  res.innerHTML = '🟢 Selected symptoms noted.<br>Monitor carefully. Call 108 if worsening.<br><small style="opacity:.7;font-size:11px">⚕️ This is not a diagnosis.</small>';
+}
+
+// ── ⑤ First Aid Tabs ─────────────────────────────────────────
+function showAid(type, tabBtn) {
+  document.querySelectorAll('.em-aid-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.em-aid-tab').forEach(el => el.classList.remove('active'));
+  const content = document.getElementById('aid-' + type);
+  if (content) content.classList.add('active');
+  if (tabBtn) tabBtn.classList.add('active');
+}
+
+// ── ⑥ Emergency Contact + SOS SMS ────────────────────────────
+function saveEmContact() {
+  const name = document.getElementById('emContactName').value.trim();
+  const num  = document.getElementById('emContactNum').value.trim();
+  if (!name || !num) { alert('Please enter name and number.'); return; }
+  localStorage.setItem('em_contact_name', name);
+  localStorage.setItem('em_contact_num',  num);
+  loadEmContact();
+  const btn = document.querySelector('.em-contact-save');
+  btn.textContent = '✅ Contact Saved!';
+  setTimeout(() => { btn.textContent = '💾 Save Contact'; }, 2000);
+}
+
+function loadEmContact() {
+  const name = localStorage.getItem('em_contact_name') || '';
+  const num  = localStorage.getItem('em_contact_num')  || '';
+  if (name) document.getElementById('emContactName').value = name;
+  if (num)  document.getElementById('emContactNum').value  = num;
+  const actions = document.getElementById('emContactActions');
+  const callBtn = document.getElementById('emCallFamily');
+  if (name && num) {
+    actions.style.display = 'flex';
+    callBtn.href = 'tel:' + num;
+    callBtn.textContent = '📞 Call ' + name;
+  } else {
+    actions.style.display = 'none';
+  }
+}
+
+function sendEmSMS() {
+  const name = localStorage.getItem('em_contact_name') || 'Family';
+  const num  = localStorage.getItem('em_contact_num')  || '';
+  if (!num) { alert('Please save emergency contact first.'); return; }
+  let locStr = 'my current location';
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        locStr = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+        const msg = `🚨 EMERGENCY! I need help immediately. My location: ${locStr} — VitalsAI Emergency Alert`;
+        window.open(`sms:${num}?body=${encodeURIComponent(msg)}`);
+      },
+      () => {
+        const msg = `🚨 EMERGENCY! I need help immediately. Please call 108 for me. — VitalsAI Emergency Alert`;
+        window.open(`sms:${num}?body=${encodeURIComponent(msg)}`);
+      }
+    );
+  }
+}
+// ── Medical ID Save/Load ─────────────────────────────────────
+function saveMedicalID() {
+  const bg = document.getElementById('emBloodGroup').value;
+  const al = document.getElementById('emAllergies').value;
+  const co = document.getElementById('emConditions').value;
+  
+  localStorage.setItem('em_blood_group', bg);
+  localStorage.setItem('em_allergies', al);
+  localStorage.setItem('em_conditions', co);
+  
+  alert('Medical ID Saved Successfully!');
+}
+
+function loadMedicalID() {
+  document.getElementById('emBloodGroup').value = localStorage.getItem('em_blood_group') || '';
+  document.getElementById('emAllergies').value = localStorage.getItem('em_allergies') || '';
+  document.getElementById('emConditions').value = localStorage.getItem('em_conditions') || '';
+}
+
+// ── Panic Siren ──────────────────────────────────────────────
+function playSiren() {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.type = 'square'; // Harsh sound
+  oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+  oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+  
+  gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  
+  oscillator.start();
+  
+  // Stop after 3 seconds
+  setTimeout(() => {
+    oscillator.stop();
+  }, 3000);
+}
+
+// અપડેટ કરો: openEmergency ફંક્શનમાં loadMedicalID() કોલ કરો
+// function openEmergency() { ... loadEmContact(); loadMedicalID(); }
+
+
+// Auto-load contact when panel opens
+document.addEventListener('DOMContentLoaded', loadEmContact);
+
+let autoEmergencyTimer = null;
+let isEmergencyActive = false;
+
+// 1. સેન્સર પરમિશન મેળવવી (iOS અને Android માટે જરૂરી)
+async function requestSensorPermission() {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+            const permission = await DeviceMotionEvent.requestPermission();
+            if (permission === 'granted') {
+                window.addEventListener('devicemotion', detectImpact);
+            }
+        } catch (e) { console.error("Permission denied"); }
+    } else {
+        window.addEventListener('devicemotion', detectImpact);
+    }
+}
+
+// 2. ઈમ્પેક્ટ (ઝટકો) ડિટેક્ટ કરવું
+function detectImpact(event) {
+    const acc = event.accelerationIncludingGravity;
+    if (!acc) return;
+
+    // ગણતરી: x^2 + y^2 + z^2 (Total Force)
+    const totalForce = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
+
+    // જો Force 25 m/s² થી વધારે હોય (આ વેલ્યુ તમે ચેક કરીને વધારી/ઘટાડી શકો છો)
+    if (totalForce > 25) { 
+        console.log("Hard Impact Detected!");
+        triggerAutoEmergency();
+    }
+}
+
+// 3. ઓટોમેટિક ઇમરજન્સી પ્રોસેસ શરૂ કરવી
+function triggerAutoEmergency() {
+    if (isEmergencyActive) return;
+    isEmergencyActive = true;
+
+    const alertBox = document.getElementById('autoEmergencyAlert');
+    const timerDisplay = document.getElementById('autoTimer');
+    alertBox.style.display = 'block';
+
+    let timeLeft = 10;
+    timerDisplay.innerText = timeLeft;
+
+    autoEmergencyTimer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(autoEmergencyTimer);
+            executeEmergencyAction();
+        }
+    }, 1000);
+}
+
+// 4. ફાઇનલ એક્શન: સિરન + SOS
+function executeEmergencyAction() {
+    alert('🚨 EMERGENCY! Starting Siren and Sending SOS...');
+    playSiren(); // આપણે પહેલા બનાવેલું સિરન ફંક્શન
+    sendEmSMS(); // ફેમિલીને મેસેજ મોકલવાનું ફંક્શન
+    
+    // પેનલ પણ ખોલી નાખવી
+    openEmergency();
+    
+    // એલર્ટ બોક્સ બંધ કરવું
+    document.getElementById('autoEmergencyAlert').style.display = 'none';
+    isEmergencyActive = false;
+}
+
+// 5. કેન્સલ કરવું
+function cancelAutoEmergency() {
+    clearInterval(autoEmergencyTimer);
+    document.getElementById('autoEmergencyAlert').style.display = 'none';
+    isEmergencyActive = false;
+}
+
+
+
+
+
+</script>
 </body>
+
 </html>

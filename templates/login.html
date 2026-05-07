@@ -3,147 +3,398 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VitalsAI — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center}
-.box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.logo{text-align:center;margin-bottom:28px}
-.logo h1{font-size:28px;font-weight:700;color:#2b6cb0}.logo h1 span{color:#e53e3e}
-.logo p{font-size:13px;color:#718096;margin-top:4px}
-.tabs{display:flex;border-radius:10px;background:#f0f4f8;padding:4px;margin-bottom:24px}
-.tab{flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;color:#718096;transition:.2s}
-.tab.active{background:#fff;color:#2b6cb0;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:13px;font-weight:600;color:#4a5568;margin-bottom:6px}
-.form-group input{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;transition:.2s}
-.form-group input:focus{outline:none;border-color:#667eea}
-.btn{width:100%;padding:13px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity .2s}
-.btn:hover{opacity:.9}
-.divider{text-align:center;color:#a0aec0;font-size:13px;margin:16px 0;position:relative}
-.divider::before,.divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:#e2e8f0}
+body{font-family:'Poppins',sans-serif;background:#0a0e27;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.bg-gradient{position:fixed;inset:0;z-index:-1}
+.blob{position:absolute;filter:blur(80px);opacity:.25;border-radius:50%;animation:float 8s ease-in-out infinite}
+.blob-1{width:350px;height:350px;background:#ff1654;top:-50px;left:5%}
+.blob-2{width:400px;height:400px;background:#c77dff;bottom:50px;right:5%;animation-delay:2s}
+.blob-3{width:300px;height:300px;background:#00d9ff;top:50%;left:15%;animation-delay:4s}
+.blob-4{width:280px;height:280px;background:#00ff88;bottom:10%;right:10%;animation-delay:3s}
+@keyframes float{0%,100%{transform:translate(0,0)}25%{transform:translate(20px,-20px)}50%{transform:translate(-10px,20px)}75%{transform:translate(10px,-10px)}}
+.container{max-width:440px;width:90%;position:relative;z-index:10}
+.box{background:linear-gradient(135deg,rgba(26,31,58,.95),rgba(42,42,80,.95));border-radius:24px;padding:48px 32px;box-shadow:0 25px 80px rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);animation:slideUp .6s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+.logo{text-align:center;margin-bottom:32px}
+.logo h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#00d9ff,#ff00ff,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1.5px;font-family:'Space Grotesk',sans-serif}
+.logo p{font-size:13px;color:#9ca3b5;margin-top:6px}
+.tabs{display:flex;border-radius:12px;background:rgba(0,0,0,.3);padding:6px;margin-bottom:28px;gap:4px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;color:#9ca3b5;background:transparent;border:none;transition:all .3s;font-family:inherit}
+.tab.active{background:linear-gradient(135deg,#00d9ff,#ff00ff);color:#fff;box-shadow:0 8px 24px rgba(0,217,255,.3)}
+.msg{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;display:none;border:1px solid;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.msg.error{background:rgba(255,22,84,.2);color:#ff6b9d;border-color:#ff1654}
+.msg.success{background:rgba(0,255,136,.2);color:#00ff88;border-color:#00ff88}
+.msg.info{background:rgba(0,217,255,.15);color:#00d9ff;border-color:#00d9ff}
+.msg.warning{background:rgba(255,165,0,.15);color:#ffa500;border-color:#ffa500}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:700;color:#f0f4ff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input{width:100%;padding:13px 16px;border:1.5px solid rgba(255,255,255,.15);border-radius:12px;font-size:14px;background:rgba(0,0,0,.3);color:#f0f4ff;transition:all .3s;font-family:inherit}
+.form-group input:focus{outline:none;border-color:#00d9ff;background:rgba(0,217,255,.1);box-shadow:0 0 16px rgba(0,217,255,.2)}
+.form-group input::placeholder{color:#6b7280}
+/* reCAPTCHA */
+.recaptcha-wrap{display:flex;justify-content:center;margin:16px 0}
+/* OTP inputs */
+.otp-container{display:flex;gap:10px;justify-content:center;margin:8px 0}
+.otp-input{width:52px;height:56px;text-align:center;font-size:22px;font-weight:700;border:2px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(0,0,0,.4);color:#f0f4ff;font-family:'Space Grotesk',sans-serif;transition:all .3s;caret-color:#00d9ff}
+.otp-input:focus{outline:none;border-color:#00d9ff;background:rgba(0,217,255,.1);box-shadow:0 0 20px rgba(0,217,255,.3);transform:scale(1.05)}
+.otp-input.filled{border-color:#00d9ff;color:#00d9ff}
+.otp-timer{text-align:center;font-size:13px;color:#9ca3b5;margin-top:10px}
+.otp-timer span{color:#00d9ff;font-weight:700}
+.resend-btn{background:none;border:none;color:#ff00ff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline;display:none}
+/* Steps */
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px}
+.step{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid rgba(255,255,255,.2);color:#9ca3b5;transition:all .3s;font-family:'Space Grotesk',sans-serif}
+.step.active{background:linear-gradient(135deg,#00d9ff,#ff00ff);border-color:transparent;color:#fff;box-shadow:0 4px 16px rgba(0,217,255,.4)}
+.step.done{background:#00ff88;border-color:#00ff88;color:#000}
+.step-line{flex:1;height:2px;background:rgba(255,255,255,.1);border-radius:2px;max-width:80px}
+.step-line.done{background:linear-gradient(90deg,#00d9ff,#ff00ff)}
+/* Buttons */
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#00d9ff,#ff00ff);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;transition:all .3s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,217,255,.3)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:#9ca3b5;font-size:13px;padding:10px;margin-top:8px}
+.btn-ghost:hover{border-color:#00d9ff;color:#00d9ff;box-shadow:none;transform:none}
+.google-btn{width:100%;padding:12px;border:1.5px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(0,0,0,.2);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;color:#f0f4ff;transition:all .3s;font-family:inherit}
+.google-btn:hover{background:rgba(255,255,255,.05);border-color:#00d9ff;color:#00d9ff}
+.divider{text-align:center;color:#6b7280;font-size:13px;margin:20px 0;position:relative;font-weight:600}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent)}
 .divider::before{left:0}.divider::after{right:0}
-.google-btn{width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
-.google-btn:hover{background:#f7fafc}
-.msg{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none}
-.msg.error{background:#fff5f5;color:#c53030;border:1px solid #fed7d7}
-.msg.success{background:#f0fff4;color:#276749;border:1px solid #9ae6b4}
-.form-panel{display:none}.form-panel.active{display:block}
-.forgot{text-align:right;font-size:12px;color:#667eea;cursor:pointer;margin-top:-8px;margin-bottom:14px}
+.form-panel{display:none}.form-panel.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.forgot{text-align:right;font-size:12px;color:#00d9ff;cursor:pointer;margin-top:-8px;margin-bottom:16px}
+.forgot:hover{color:#ff00ff}
+.info-badge{background:rgba(0,217,255,.1);border:1px solid rgba(0,217,255,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#9ca3b5;margin-bottom:18px;line-height:1.6}
+.info-badge i{color:#00d9ff;margin-right:6px}
+/* Session modal */
+.session-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(10px)}
+.session-overlay.show{opacity:1;pointer-events:all}
+.session-box{background:linear-gradient(135deg,#1a1f3a,#2a2a50);border:1px solid rgba(255,165,0,.4);border-radius:24px;padding:40px 32px;max-width:360px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6);transform:scale(.88);transition:transform .3s}
+.session-overlay.show .session-box{transform:scale(1)}
+.session-icon{font-size:52px;margin-bottom:16px}
+.session-title{font-size:20px;font-weight:800;color:#ffa500;margin-bottom:8px;font-family:'Space Grotesk',sans-serif}
+.session-sub{font-size:13px;color:#9ca3b5;margin-bottom:12px;line-height:1.6}
+.session-countdown{font-size:52px;font-weight:800;color:#ff1654;font-family:'Space Grotesk',sans-serif;margin:8px 0 16px}
+.session-stay-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,#00d9ff,#ff00ff);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;justify-content:center}
+.session-bar{width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:16px;overflow:hidden}
+.session-bar-fill{height:100%;background:linear-gradient(90deg,#00d9ff,#ff00ff);transition:width 1s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@media(max-width:480px){.box{padding:32px 20px}.otp-input{width:42px;height:48px;font-size:18px}}
 </style>
 </head>
 <body>
-<div class="box">
-  <div class="logo">
-    <h1>Vitals<span>AI</span></h1>
-    <p>Intelligent Disease Prediction System</p>
-  </div>
 
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('login')">Login</div>
-    <div class="tab" onclick="switchTab('signup')">Sign Up</div>
-  </div>
-
-  <div id="msg" class="msg"></div>
-
-  <!-- Login -->
-  <div id="login-panel" class="form-panel active">
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="login-email" placeholder="you@example.com">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="••••••••">
-    </div>
-    <div class="forgot" onclick="showForgot()">Forgot password?</div>
-    <button class="btn" onclick="login()">Login</button>
-    <div class="divider">or</div>
-    <button class="google-btn" onclick="googleLogin()">
-      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Continue with Google
+<!-- Session Timeout Modal -->
+<div class="session-overlay" id="sessionOverlay">
+  <div class="session-box">
+    <div class="session-icon">⏱️</div>
+    <div class="session-title">Session Expiring</div>
+    <div class="session-sub">No activity for 59 minutes. Logging out in:</div>
+    <div class="session-countdown" id="sessionCountdown">60</div>
+    <button class="session-stay-btn" onclick="stayLoggedIn()">
+      <i class="fa-solid fa-rotate-right"></i> Keep Me Logged In
     </button>
+    <div class="session-bar"><div class="session-bar-fill" id="sessionBar"></div></div>
   </div>
+</div>
 
-  <!-- Signup -->
-  <div id="signup-panel" class="form-panel">
-    <div class="form-group">
-      <label>Full Name</label>
-      <input type="text" id="signup-name" placeholder="Poojan Patel">
+<div class="bg-gradient">
+  <div class="blob blob-1"></div><div class="blob blob-2"></div>
+  <div class="blob blob-3"></div><div class="blob blob-4"></div>
+</div>
+
+<div class="container">
+  <div class="box">
+    <div class="logo">
+      <h1>VitalsAI</h1>
+      <p>Intelligent Health Prediction System</p>
     </div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="signup-email" placeholder="you@example.com">
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Login</button>
+      <button class="tab" onclick="switchTab('signup')">Sign Up</button>
     </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="signup-pass" placeholder="Min 6 characters">
+
+    <div id="msg" class="msg"></div>
+
+    <!-- ══ LOGIN ══ -->
+    <div id="login-panel" class="form-panel active">
+      <div class="form-group">
+        <label><i class="fa-solid fa-envelope"></i> Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" oninput="clearMsg()">
+      </div>
+      <div class="form-group">
+        <label><i class="fa-solid fa-lock"></i> Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••" oninput="clearMsg()">
+      </div>
+      <div class="forgot" onclick="showForgot()">Forgot password?</div>
+      <div class="recaptcha-wrap">
+        <div class="g-recaptcha"
+             data-sitekey="6LdoPNMsAAAAAHHbia4KIKPwPcrvhxqIQ5OGhonH"
+             data-theme="dark"
+             data-callback="onCaptchaSolved"
+             data-expired-callback="onCaptchaExpired">
+        </div>
+      </div>
+      <button class="btn" id="loginBtn" onclick="login()" disabled>
+        <i class="fa-solid fa-shield-halved"></i> Complete CAPTCHA to Login
+      </button>
+      <div class="divider">or</div>
+      <button class="google-btn" onclick="googleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
     </div>
-    <div class="form-group">
-      <label>Confirm Password</label>
-      <input type="password" id="signup-confirm" placeholder="••••••••">
+
+    <!-- ══ SIGNUP ══ -->
+    <div id="signup-panel" class="form-panel">
+
+      <!-- Step 1: Info -->
+      <div id="signup-step1">
+        <div class="step-indicator">
+          <div class="step active">1</div>
+          <div class="step-line" id="line1"></div>
+          <div class="step" id="step2">2</div>
+        </div>
+        <div class="info-badge">
+          <i class="fa-solid fa-envelope-circle-check"></i>
+          OTP will be sent to your email for verification. <b style="color:#00d9ff">One account per email.</b>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-user"></i> Full Name</label>
+          <input type="text" id="signup-name" placeholder="Poojan Patel" oninput="clearMsg()">
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-envelope"></i> Email</label>
+          <input type="email" id="signup-email" placeholder="you@example.com" oninput="clearMsg()">
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="signup-pass" placeholder="Min 6 characters" oninput="clearMsg()">
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-lock"></i> Confirm Password</label>
+          <input type="password" id="signup-confirm" placeholder="••••••••" oninput="clearMsg()">
+        </div>
+        <button class="btn" id="nextBtn1" onclick="sendEmailOTP()">
+          <i class="fa-solid fa-envelope-open-text"></i> Send OTP to Email
+        </button>
+        <div class="divider">or</div>
+        <button class="google-btn" onclick="googleLogin()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- Step 2: OTP Verify -->
+      <div id="signup-step2" style="display:none">
+        <div class="step-indicator">
+          <div class="step done"><i class="fa-solid fa-check" style="font-size:11px"></i></div>
+          <div class="step-line done"></div>
+          <div class="step active">2</div>
+        </div>
+        <div class="info-badge">
+          <i class="fa-solid fa-key"></i>
+          6-digit OTP sent to <b id="emailSentTo" style="color:#00d9ff"></b>
+        </div>
+        <label style="display:block;font-size:13px;font-weight:700;color:#f0f4ff;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">
+          <i class="fa-solid fa-key"></i> Enter OTP
+        </label>
+        <div class="otp-container">
+          <input class="otp-input" maxlength="1" id="otp0" oninput="otpMove(this,0)" onkeydown="otpBack(event,0)" type="text" inputmode="numeric">
+          <input class="otp-input" maxlength="1" id="otp1" oninput="otpMove(this,1)" onkeydown="otpBack(event,1)" type="text" inputmode="numeric">
+          <input class="otp-input" maxlength="1" id="otp2" oninput="otpMove(this,2)" onkeydown="otpBack(event,2)" type="text" inputmode="numeric">
+          <input class="otp-input" maxlength="1" id="otp3" oninput="otpMove(this,3)" onkeydown="otpBack(event,3)" type="text" inputmode="numeric">
+          <input class="otp-input" maxlength="1" id="otp4" oninput="otpMove(this,4)" onkeydown="otpBack(event,4)" type="text" inputmode="numeric">
+          <input class="otp-input" maxlength="1" id="otp5" oninput="otpMove(this,5)" onkeydown="otpBack(event,5)" type="text" inputmode="numeric">
+        </div>
+        <div class="otp-timer">
+          OTP expires in <span id="timerDisplay">02:00</span>
+          <br><button class="resend-btn" id="resendBtn" onclick="resendOTP()">Resend OTP</button>
+        </div>
+        <button class="btn" id="verifyBtn" onclick="verifyAndSignup()" style="margin-top:20px">
+          <i class="fa-solid fa-user-check"></i> Verify & Create Account
+        </button>
+        <button class="btn btn-ghost" onclick="backToStep1()">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+      </div>
+
     </div>
-    <button class="btn" onclick="signup()">Create Account</button>
-    <div class="divider">or</div>
-    <button class="google-btn" onclick="googleLogin()">
-      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Continue with Google
-    </button>
   </div>
 </div>
 
 <script>
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='signup'&&i===1)));
-  document.getElementById('login-panel').classList.toggle('active', tab==='login');
-  document.getElementById('signup-panel').classList.toggle('active', tab==='signup');
+// ── reCAPTCHA ──────────────────────────────────────────────
+let captchaDone = false;
+function onCaptchaSolved()  { captchaDone=true; const b=document.getElementById('loginBtn'); b.disabled=false; b.innerHTML='<i class="fa-solid fa-sign-in-alt"></i> Login'; }
+function onCaptchaExpired() { captchaDone=false; const b=document.getElementById('loginBtn'); b.disabled=true; b.innerHTML='<i class="fa-solid fa-shield-halved"></i> Complete CAPTCHA to Login'; showMsg('CAPTCHA expired. Please verify again.','warning'); }
+
+// ── Session Timeout ─────────────────────────────────────────
+const IDLE_LIMIT=60*60*1000, WARN_BEFORE=60*1000;
+let idleTimer=null, warnTimer=null, cdownTimer=null, cdownLeft=60, sessionOn=false;
+function startSessionWatch(){
+  sessionOn=true; resetIdle();
+  ['mousemove','keydown','mousedown','scroll','touchstart'].forEach(ev=>document.addEventListener(ev,onUserActivity,{passive:true}));
+}
+function onUserActivity(){ if(sessionOn&&!document.getElementById('sessionOverlay').classList.contains('show')) resetIdle(); }
+function resetIdle(){
+  clearTimeout(idleTimer); clearTimeout(warnTimer);
+  warnTimer=setTimeout(showWarning, IDLE_LIMIT-WARN_BEFORE);
+  idleTimer=setTimeout(doLogout, IDLE_LIMIT);
+}
+function showWarning(){
+  cdownLeft=60; document.getElementById('sessionCountdown').textContent=60;
+  document.getElementById('sessionBar').style.width='100%';
+  document.getElementById('sessionOverlay').classList.add('show');
+  clearInterval(cdownTimer);
+  cdownTimer=setInterval(()=>{ cdownLeft--; document.getElementById('sessionCountdown').textContent=cdownLeft; document.getElementById('sessionBar').style.width=(cdownLeft/60*100)+'%'; if(cdownLeft<=0){clearInterval(cdownTimer);doLogout();} },1000);
+}
+function stayLoggedIn(){ clearInterval(cdownTimer); document.getElementById('sessionOverlay').classList.remove('show'); resetIdle(); fetch('/api/ping',{method:'POST'}).catch(()=>{}); }
+async function doLogout(){ sessionOn=false; clearTimeout(idleTimer); clearTimeout(warnTimer); clearInterval(cdownTimer); try{await fetch('/api/logout',{method:'POST'});}catch(e){} window.location.href='/login?timeout=1'; }
+
+// ── Tab Switch ──────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(tab==='login'&&i===0)||(tab==='signup'&&i===1)));
+  document.getElementById('login-panel').classList.toggle('active',tab==='login');
+  document.getElementById('signup-panel').classList.toggle('active',tab==='signup');
   hideMsg();
+  if(tab==='signup') resetSignup();
 }
 
-function showMsg(text, type) {
-  const el = document.getElementById('msg');
-  el.textContent = text; el.className = `msg ${type}`; el.style.display = 'block';
-}
-function hideMsg() { document.getElementById('msg').style.display = 'none'; }
+// ── Messages ───────────────────────────────────────────────
+function showMsg(t,type){ const el=document.getElementById('msg'); el.innerHTML=t; el.className=`msg ${type}`; el.style.display='block'; }
+function hideMsg(){ document.getElementById('msg').style.display='none'; }
+function clearMsg(){ hideMsg(); }
 
-async function login() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-pass').value;
-  if (!email || !pass) return showMsg('Please fill all fields', 'error');
-  try {
-    const res  = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pass})});
-    const data = await res.json();
-    if (data.success) { showMsg('Login successful! Redirecting...', 'success'); setTimeout(()=>window.location.href='/', 1000); }
-    else showMsg(data.error || 'Login failed', 'error');
-  } catch(e) { showMsg('Server error', 'error'); }
-}
-
-async function signup() {
-  const name    = document.getElementById('signup-name').value.trim();
-  const email   = document.getElementById('signup-email').value.trim();
-  const pass    = document.getElementById('signup-pass').value;
-  const confirm = document.getElementById('signup-confirm').value;
-  if (!name||!email||!pass) return showMsg('Please fill all fields', 'error');
-  if (pass !== confirm) return showMsg('Passwords do not match', 'error');
-  if (pass.length < 6) return showMsg('Password must be at least 6 characters', 'error');
-  try {
-    const res  = await fetch('/api/signup', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, email, password: pass})});
-    const data = await res.json();
-    if (data.success) { showMsg('Account created! Please login.', 'success'); setTimeout(()=>switchTab('login'), 1500); }
-    else showMsg(data.error || 'Signup failed', 'error');
-  } catch(e) { showMsg('Server error', 'error'); }
+// ── Login ──────────────────────────────────────────────────
+async function login(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!email||!pass) return showMsg('Please fill all fields','error');
+  if(!captchaDone)  return showMsg('Please complete the CAPTCHA first','error');
+  const token=grecaptcha.getResponse();
+  const btn=document.getElementById('loginBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Logging in...';
+  try{
+    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,captcha_token:token})});
+    const data=await res.json();
+    if(data.success){ showMsg('✅ Login successful! Redirecting...','success'); setTimeout(()=>window.location.href='/',1000); }
+    else{ showMsg(data.error||'Login failed','error'); grecaptcha.reset(); captchaDone=false; btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-shield-halved"></i> Complete CAPTCHA to Login'; }
+  }catch(e){ showMsg('Server error. Try again.','error'); grecaptcha.reset(); captchaDone=false; btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-shield-halved"></i> Complete CAPTCHA to Login'; }
 }
 
-function googleLogin() { window.location.href = '/auth/google'; }
-function showForgot() { showMsg('Password reset email sent! (Demo)', 'success'); }
+// ── Send Email OTP (Step 1 → Step 2) ──────────────────────
+async function sendEmailOTP(){
+  const name=document.getElementById('signup-name').value.trim();
+  const email=document.getElementById('signup-email').value.trim();
+  const pass=document.getElementById('signup-pass').value;
+  const confirm=document.getElementById('signup-confirm').value;
+  if(!name||!email||!pass) return showMsg('Please fill all fields','error');
+  if(pass!==confirm)        return showMsg('Passwords do not match','error');
+  if(pass.length<6)         return showMsg('Password must be at least 6 characters','error');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showMsg('Invalid email format','error');
 
-// Show error if Google login failed
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('error') === 'google_failed') {
-    showMsg('Google login failed. Please try again.', 'error');
+  const btn=document.getElementById('nextBtn1');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Sending OTP...';
+
+  try{
+    // Check email exists
+    const chk=await fetch('/api/check-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const chkData=await chk.json();
+    if(chkData.exists){ showMsg('⚠️ This email is already registered. Please login.','error'); btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-envelope-open-text"></i> Send OTP to Email'; return; }
+
+    // Send OTP
+    const res=await fetch('/api/send-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,phone:'0000000000'})});
+    const data=await res.json();
+    if(data.success){
+      document.getElementById('emailSentTo').textContent=email;
+      document.getElementById('signup-step1').style.display='none';
+      document.getElementById('signup-step2').style.display='block';
+      clearOtpInputs(); startTimer(120); document.getElementById('otp0').focus();
+      if(data.demo) showMsg(`🔧 Demo: OTP is in your terminal console.`,'info');
+      else          showMsg(`📧 OTP sent to ${email}! Check your inbox.`,'success');
+    } else {
+      showMsg(data.error||'Failed to send OTP','error');
+    }
+  }catch(e){ showMsg('Server error. Try again.','error'); }
+  btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-envelope-open-text"></i> Send OTP to Email';
 }
 
-// Enter key support
-document.addEventListener('keydown', e => { if(e.key==='Enter') { document.getElementById('login-panel').classList.contains('active') ? login() : signup(); }});
+function backToStep1(){
+  clearOtpInputs(); stopTimer();
+  document.getElementById('signup-step2').style.display='none';
+  document.getElementById('signup-step1').style.display='block';
+  clearMsg();
+}
+
+// ── OTP Inputs ─────────────────────────────────────────────
+function otpMove(el,idx){
+  el.value=el.value.replace(/[^0-9]/g,'');
+  if(el.value){ el.classList.add('filled'); if(idx<5) document.getElementById('otp'+(idx+1)).focus(); }
+  else el.classList.remove('filled');
+  if([...Array(6)].map((_,i)=>document.getElementById('otp'+i).value).every(v=>v)) verifyAndSignup();
+}
+function otpBack(e,idx){ if(e.key==='Backspace'&&!document.getElementById('otp'+idx).value&&idx>0){ const p=document.getElementById('otp'+(idx-1)); p.value=''; p.classList.remove('filled'); p.focus(); } }
+function clearOtpInputs(){ for(let i=0;i<6;i++){const el=document.getElementById('otp'+i);el.value='';el.classList.remove('filled');} }
+function getOTP(){ return [...Array(6)].map((_,i)=>document.getElementById('otp'+i).value).join(''); }
+
+// ── Timer ──────────────────────────────────────────────────
+let timerInterval=null;
+function startTimer(s){ clearInterval(timerInterval); document.getElementById('resendBtn').style.display='none'; let rem=s; document.getElementById('timerDisplay').textContent=fmt(rem); timerInterval=setInterval(()=>{ rem--; document.getElementById('timerDisplay').textContent=fmt(rem); if(rem<=0){clearInterval(timerInterval);document.getElementById('resendBtn').style.display='inline';} },1000); }
+function stopTimer(){ clearInterval(timerInterval); }
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+async function resendOTP(){
+  document.getElementById('resendBtn').style.display='none'; clearOtpInputs();
+  const email=document.getElementById('signup-email').value.trim();
+  try{
+    const res=await fetch('/api/send-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,phone:'0000000000'})});
+    const data=await res.json();
+    if(data.success){ showMsg('📧 OTP resent! Check inbox.','info'); startTimer(120); document.getElementById('otp0').focus(); }
+    else showMsg(data.error||'Failed to resend','error');
+  }catch(e){ showMsg('Server error','error'); }
+}
+
+// ── Verify OTP + Create Account ────────────────────────────
+async function verifyAndSignup(){
+  const otp=getOTP();
+  if(otp.length<6) return showMsg('Enter the complete 6-digit OTP','error');
+  const btn=document.getElementById('verifyBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Verifying...';
+  try{
+    const res=await fetch('/api/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      name:     document.getElementById('signup-name').value.trim(),
+      email:    document.getElementById('signup-email').value.trim(),
+      password: document.getElementById('signup-pass').value,
+      otp
+    })});
+    const data=await res.json();
+    if(data.success){ stopTimer(); showMsg('🎉 Account created! Please login.','success'); setTimeout(()=>{switchTab('login');resetSignup();},1800); }
+    else{ showMsg(data.error||'Signup failed','error'); btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-user-check"></i> Verify & Create Account'; }
+  }catch(e){ showMsg('Server error. Try again.','error'); btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-user-check"></i> Verify & Create Account'; }
+}
+
+function resetSignup(){
+  document.getElementById('signup-step1').style.display='block';
+  document.getElementById('signup-step2').style.display='none';
+  stopTimer(); clearOtpInputs();
+}
+
+// ── Misc ───────────────────────────────────────────────────
+function googleLogin(){ window.location.href='/auth/google'; }
+function showForgot(){ showMsg('📧 Password reset feature coming soon!','info'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('login-panel').classList.contains('active')) login(); });
+
+window.addEventListener('DOMContentLoaded',()=>{
+  if(new URLSearchParams(window.location.search).get('timeout')==='1')
+    showMsg('⏱️ You were logged out due to 1 hour of inactivity. Please login again.','warning');
+});
 </script>
 </body>
 </html>

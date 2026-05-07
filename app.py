@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+import sqlite3
+from contextlib import contextmanager
 import pandas as pd
 import numpy as np
 import joblib
@@ -7,10 +9,24 @@ import json
 import uuid
 import hashlib
 from datetime import datetime
+import random
+import time
+import urllib.request
+import urllib.parse
 import warnings
 warnings.filterwarnings('ignore')
 from authlib.integrations.flask_client import OAuth
+import google.generativeai as genai
 
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+API_KEY = os.getenv("GEMINI_API_KEY")
+print("Loaded KEY:", API_KEY)
 # ── Load .env file ─────────────────────────────────────────
 try:
     from dotenv import load_dotenv
@@ -21,6 +37,11 @@ except ImportError:
 
 app = Flask(__name__)
 app.secret_key = 'vitalsai-secret-2024'
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
+# reCAPTCHA — replace with real keys from https://www.google.com/recaptcha/admin
+RECAPTCHA_SECRET = os.environ.get('RECAPTCHA_SECRET', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe')
+IDLE_TIMEOUT = 3600  # 1 hour idle auto-logout
 
 GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
@@ -36,11 +57,136 @@ google = oauth.register(
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 MODELS  = {}
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-USERS   = {}   # email -> {name, pwd, created}
+GEMINI_API_KEY  = os.environ.get('GEMINI_API_KEY')
+OPENROUTER_KEY  = os.environ.get('OPENROUTER_API_KEY', '')
 
-# ── In-memory storage for history & trends ────────────────
-HISTORY = {}  # session_id -> list of predictions
+# ── In-memory OTP store (no persistence needed) ───────────
+OTP_STORE = {}   # email -> {otp, expires, attempts}
+
+# ══════════════════════════════════════════════════════════════
+#  SQLite DATABASE SETUP
+#  File: vitalsai.db  (auto-created in project folder)
+# ══════════════════════════════════════════════════════════════
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vitalsai.db')
+
+@contextmanager
+def get_db():
+    """Thread-safe SQLite connection context manager"""
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")   # Better concurrency
+    conn.execute("PRAGMA foreign_keys=ON")
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def init_db():
+    """Create all tables if they don't exist"""
+    with get_db() as conn:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS users (
+                email       TEXT PRIMARY KEY,
+                name        TEXT NOT NULL,
+                pwd         TEXT,
+                created_at  TEXT DEFAULT (datetime('now')),
+                verified    INTEGER DEFAULT 0,
+                google      INTEGER DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS predictions (
+                id          TEXT PRIMARY KEY,
+                user_email  TEXT NOT NULL,
+                disease     TEXT NOT NULL,
+                inputs      TEXT,
+                result      TEXT,
+                risk        TEXT,
+                probability REAL,
+                created_at  TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (user_email) REFERENCES users(email)
+            );
+        """)
+    print("[DB] SQLite database initialised ✅")
+
+init_db()
+
+# ── DB helper functions (drop-in replacements for dict ops) ──
+
+def db_get_user(email):
+    """Return user dict or None"""
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        return dict(row) if row else None
+
+def db_email_exists(email):
+    with get_db() as conn:
+        return conn.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone() is not None
+
+def db_create_user(email, name, pwd_hash, verified=True, google=False):
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO users (email,name,pwd,verified,google) VALUES (?,?,?,?,?)",
+            (email, name, pwd_hash, int(verified), int(google))
+        )
+
+def db_save_prediction(user_email, disease, inputs, result):
+    """Save prediction to DB (linked to logged-in user)"""
+    rec_id   = str(uuid.uuid4())[:8]
+    ts       = datetime.now().strftime('%Y-%m-%d %H:%M')
+    risk     = result.get('risk') or result.get('prediction') or result.get('stage','')
+    prob_raw = result.get('probability') or result.get('survival_probability') or 0
+    try:
+        prob = float(str(prob_raw).replace('%',''))
+    except Exception:
+        prob = 0.0
+    with get_db() as conn:
+        conn.execute(
+            """INSERT INTO predictions (id,user_email,disease,inputs,result,risk,probability,created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (rec_id, user_email, disease,
+             json.dumps(inputs,  ensure_ascii=False),
+             json.dumps(result,  ensure_ascii=False),
+             str(risk), prob, ts)
+        )
+    return rec_id
+
+def db_get_history(user_email, limit=50):
+    """Get prediction history for a user"""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT id,disease,inputs,result,risk,probability,created_at
+               FROM predictions WHERE user_email=?
+               ORDER BY created_at DESC LIMIT ?""",
+            (user_email, limit)
+        ).fetchall()
+    history = []
+    for r in rows:
+        try:   inp = json.loads(r['inputs'])
+        except: inp = {}
+        try:   res = json.loads(r['result'])
+        except: res = {}
+        history.append({
+            'id':        r['id'],
+            'timestamp': r['created_at'],
+            'disease':   r['disease'],
+            'inputs':    inp,
+            'result':    res,
+            'risk':      r['risk'],
+            'probability': r['probability'],
+        })
+    return history
+
+def db_delete_prediction(user_email, record_id):
+    with get_db() as conn:
+        conn.execute("DELETE FROM predictions WHERE id=? AND user_email=?", (record_id, user_email))
+
+def db_clear_history(user_email):
+    with get_db() as conn:
+        conn.execute("DELETE FROM predictions WHERE user_email=?", (user_email,))
 
 def hash_pwd(p):
     return hashlib.sha256(p.encode()).hexdigest()
@@ -141,19 +287,12 @@ def load_models():
         print(f"[WARN] Lung: {e}")
 load_models()
 
-# ── Helper: Save to history ────────────────────────────────
+# ── Helper: Save to history (DB-backed) ─────────────────────
 def save_to_history(session_id, disease, inputs, result):
-    if session_id not in HISTORY:
-        HISTORY[session_id] = []
-    HISTORY[session_id].append({
-        'id':        str(uuid.uuid4())[:8],
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M'),
-        'disease':   disease,
-        'inputs':    inputs,
-        'result':    result
-    })
-    # Keep last 50 records only
-    HISTORY[session_id] = HISTORY[session_id][-50:]
+    """Save prediction — uses logged-in user email if available"""
+    user = session.get('user')
+    if user and user.get('email'):
+        db_save_prediction(user['email'], disease, inputs, result)
 
 # ── Helper: Doctor recommendations ────────────────────────
 DOCTOR_MAP = {
@@ -189,6 +328,9 @@ def index():
         session['sid'] = str(uuid.uuid4())
     if 'user' not in session:
         return redirect(url_for('login_page'))
+    # Update last_active on home visit
+    session['last_active'] = time.time()
+    session.modified = True
     return render_template('index.html')
 
 @app.route('/login')
@@ -209,23 +351,33 @@ def google_callback():
             user_info = google.get('https://www.googleapis.com/oauth2/v3/userinfo').json()
         email = user_info.get('email', '').lower()
         name  = user_info.get('name', email.split('@')[0])
-        if email not in USERS:
-            USERS[email] = {'name': name, 'pwd': None, 'created': datetime.now().isoformat(), 'google': True}
+        if not db_email_exists(email):
+            db_create_user(email, name, None, verified=True, google=True)
         if 'sid' not in session:
             session['sid'] = str(uuid.uuid4())
-        session['user'] = {'email': email, 'name': name}
+        session.permanent      = True
+        session['user']        = {'email': email, 'name': name}
+        session['last_active'] = time.time()
         return redirect(url_for('index'))
     except Exception as e:
         print(f"[Google OAuth Error] {e}")
         return redirect(url_for('login_page') + '?error=google_failed')
 
 def login_required(f):
-    """Decorator: redirect to login if not logged in"""
+    """Decorator: redirect to login if not logged in or session idle > 1hr"""
     from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user' not in session:
             return redirect(url_for('login_page'))
+        if 'IDLE_TIMEOUT' in dir() or 'IDLE_TIMEOUT' in globals():
+            if is_session_idle():
+                session.pop('user', None)
+                session.pop('last_active', None)
+                print("[SESSION] Idle timeout — auto logout")
+                return redirect(url_for('login_page') + '?timeout=1')
+        session['last_active'] = time.time()
+        session.modified = True
         return f(*args, **kwargs)
     return decorated
 
@@ -261,44 +413,341 @@ def bmi_page():       return render_template('bmi.html')
 def lifestyle_page(): return render_template('lifestyle.html')
 
 # ── Auth APIs ──────────────────────────────────────────────
-@app.route('/api/signup', methods=['POST'])
-def api_signup():
-    d     = request.json
-    email = d.get('email', '').strip().lower()
-    name  = d.get('name', '').strip()
-    pwd   = d.get('password', '')
-    if not email or not name or not pwd:
-        return jsonify({'success': False, 'error': 'All fields required'})
-    if len(pwd) < 6:
-        return jsonify({'success': False, 'error': 'Password min 6 characters'})
-    if email in USERS:
-        return jsonify({'success': False, 'error': 'Email already registered'})
-    USERS[email] = {'name': name, 'pwd': hash_pwd(pwd), 'created': datetime.now().isoformat()}
-    return jsonify({'success': True})
-
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    d     = request.json
-    email = d.get('email', '').strip().lower()
-    pwd   = d.get('password', '')
-    u     = USERS.get(email)
-    if not u or u['pwd'] != hash_pwd(pwd):
+    d             = request.json
+    email         = d.get('email', '').strip().lower()
+    pwd           = d.get('password', '')
+    captcha_token = d.get('captcha_token', '')
+
+    # ── 1. reCAPTCHA verification ─────────────────────────────
+    if not captcha_token:
+        return jsonify({'success': False, 'error': 'CAPTCHA verification required'})
+    try:
+        verify_data = urllib.parse.urlencode({
+            'secret':   RECAPTCHA_SECRET,
+            'response': captcha_token
+        }).encode()
+        req    = urllib.request.Request(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data=verify_data
+        )
+        resp   = urllib.request.urlopen(req, timeout=5)
+        result = json.loads(resp.read().decode())
+        if not result.get('success'):
+            return jsonify({'success': False, 'error': 'CAPTCHA failed. Please try again.'})
+    except Exception as e:
+        print(f"[reCAPTCHA Error] {e}")
+        if RECAPTCHA_SECRET != '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe':
+            return jsonify({'success': False, 'error': 'CAPTCHA check failed.'})
+
+    # ── 2. Credentials check with DEBUGGING (SQLite) ────────────
+    print(f"\n--- Login Attempt for: {email} ---") # Debug Log
+    u = db_get_user(email)
+    
+    if not u:
+        print(f"[DEBUG] User NOT found in database for email: {email}") 
+        # જો અહીં "User NOT found" આવે, તો તમારો ડેટાબેઝ રીસેટ થઈ રહ્યો છે.
         return jsonify({'success': False, 'error': 'Invalid email or password'})
-    session['user'] = {'email': email, 'name': u['name']}
+
+    print(f"[DEBUG] User found: {u['name']}") # Debug Log
+    
+    # Check if password exists and matches
+    stored_pwd = u.get('pwd')
+    if not stored_pwd:
+        print(f"[DEBUG] No password stored for user: {email}")
+        return jsonify({'success': False, 'error': 'Account password not set'})
+
+    if stored_pwd != hash_pwd(pwd):
+        print(f"[DEBUG] Password Mismatch for user: {email}") # Debug Log
+        return jsonify({'success': False, 'error': 'Invalid email or password'})
+
+    # ── 3. Set session ────────────────────────────────────────
+    print(f"[DEBUG] Password Match! Logging in {email}...") 
+    session.permanent      = True
+    session['user']        = {'email': email, 'name': u['name']}
+    session['last_active'] = time.time()
+    
+    print(f"[LOGIN SUCCESS] {email} logged in successfully ✅")
     return jsonify({'success': True, 'name': u['name']})
+
 
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
     session.pop('user', None)
+    session.pop('last_active', None)
     return jsonify({'success': True})
+
+# ── Ping — extend session from frontend ───────────────────
+@app.route('/api/ping', methods=['POST'])
+def api_ping():
+    if 'user' in session:
+        session['last_active'] = time.time()
+        session.modified = True
+        return jsonify({'success': True})
+    return jsonify({'success': False})
+
+# ── Idle check helper ──────────────────────────────────────
+def is_session_idle():
+    last = session.get('last_active')
+    return bool(last and (time.time() - last) > IDLE_TIMEOUT)
 
 @app.route('/api/me')
 def api_me():
     u = session.get('user')
-    if u:
-        return jsonify({'logged_in': True, 'name': u['name'], 'email': u['email']})
-    return jsonify({'logged_in': False})
+    if not u:
+        return jsonify({'logged_in': False})
+    email    = u.get('email', '')
+    name     = u.get('name', 'User')
+    userdata = db_get_user(email) or {}
+    initials = ''.join(w[0] for w in name.split() if w)[:2].upper()
+    return jsonify({
+        'logged_in': True,
+        'name':      name,
+        'email':     email,
+        'initials':  initials,
+        'created':   userdata.get('created_at', ''),
+        'google':    bool(userdata.get('google', False)),
+        'verified':  bool(userdata.get('verified', False)),
+    })
 
+
+# ── Check if email already exists ─────────────────────────────────
+@app.route('/api/check-email', methods=['POST'])
+def api_check_email():
+    email = request.json.get('email', '').strip().lower()
+    return jsonify({'exists': db_email_exists(email)})
+
+
+# ── Send OTP via Email (Gmail SMTP) ──────────────────────
+@app.route('/api/send-otp', methods=['POST'])
+def api_send_otp():
+    d     = request.json
+    email = d.get('email', '').strip().lower()
+
+    if not email:
+        return jsonify({'success': False, 'error': 'Email required'})
+
+    # ── Duplicate email check (DB) ─────────────────────────
+    if db_email_exists(email):
+        return jsonify({'success': False, 'error': 'Email already registered. Please login.'})
+
+    # ── Generate 6-digit OTP ───────────────────────────────
+    otp     = str(random.randint(100000, 999999))
+    expires = time.time() + 120  # 2 minutes
+
+    OTP_STORE[email] = {
+        'otp':      otp,
+        'expires':  expires,
+        'attempts': 0
+    }
+
+    # ── Send via Gmail SMTP ────────────────────────────────
+    gmail_user = os.environ.get('GMAIL_USER', '')
+    gmail_pass = os.environ.get('GMAIL_APP_PASSWORD', '')
+    otp_sent   = False
+
+    if gmail_user and gmail_pass:
+        try:
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text      import MIMEText
+
+            html_body = f"""
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;
+                        background:#0a0e27;color:#f0f4ff;border-radius:16px;padding:32px;">
+              <h2 style="color:#00d9ff;margin:0 0 4px;font-size:28px;letter-spacing:-1px">VitalsAI</h2>
+              <p style="color:#9ca3b5;margin:0 0 28px;font-size:12px;letter-spacing:1px">
+                INTELLIGENT HEALTH PREDICTION SYSTEM
+              </p>
+              <p style="margin:0 0 16px;font-size:15px">Your One-Time Password (OTP) for account verification:</p>
+              <div style="background:#1a1f3a;border:2px solid #00d9ff;border-radius:12px;
+                          padding:24px;text-align:center;margin:0 0 24px">
+                <span style="font-size:42px;font-weight:800;letter-spacing:14px;
+                             color:#00d9ff;font-family:monospace">{otp}</span>
+              </div>
+              <table style="width:100%;margin:0 0 20px">
+                <tr>
+                  <td style="color:#9ca3b5;font-size:13px">⏱️ Valid for</td>
+                  <td style="color:#f0f4ff;font-size:13px;font-weight:700;text-align:right">2 minutes only</td>
+                </tr>
+                <tr>
+                  <td style="color:#9ca3b5;font-size:13px">📧 Sent to</td>
+                  <td style="color:#00d9ff;font-size:13px;text-align:right">{email}</td>
+                </tr>
+              </table>
+              <p style="color:#ff6b9d;font-size:12px;margin:0 0 20px;
+                        background:rgba(255,22,84,.1);border:1px solid #ff1654;
+                        border-radius:8px;padding:10px 14px;">
+                🔒 Never share this OTP with anyone. VitalsAI will never ask for your OTP.
+              </p>
+              <hr style="border:none;border-top:1px solid #2a2a50;margin:20px 0">
+              <p style="color:#6b7280;font-size:11px;margin:0">
+                If you did not request this, please ignore this email.
+              </p>
+            </div>
+            """
+
+            msg            = MIMEMultipart('alternative')
+            msg['Subject'] = f'VitalsAI — Your OTP is {otp}'
+            msg['From']    = f'VitalsAI <{gmail_user}>'
+            msg['To']      = email
+            msg.attach(MIMEText(f'Your VitalsAI OTP is: {otp}. Valid for 2 minutes. Do not share.', 'plain'))
+            msg.attach(MIMEText(html_body, 'html'))
+
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                server.login(gmail_user, gmail_pass)
+                server.sendmail(gmail_user, email, msg.as_string())
+
+            otp_sent = True
+            print(f"[OTP] Email sent to {email} ✅")
+
+        except Exception as e:
+            print(f"[OTP] Gmail error: {e}")
+
+    # ── Console fallback ───────────────────────────────────
+    if not otp_sent:
+        print(f"\n{'='*50}")
+        print(f"  📧 VitalsAI OTP {'(Gmail not configured)' if not gmail_user else '(Gmail error)'}")
+        print(f"  Email : {email}")
+        print(f"  OTP   : {otp}")
+        print(f"  Valid for 2 minutes")
+        print(f"{'='*50}\n")
+
+    return jsonify({
+        'success': True,
+        'demo':    not otp_sent,
+        'message': f'OTP sent to {email}' if otp_sent else f'Demo — OTP: {otp}'
+    })
+
+
+
+# ── Signup with OTP verification ──────────────────────────
+@app.route('/api/signup', methods=['POST'])
+def api_signup():
+    d      = request.json
+    email  = d.get('email', '').strip().lower()
+    name   = d.get('name', '').strip()
+    pwd    = d.get('password', '')
+    otp_in = d.get('otp', '').strip()
+
+    # Basic validation
+    if not email or not name or not pwd:
+        return jsonify({'success': False, 'error': 'All fields required'})
+    if len(pwd) < 6:
+        return jsonify({'success': False, 'error': 'Password min 6 characters'})
+    if db_email_exists(email):
+        return jsonify({'success': False, 'error': 'Email already registered. Please login.'})
+    if not otp_in:
+        return jsonify({'success': False, 'error': 'OTP verification required'})
+
+    # ── Verify OTP ────────────────────────────────────────
+    record = OTP_STORE.get(email)
+    if not record:
+        return jsonify({'success': False, 'error': 'OTP not sent or expired. Request a new one.'})
+    if time.time() > record['expires']:
+        OTP_STORE.pop(email, None)
+        return jsonify({'success': False, 'error': 'OTP expired. Click Resend.'})
+
+    record['attempts'] = record.get('attempts', 0) + 1
+    if record['attempts'] > 5:
+        OTP_STORE.pop(email, None)
+        return jsonify({'success': False, 'error': 'Too many wrong attempts. Request a new OTP.'})
+    if otp_in != record['otp']:
+        remaining = 5 - record['attempts']
+        return jsonify({'success': False, 'error': f'Wrong OTP. {remaining} attempts left.'})
+
+    # ✅ OTP correct
+    OTP_STORE.pop(email, None)
+
+    # ── Create account (SQLite) ──────────────────────────
+    db_create_user(email, name, hash_pwd(pwd), verified=True, google=False)
+    print(f"[SIGNUP] New user: {email} | Email OTP verified ✅  → saved to DB")
+    return jsonify({'success': True})
+
+
+# ══════════════════════════════════════════════════════════════════════
+# HOW TO SETUP REAL SMS (Optional — Twilio):
+#
+#   pip install twilio
+#
+#   Add to your .env file:
+#     TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxx
+#     TWILIO_AUTH_TOKEN=your_auth_token
+#     TWILIO_FROM_NUMBER=+1234567890
+#
+#   Get free trial at: https://www.twilio.com
+#   (Free trial gives ~$15 credit = ~1000 SMS)
+#
+# In DEMO mode (no Twilio):
+#   OTP is printed in terminal/console.
+#   The frontend will also show OTP in the success message.
+# ══════════════════════════════════════════════════════════════════════
+
+
+
+# ── Lifestyle Recommendation API ──────────────────────────
+# ── Helper: Send Lifestyle Recommendations via Email ────────────────
+# ધ્યાન રાખજો: આ ફંક્શનની ઉપર કોઈ @app.route ન હોવું જોઈએ
+def send_lifestyle_email(email, recs):
+    gmail_user = os.environ.get('GMAIL_USER', '')
+    gmail_pass = os.environ.get('GMAIL_APP_PASSWORD', '')
+    
+    if not gmail_user or not gmail_pass:
+        print("[ERROR] Gmail credentials missing. Cannot send recommendation email.")
+        return False
+
+    try:
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        diet_list = "<br>• ".join(recs.get('diet', []))
+        ex_list = "<br>• ".join(recs.get('exercise', []))
+        sleep_list = "<br>• ".join(recs.get('sleep', []))
+        med_list = "<br>• ".join(recs.get('medical', []))
+
+        html_body = f"""
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;
+                    background:#0a0e27;color:#f0f4ff;border-radius:16px;padding:32px;border:1px solid #00d9ff;">
+          <h2 style="color:#00d9ff;text-align:center;">🌿 VitalsAI Health Guide</h2>
+          <p style="text-align:center;color:#9ca3b5;">We've analyzed your health profile and prepared some personalized tips for you.</p>
+          <hr style="border:none;border-top:1px solid #2d3a5a;margin:20px 0">
+          <div style="background:#1a1f3a;padding:20px;border-radius:12px;margin-bottom:20px;">
+            <h3 style="color:#00ff88;">🍎 Diet Recommendations</h3>
+            <p style="color:#f0f4ff;line-height:1.6;">{diet_list}</p>
+          </div>
+          <div style="background:#1a1f3a;padding:20px;border-radius:12px;margin-bottom:20px;">
+            <h3 style="color:#ff6b35;">🏃 Exercise Tips</h3>
+            <p style="color:#f0f4ff;line-height:1.6;">{ex_list}</p>
+          </div>
+          <div style="background:#1a1f3a;padding:20px;border-radius:12px;margin-bottom:20px;">
+            <h3 style="color:#c77dff;">😴 Sleep & Wellness</h3>
+            <p style="color:#f0f4ff;line-height:1.6;">{sleep_list}</p>
+          </div>
+          <div style="background:#1a1f3a;padding:20px;border-radius:12px;margin-bottom:20px;border-left:4px solid #ff1654;">
+            <h3 style="color:#ff1654;">🏥 Important Medical Advice</h3>
+            <p style="color:#f0f4ff;line-height:1.6;">{med_list}</p>
+          </div>
+          <p style="font-size:12px;color:#6b7280;text-align:center;margin-top:30px;">
+            Disclaimer: This is an AI-generated guide. Please consult a certified doctor for medical diagnosis.
+          </p>
+        </div>
+        """
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = '🌿 Your Personalized Health Tips from VitalsAI'
+        msg['From'] = f'VitalsAI Health <{gmail_user}>'
+        msg['To'] = email
+        msg.attach(MIMEText("Please use an HTML viewer to see your personalized health guide.", 'plain'))
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, email, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"[Email Error] {e}")
+        return False
 
 # ── Lifestyle Recommendation API ──────────────────────────
 @app.route('/api/recommend', methods=['POST'])
@@ -311,98 +760,119 @@ def recommend():
     activity = int(d.get('activity', 1))
     diabetes = int(d.get('diabetes', 0))
     sleep    = int(d.get('sleep', 7))
-    stress   = d.get('stress', 'low')
+    stress   = d.get('stress') or 'low'
     age      = int(d.get('age', 30))
-
     diet_recs = []; exercise_recs = []; sleep_recs = []; medical_recs = []
     score = 100
 
+    # --- BMI Logic ---
     if bmi > 30:
-        diet_recs     += ["Calorie deficit diet follow karo", "Junk food avoid karo", "Fruits & vegetables vadhu lo"]
-        exercise_recs += ["Daily 45 min walking shuru karo", "Cardio exercise 4x per week"]
+        diet_recs     += ["Follow a calorie-deficit diet", "Avoid junk food", "Eat more fruits and vegetables"]
+        exercise_recs += ["Start 45 minutes of daily walking", "Do cardio exercise 4 times per week"]
         score -= 20
     elif bmi > 25:
-        diet_recs     += ["Healthy balanced diet lo", "Processed food ochhu karo"]
+        diet_recs     += ["Eat a healthy balanced diet", "Reduce processed foods"]
         exercise_recs += ["Daily 30 min brisk walking"]
         score -= 10
     elif bmi < 18.5:
-        diet_recs += ["Protein-rich food vadhu lo (eggs, paneer, daal)", "Healthy fats lo (nuts, avocado, ghee)"]
+        diet_recs += ["Eat protein-rich foods such as eggs, paneer, and lentils", "Eat healthy fats such as nuts, avocado, and small amounts of ghee"]
         score -= 10
     else:
-        diet_recs.append("BMI normal che! Balanced diet continue rakho")
+        diet_recs.append("BMI is normal. Continue a balanced diet")
 
+    # --- BP Logic ---
     if bp >= 140:
-        diet_recs    += ["Low sodium diet — namak bilkul ochhu", "DASH diet follow karo"]
-        medical_recs += ["BP rojana monitor karo", "Doctor ne miljo"]
+        diet_recs    += ["Follow a low-sodium diet", "Follow the DASH diet"]
+        medical_recs += ["Monitor blood pressure daily", "Consult a doctor"]
         score -= 15
     elif bp >= 130:
-        diet_recs.append("Salt intake thodi kam karo")
+        diet_recs.append("Reduce salt intake")
         score -= 5
 
+    # --- Cholesterol Logic ---
     if chol >= 240:
-        diet_recs    += ["Saturated fats avoid karo (butter, fried food)", "Oats & fiber-rich food lo"]
-        medical_recs.append("Lipid profile test karavo")
+        diet_recs    += ["Avoid saturated fats such as butter and fried food", "Eat oats and fiber-rich foods"]
+        medical_recs.append("Get a lipid profile test")
         score -= 10
     elif chol >= 200:
-        diet_recs.append("Healthy fats prefer karo — olive oil, nuts")
+        diet_recs.append("Prefer healthy fats such as olive oil and nuts")
         score -= 5
 
+    # --- Smoker Logic ---
     if smoker:
-        medical_recs  += ["Smoking taatkaalik band karo", "Doctor ni help lo quit karva"]
-        exercise_recs.append("Exercise smoking chhadvama help kare che")
+        medical_recs  += ["Stop smoking immediately", "Get medical help to quit smoking"]
+        exercise_recs.append("Exercise can help with smoking cessation")
         score -= 20
 
+    # --- Activity Logic ---
     if not activity:
-        exercise_recs += ["Daily 30 min walking shuru karo!", "Lift ni jagya stairs use karo"]
+        exercise_recs += ["Start 30 minutes of daily walking", "Use stairs instead of elevators when possible"]
         score -= 10
     else:
         exercise_recs.append("Exercise excellent! Niyamit chalalu rakho")
 
+    # --- Diabetes Logic ---
     if diabetes:
-        diet_recs    += ["Sugar & refined carbs bilkul avoid karo", "Low glycemic index food prefer karo"]
-        medical_recs += ["Blood glucose daily monitor karo", "HbA1c test daekaek 3 mahine ma karavo"]
+        diet_recs    += ["Avoid sugar and refined carbohydrates", "Prefer low-glycemic-index foods"]
+        medical_recs += ["Monitor blood glucose daily", "Get an HbA1c test every 3 months"]
         score -= 15
 
+    # --- Sleep Logic ---
     if sleep < 6:
-        sleep_recs += ["7-8 hours suvani koshish karo", "Suvata 1 hour pehla phone/TV band karo"]
+        sleep_recs += ["Try to sleep 7 to 8 hours", "Turn off phone and TV 1 hour before sleep"]
         score -= 10
     elif sleep > 9:
-        sleep_recs.append("Vadhu suvath pan hanikarak — 7-8 hours ideal che")
+        sleep_recs.append("Excess sleep can also be harmful. 7 to 8 hours is ideal")
     else:
-        sleep_recs.append("Sleep schedule excellent che!")
+        sleep_recs.append("Your sleep schedule is excellent")
 
+    # --- Stress Logic ---
     if stress == 'high':
-        sleep_recs    += ["Daily 10-15 min meditation try karo", "Deep breathing exercises karo"]
-        exercise_recs.append("Yoga — stress relief mate best che")
+        sleep_recs    += ["Try 10 to 15 minutes of daily meditation", "Practice deep breathing exercises"]
+        exercise_recs.append("Yoga is helpful for stress relief")
         score -= 10
     elif stress == 'medium':
-        sleep_recs.append("Relaxation techniques try karo")
+        sleep_recs.append("Try relaxation techniques")
 
+    # --- Age Logic ---
     if age >= 50:
-        medical_recs += ["Yearly full body checkup karavo", "Vitamin D, B12, Iron levels check karavo"]
+        medical_recs += ["Get a yearly full-body checkup", "Check vitamin D, B12, and iron levels"]
     elif age >= 40:
-        medical_recs.append("BP, Sugar, Cholesterol yearly test karavo")
+        medical_recs.append("Test blood pressure, blood sugar, and cholesterol every year")
     else:
-        medical_recs.append("Preventive health checkup daekaek 2 year ma karavo")
+        medical_recs.append("Get a preventive health checkup every 2 years")
 
     if not diet_recs:     diet_recs     = ["Balanced diet lo — daal, chaval, shaak, fruit"]
-    if not exercise_recs: exercise_recs = ["Exercise continue karo"]
-    if not sleep_recs:    sleep_recs    = ["Sleep schedule excellent che!"]
+    if not exercise_recs: exercise_recs = ["Continue exercising"]
+    if not sleep_recs:    sleep_recs    = ["Your sleep schedule is excellent"]
 
     score      = max(0, min(100, score))
     risk_level = 'high' if score < 50 else ('medium' if score < 75 else 'low')
 
+    # ── EMAIL NOTIFICATION LOGIC ──────────────────────────
+    user = session.get('user')
+    email_sent = False
+    if user and user.get('email'):
+        if risk_level in ['medium', 'high']:
+            email_sent = send_lifestyle_email(user['email'], {
+                'diet': diet_recs, 
+                'exercise': exercise_recs, 
+                'sleep': sleep_recs, 
+                'medical': medical_recs
+            })
+
     return jsonify({
         'health_score': score, 'risk_level': risk_level,
         'diet': diet_recs, 'exercise': exercise_recs,
-        'sleep': sleep_recs, 'medical': medical_recs
+        'sleep': sleep_recs, 'medical': medical_recs,
+        'email_sent': email_sent
     })
 
 # ── AI Chatbot API (Claude AI Powered) ────────────────────
 CHAT_SYSTEM = """You are the AI Health Assistant for "Vitals AI" — a health prediction and wellness platform.
 
-DEFAULT LANGUAGE: Always respond in English unless the user writes in a different language.
-LANGUAGE RULE: If user writes in Gujarati → reply in Gujarati. If Hindi → reply in Hindi. Otherwise always English.
+DEFAULT LANGUAGE: Always respond in English.
+LANGUAGE RULE: Always reply in clear English, even if the user writes in another language.
 
 For ANY disease or health question, structure your response:
 
@@ -424,75 +894,157 @@ Rules:
 - For emergencies mention: Call 108 immediately
 - You are NOT a doctor — health education only"""
 
+ADVANCED_CHAT_INSTRUCTIONS = """Advanced VitalsAI capabilities:
+- You receive a JSON context from the active page: page name, form values, visible result, and local_prediction.
+- If the user asks to predict/check risk, use local_prediction and form values to provide a clear screening-style answer.
+- If the user asks for explanation, explain the top risk factors and protective factors from context.
+- If visible_result is present, summarize and explain that result before adding advice.
+- You may answer broader health questions beyond the current disease: fever, cough/cold, headache, acidity, cholesterol, anemia, thyroid, stress, hydration, vaccines, diet, sleep, exercise, etc.
+- Keep answers concise, practical, and in clear English.
+- Do not claim a confirmed diagnosis. Say this is educational/screening support.
+- For emergency symptoms, advise urgent medical care / Call 108 immediately."""
+
+def _chat_is_predict_intent(msg):
+    q = (msg or '').lower()
+    return any(k in q for k in [
+        'predict', 'prediction', 'risk', 'probability', 'check me',
+        'risk score', 'risk level', 'screening result', 'estimate',
+        'status'
+    ])
+
+def _chat_is_explain_intent(msg):
+    q = (msg or '').lower()
+    return any(k in q for k in [
+        'explain', 'why', 'reason', 'result', 'summary',
+        'samjavo', 'samja', 'સમજ', 'કારણ', 'પરિણામ'
+    ])
+
+def _format_chat_prediction(pred):
+    import html as _html
+    if not pred or pred.get('score') is None:
+        return (
+            "<b>Prediction requires form data.</b><br>"
+            "Please fill the current disease form first, then ask: <b>predict my risk</b>."
+        )
+    disease = _html.escape(str(pred.get('disease', 'current disease')))
+    status = _html.escape(str(pred.get('status', 'Unknown')))
+    score = _html.escape(str(pred.get('score', '')))
+    reasons = pred.get('reasons') or []
+    protect = pred.get('protect') or []
+    reason_html = '<br>• '.join(_html.escape(str(x)) for x in reasons[:6]) or 'Not enough strong risk factors found'
+    protect_html = '<br>• '.join(_html.escape(str(x)) for x in protect[:4])
+    html = (
+        f"<b>Chatbot Screening Prediction</b><br>"
+        f"Disease/Page: <b>{disease}</b><br>"
+        f"Status: <b>{status}</b><br>"
+        f"Probability hint: <b>{score}%</b><br><br>"
+        f"<b>Explanation:</b><br>• {reason_html}"
+    )
+    if protect_html:
+        html += f"<br><br><b>Protective points:</b><br>• {protect_html}"
+    html += (
+        "<br><br><i>This is an AI screening estimate, not a confirmed diagnosis. "
+        "Please consult a doctor for personalized advice.</i>"
+    )
+    return html
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv() # આ લાઇન .env ફાઇલમાંથી ડેટા લોડ કરે છે
+api_key = os.getenv("GEMINI_API_KEY")
+
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    import urllib.request, json as _json
+    import urllib.request as _ur
+    import json as _json
+    import re as _re
+
     data    = request.json or {}
     msg     = data.get('message', '').strip()
     history = data.get('history', [])
     mode    = data.get('mode', 'ai')
+    context = data.get('context') or {}
+    local_prediction = context.get('local_prediction') or data.get('local_prediction') or {}
+    visible_result   = (context.get('visible_result') or '').strip() if isinstance(context, dict) else ''
 
     if not msg:
         return jsonify({'response': 'Please enter a message.'})
 
-
-    # ── Gemini AI mode ───────────────────────────────────────
-    api_key = GEMINI_API_KEY
-    if api_key:  # Always try Gemini regardless of mode
+    # ── OpenRouter AI Mode ────────────────────────────────────
+    OPENROUTER_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+    if OPENROUTER_KEY:
         try:
-            # Build system prompt + full question in single user turn
-            full_prompt = CHAT_SYSTEM + "\n\nUser question: " + msg
+            context_text = _json.dumps(context, ensure_ascii=False)[:3000] if context else '{}'
 
-            # Add recent history context if available
-            if history:
-                hist_text = ""
-                for h in history[-6:]:
-                    role_label = "User" if h.get('role') == 'user' else "Assistant"
-                    hist_text += f"\n{role_label}: {str(h.get('content',''))[:300]}"
-                if hist_text:
-                    full_prompt = CHAT_SYSTEM + "\n\nRecent conversation:" + hist_text + "\n\nNow answer this: " + msg
+            system_prompt = (
+                CHAT_SYSTEM + "\n\n" + ADVANCED_CHAT_INSTRUCTIONS +
+                "\n\nCurrent page context: " + context_text
+            )
+
+            # Build messages — system + history + user
+            messages = [{"role": "system", "content": system_prompt}]
+            for h in history[-8:]:
+                role = h.get('role', 'user')
+                if role in ('user', 'assistant'):
+                    messages.append({"role": role, "content": str(h.get('content', ''))[:500]})
+            messages.append({"role": "user", "content": msg})
 
             payload = _json.dumps({
-                'contents': [{'role': 'user', 'parts': [{'text': full_prompt}]}],
-                'generationConfig': {
-                    'temperature': 0.7,
-                    'maxOutputTokens': 1024,
-                },
-                'safetySettings': [
-                    {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
-                    {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
-                    {'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_NONE'},
-                    {'category': 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_NONE'},
-                ]
+                "model": "meta-llama/llama-3-8b-instruct",
+                "messages": messages,
+                "max_tokens": 2048,
+                "temperature": 0.75,
+                "top_p": 0.95
             }).encode('utf-8')
 
-            url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}'
-            req = urllib.request.Request(
-                url,
+            req = _ur.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
                 data=payload,
-                headers={'Content-Type': 'application/json'},
+                headers={
+                    "Content-Type":  "application/json",
+                    "Authorization": f"Bearer {OPENROUTER_KEY}",
+                    "HTTP-Referer":  "http://localhost:5000",
+                    "X-Title":       "VitalsAI Health Assistant"
+                },
                 method='POST'
             )
-            with urllib.request.urlopen(req, timeout=30) as resp:
+
+            with _ur.urlopen(req, timeout=30) as resp:
                 result = _json.loads(resp.read())
-                reply  = result['candidates'][0]['content']['parts'][0]['text']
-                # Format markdown to HTML
-                reply_html = reply.replace('\n', '<br>')
-                reply_html = reply_html.replace('**', '<b>', 1)
-                import re
-                reply_html = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', reply)
-                reply_html = reply_html.replace('\n', '<br>')
-                print(f"[Gemini OK] reply len={len(reply)}")
-                return jsonify({'response': reply_html, 'source': 'gemini'})
+                reply  = result['choices'][0]['message']['content']
+
+            # Format markdown → HTML
+            reply_html = _re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', reply)
+            reply_html = _re.sub(r'\*(.*?)\*',     r'<i>\1</i>', reply_html)
+            reply_html = _re.sub(r'^#{1,3}\s+(.+)$', r'<span class="sec-head">\1</span>', reply_html, flags=_re.MULTILINE)
+            reply_html = _re.sub(r'^[-•]\s+(.+)$',   r'<li>\1</li>', reply_html, flags=_re.MULTILINE)
+            reply_html = reply_html.replace('\n', '<br>')
+
+            print(f"[OpenRouter OK] len={len(reply)}")
+            return jsonify({'response': reply_html, 'source': 'openrouter'})
+
         except Exception as e:
-            import traceback; traceback.print_exc()
+            err = str(e)
             if hasattr(e, 'read'):
-                try:
-                    body = e.read().decode()
-                    print("[Gemini API body]", body)
+                try: err = e.read().decode()
                 except: pass
-            print(f"[Gemini API error] {e}")
+            print(f"[OpenRouter Error] {err}")
             # Fall through to KB
+
+    # ── Context-aware prediction/result fallback ─────────────
+    if _chat_is_predict_intent(msg) and local_prediction:
+        return jsonify({'response': _format_chat_prediction(local_prediction), 'source': 'context_prediction'})
+
+    if _chat_is_explain_intent(msg) and visible_result:
+        safe_result = visible_result.replace('\n', '<br>')
+        return jsonify({'response': (
+            "<b>Current Result Explanation</b><br>" + safe_result +
+            "<br><br>This is a screening estimate. Consult a doctor."
+        ), 'source': 'context_result'})
+
+
 
     # ── Intelligent KB — 50+ topics, no API needed ──────────
     msg_lower = msg.lower()
@@ -590,6 +1142,26 @@ def chat():
         "⚖️ Weight Loss &nbsp;|&nbsp; 💧 Hydration &nbsp;|&nbsp; 💊 Vitamins &nbsp;|&nbsp; 🌡️ Fever<br><br>"
         "<i>Type your health question in detail for best results!</i>"
     ), 'source': 'local'})
+
+@app.route('/api/last-prediction')
+def get_last_prediction():
+    user = session.get('user')
+    if not user or not user.get('email'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT disease, risk, result FROM predictions WHERE user_email=? ORDER BY created_at DESC LIMIT 1", 
+            (user['email'],)
+        ).fetchone()
+        
+        if row:
+            return jsonify({
+                'disease': row['disease'],
+                'risk': row['risk'],
+                'result': json.loads(row['result']) if isinstance(row['result'], str) else row['result']
+            })
+    return jsonify({'no_prediction': True})
 
 # ── BMI Calculator API ─────────────────────────────────────
 @app.route('/api/bmi', methods=['POST'])
@@ -991,15 +1563,40 @@ def predict_diabetes():
         return jsonify({'error': str(e)}), 500
 
 # ── Kidney Predict ─────────────────────────────────────────
+# ── Kidney Predict (EXACT MATCH with Training Code) ─────────────────────────
 @app.route('/predict/kidney', methods=['POST'])
 def predict_kidney():
     try:
         m = MODELS.get('kidney')
         if not m: return jsonify({'error': 'Kidney model not loaded.'}), 500
-        data        = request.json
+        
+        data = request.json
+        # ટ્રેનિંગ ફાઈલ મુજબના Target Names
         reverse_map = {v: k for k, v in m['target_map'].items()}
-        inputs      = {f: float(data.get(f, 0)) for f in m['features']}
-        patient     = pd.DataFrame([inputs]).reindex(columns=m['features'], fill_value=0)
+        
+        # 1. મોડેલ જે ફીચર્સ માંગે છે તેની લિસ્ટ લો (exact order)
+        model_features = m['features'] 
+        
+        # 2. HTML માંથી ડેટા લો. જો નામ મેચ ન થાય તો np.nan મૂકો
+        inputs_dict = {}
+        for feat in model_features:
+            val = data.get(feat)
+            if val is not None:
+                try:
+                    inputs_dict[feat] = float(val)
+                except:
+                    inputs_dict[feat] = np.nan
+            else:
+                inputs_dict[feat] = np.nan
+
+        # 3. DataFrame બનાવો (Exact Order)
+        patient = pd.DataFrame([inputs_dict]).reindex(columns=model_features)
+        
+        # 4. Missing values ને Mean થી ભરો (જેથી મોડેલ કન્ફ્યુઝ ન થાય)
+        # આ સ્ટેપ ખૂબ જરૂરી છે કારણ કે HTML માં કદાચ 1-2 ફિલ્ડ્સ મિસિંગ હોય
+        patient = patient.fillna(patient.mean().fillna(0))
+
+        # 5. Prediction
         pred        = int(m['model'].predict(patient)[0])
         proba       = m['model'].predict_proba(patient)[0]
         label       = reverse_map[pred]
@@ -1008,53 +1605,53 @@ def predict_kidney():
         doctor      = DOCTOR_MAP['kidney'].get(label, 'General Physician')
 
         # ── XAI Explanation ─────────────────────────────────
+        # અહીં આપણે HTML ID નો ઉપયોગ કરીને ચેક કરીશું
         why_high, why_low, suggestions, lifestyle = [], [], [], {}
-        sc  = inputs.get('sc', 0)   # serum creatinine
-        egfr = inputs.get('bgr',0)  # use as proxy
-        hemo = inputs.get('hemo',0) # hemoglobin
-        bp_v = inputs.get('bp',0)
-        al   = inputs.get('al',0)   # albumin
-        su   = inputs.get('su',0)   # sugar in urine
+        
+        # સાચા નામ સાથે વેલ્યુઝ મેળવો
+        sc   = data.get('Serum creatinine (mg/dl)', 0)
+        egfr = data.get('Estimated Glomerular Filtration Rate (eGFR)', 0)
+        hemo = data.get('Hemoglobin level (gms)', 0)
+        bp_v = data.get('Blood pressure (mm/Hg)', 0)
+        al   = data.get('Albumin in urine', 0)
+        su   = data.get('Sugar in urine', 0)
 
-        if sc > 1.2:
-            why_high.append(f"High Serum Creatinine ({sc:.2f} mg/dL) — indicates reduced kidney filtration")
+        # Logic based on medical thresholds
+        if float(sc or 0) > 1.2:
+            why_high.append(f"High Serum Creatinine ({sc} mg/dL) — indicates reduced kidney filtration")
             suggestions.append("Repeat creatinine + eGFR test — monitor kidney function monthly")
         else:
-            why_low.append(f"Serum Creatinine ({sc:.2f}) in normal range — good kidney filtration")
-        if hemo < 12:
-            why_high.append(f"Low Hemoglobin ({hemo:.1f} g/dL) — anemia common in kidney disease")
+            why_low.append(f"Serum Creatinine ({sc}) in normal range — good kidney filtration")
+            
+        if float(hemo or 0) < 12:
+            why_high.append(f"Low Hemoglobin ({hemo} g/dL) — anemia common in kidney disease")
             suggestions.append("Check for renal anemia — may need erythropoietin therapy")
         else:
-            why_low.append(f"Hemoglobin ({hemo:.1f} g/dL) — adequate, less anemia risk")
-        if bp_v >= 90:
-            why_high.append(f"High diastolic BP ({bp_v} mmHg) — damages kidney blood vessels")
+            why_low.append(f"Hemoglobin ({hemo} g/dL) — adequate, less anemia risk")
+            
+        if float(bp_v or 0) >= 90:
+            why_high.append(f"High BP ({bp_v} mmHg) — damages kidney blood vessels")
             suggestions.append("Strict BP control < 130/80 — ACE inhibitors preferred for CKD")
         else:
             why_low.append(f"Blood pressure ({bp_v}) within acceptable range")
-        if al >= 3:
-            why_high.append(f"Albumin in urine (grade {int(al)}) — kidney protein leakage sign")
-        elif al == 0:
+            
+        if float(al or 0) >= 3:
+            why_high.append(f"Albumin in urine (grade {al}) — kidney protein leakage sign")
+        elif float(al or 0) == 0:
             why_low.append("No albumin in urine — healthy glomerular filtration")
-        if su >= 2:
-            why_high.append(f"Sugar in urine (grade {int(su)}) — diabetic nephropathy indicator")
+            
+        if float(su or 0) >= 2:
+            why_high.append(f"Sugar in urine (grade {su}) — diabetic nephropathy indicator")
 
+        # Stage-wise suggestions
         if label in ['Severe_Disease', 'High_Risk']:
-            suggestions += ["Consult Nephrologist urgently",
-                            "24-hour urine protein test recommended",
-                            "Strict fluid and protein restriction",
-                            "Avoid NSAIDs (ibuprofen) — nephrotoxic"]
-            lifestyle = {'diet': ['Low protein diet: 0.6-0.8g/kg body weight',
-                                  'Low potassium: avoid banana, orange, potato',
-                                  'Low phosphorus: avoid dairy, nuts, cola drinks',
-                                  'Limit fluid intake as advised by doctor',
-                                  'Low sodium: < 2g/day'],
-                         'exercise': ['Light walking only — avoid intense exercise',
-                                      'Gentle yoga if BP is controlled'],
+            suggestions += ["Consult Nephrologist urgently", "24-hour urine protein test recommended",
+                            "Strict fluid and protein restriction", "Avoid NSAIDs (ibuprofen) — nephrotoxic"]
+            lifestyle = {'diet': ['Low protein diet', 'Low potassium/sodium', 'Limit fluid intake'],
+                         'exercise': ['Light walking only', 'Gentle yoga'],
                          'sleep': ['8 hours sleep', 'Elevate legs to reduce swelling']}
         elif label in ['Moderate_Risk']:
-            suggestions += ["Nephrology referral recommended",
-                            "Kidney function test every 3 months",
-                            "Control diabetes and BP strictly"]
+            suggestions += ["Nephrology referral recommended", "Kidney function test every 3 months"]
             lifestyle = {'diet': ['Moderate protein restriction', 'Low salt diet'],
                          'exercise': ['30 min moderate walk daily'],
                          'sleep': ['Regular 7-8 hours sleep']}
@@ -1070,18 +1667,22 @@ def predict_kidney():
             {'feature': 'Blood Pressure',    'contribution_percent': 18, 'max_weight': 30},
             {'feature': 'Albumin in Urine',  'contribution_percent': 15, 'max_weight': 30},
             {'feature': 'Blood Glucose',     'contribution_percent': 10, 'max_weight': 30},
-            {'feature': 'Sugar in Urine',    'contribution_percent': 7,  'max_weight': 30},
+            {'feature': 'Sugar in Urine',    'contribution_percent': 7, 'max_weight': 30},
         ]
 
         result = {'prediction': label, 'confidence': conf, 'probabilities': all_p,
                   'doctor': doctor, 'why_high_risk': why_high, 'why_low_risk': why_low,
                   'suggestions': suggestions, 'lifestyle_changes': lifestyle,
                   'feature_importance': feat_imp}
+        
         sid = session.get('sid', 'default')
-        save_to_history(sid, 'kidney', inputs, result)
+        save_to_history(sid, 'kidney', inputs_dict, result)
         return jsonify(result)
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
+
 
 # ── Eye Predict ────────────────────────────────────────────
 @app.route('/predict/eye', methods=['POST'])
@@ -1124,16 +1725,34 @@ def predict_lung():
         data = request.json
         meta = m['meta']
 
-        # Encode inputs
-        gender    = m['le_gender'].transform([data.get('Gender','Male')])[0]
-        stage     = m['le_stage'].transform([data.get('CancerStage','Stage II')])[0]
-        family    = m['le_family'].transform([data.get('FamilyHistory','No')])[0]
-        smoking   = m['le_smoking'].transform([data.get('SmokingStatus','Never Smoked')])[0]
-        treatment = m['le_treat'].transform([data.get('TreatmentType','Chemotherapy')])[0]
+        # Encode inputs - support both naming conventions from HTML form
+        gender_raw    = data.get('gender', data.get('Gender', 'Male'))
+        stage_raw     = data.get('cancer_stage', data.get('CancerStage', 0))
+        family_raw    = data.get('family_history', data.get('FamilyHistory', 0))
+        smoking_raw   = data.get('smoking_status', data.get('SmokingStatus', 0))
+        treatment_raw = data.get('treatment_type', data.get('TreatmentType', 0))
 
-        age_val  = float(data.get('Age', 50))
-        bmi_val  = float(data.get('BMI', 25))
-        chol_val = int(data.get('CholesterolLevel', 200))
+        # Handle both string and integer inputs
+        def safe_encode(le, val, fallback=0):
+            try:
+                if isinstance(val, (int, float)):
+                    # Already numeric — check if it's a valid index
+                    if int(val) < len(le.classes_):
+                        return int(val)
+                    return fallback
+                return int(le.transform([str(val)])[0])
+            except:
+                return fallback
+
+        gender    = safe_encode(m['le_gender'],  gender_raw,    0)
+        stage     = safe_encode(m['le_stage'],   stage_raw,     0)
+        family    = safe_encode(m['le_family'],  family_raw,    0)
+        smoking   = safe_encode(m['le_smoking'], smoking_raw,   0)
+        treatment = safe_encode(m['le_treat'],   treatment_raw, 0)
+
+        age_val  = float(data.get('age', data.get('Age', 50)))
+        bmi_val  = float(data.get('bmi', data.get('BMI', 25)))
+        chol_val = int(data.get('cholesterol_level', data.get('CholesterolLevel', 200)))
 
         inputs = {
             'age':               age_val,
@@ -1143,10 +1762,10 @@ def predict_lung():
             'smoking_status':    int(smoking),
             'bmi':               bmi_val,
             'cholesterol_level': chol_val,
-            'hypertension':      int(data.get('Hypertension', 0)),
-            'asthma':            int(data.get('Asthma', 0)),
-            'cirrhosis':         int(data.get('Cirrhosis', 0)),
-            'other_cancer':      int(data.get('OtherCancer', 0)),
+            'hypertension':      int(data.get('hypertension', data.get('Hypertension', 0))),
+            'asthma':            int(data.get('asthma', data.get('Asthma', 0))),
+            'cirrhosis':         int(data.get('cirrhosis', data.get('Cirrhosis', 0))),
+            'other_cancer':      int(data.get('other_cancer', data.get('OtherCancer', 0))),
             'treatment_type':    int(treatment),
         }
 
@@ -1272,6 +1891,7 @@ def predict_lung():
         ]
 
         result = {
+            'probability': round(prob_adj * 100, 2),
             'survival_probability': round(prob_adj * 100, 2),
             'risk':   risk,
             'doctor': doctor,
@@ -1293,28 +1913,33 @@ def predict_lung():
 # ── History API ────────────────────────────────────────────
 @app.route('/api/history', methods=['GET'])
 def get_history():
-    sid = session.get('sid', 'default')
-    return jsonify(HISTORY.get(sid, []))
+    user = session.get('user')
+    if not user or not user.get('email'):
+        return jsonify([])
+    return jsonify(db_get_history(user['email']))
 
 @app.route('/api/history/clear', methods=['POST'])
 def clear_history():
-    sid = session.get('sid', 'default')
-    HISTORY[sid] = []
+    user = session.get('user')
+    if user and user.get('email'):
+        db_clear_history(user['email'])
     return jsonify({'status': 'cleared'})
 
 @app.route('/api/history/delete/<record_id>', methods=['DELETE'])
 def delete_record(record_id):
-    sid = session.get('sid', 'default')
-    if sid in HISTORY:
-        HISTORY[sid] = [r for r in HISTORY[sid] if r['id'] != record_id]
+    user = session.get('user')
+    if user and user.get('email'):
+        db_delete_prediction(user['email'], record_id)
     return jsonify({'status': 'deleted'})
 
 # ── Trend API (last N predictions for a disease) ──────────
 @app.route('/api/trend/<disease>', methods=['GET'])
 def get_trend(disease):
-    sid     = session.get('sid', 'default')
-    records = HISTORY.get(sid, [])
-    trend   = [r for r in records if r['disease'] == disease][-20:]
+    user = session.get('user')
+    if not user or not user.get('email'):
+        return jsonify([])
+    all_records = db_get_history(user['email'], limit=100)
+    trend = [r for r in all_records if r['disease'] == disease][-20:]
     return jsonify(trend)
 
 # ── PDF Report API ─────────────────────────────────────────
@@ -1485,14 +2110,45 @@ def build_explanation(features, values, shap_values):
 def get_shap_values(rf_model, X):
     try:
         import shap
+        import numpy as np
+        
+        # 1. ડેટાને Numpy Array માં કન્વર્ટ કરવો (SASH-XAI માટે સૌથી મહત્વનું)
+        # જો X DataFrame હોય તો તેની વેલ્યુઝ લો, નહીતર જેવું છે તેવું રાખો
+        X_values = X.values if hasattr(X, 'values') else np.array(X)
+        
+        # 2. TreeExplainer બનાવો
         explainer = shap.TreeExplainer(rf_model)
-        shap_vals = explainer.shap_values(X)
+        
+        # 3. SHAP વેલ્યુઝ કેલ્ક્યુલેટ કરો
+        shap_vals = explainer.shap_values(X_values)
+        
+        # 4. આઉટપુટ ફોર્મેટ હેન્ડલ કરવું (SHAP ના અલગ અલગ વર્ઝન માટે)
         if isinstance(shap_vals, list):
-            return shap_vals[1][0]
-        return shap_vals[0]
+            # Binary classification માં લિસ્ટમાં બે એરે હોય છે [Class 0, Class 1]
+            # આપણે Class 1 (Disease) ની વેલ્યુઝ જોઈએ છે
+            vals = shap_vals[1] if len(shap_vals) > 1 else shap_vals[0]
+            return vals[0] if len(vals.shape) > 1 else vals
+            
+        elif isinstance(shap_vals, np.ndarray):
+            # જો આઉટપુટ (samples, features, classes) હોય
+            if len(shap_vals.shape) == 3:
+                return shap_vals[0, :, 1] # પહેલી સેમ્પલ, બધા ફીચર્સ, ક્લાસ 1
+            # જો આઉટપુટ (samples, features) હોય
+            return shap_vals[0]
+            
+        else:
+            # જો SHAP Explanation ઓબ્જેક્ટ રિટર્ન કરે
+            if hasattr(shap_vals, 'values'):
+                return shap_vals.values[0]
+            return shap_vals[0]
+
     except Exception as e:
-        print(f"[SHAP error] {e}")
+        import traceback
+        print("\n--- 🔴 DETAILED SHAP ERROR ---")
+        print(traceback.format_exc()) 
+        print("-----------------------------\n")
         return None
+
  
 # ── XAI — Heart ────────────────────────────────────────────
 @app.route('/api/explain/heart', methods=['POST'])
@@ -1500,9 +2156,12 @@ def explain_heart():
     try:
         m = MODELS.get('heart')
         if not m: return jsonify({'error': 'Heart model not loaded'}), 500
+        
         data = request.json
         bp   = float(data.get('BloodPressure', 120))
         cho  = float(data.get('Cholesterol', 180))
+        
+        # EXACT FEATURE ORDER (જે મોડેલ ટ્રેનિંગ વખતે હતો)
         inputs = {
             'Age':          float(data.get('Age', 0)),
             'BMI':          float(data.get('BMI', 0)),
@@ -1514,15 +2173,33 @@ def explain_heart():
             'GenHlth':      int(data.get('GenHlth', 3)),
             'Sex':          int(data.get('Sex', 0)),
         }
+        
         features = m['features']
-        patient  = pd.DataFrame([inputs])
-        rf_model = m['model'].named_estimators_['rf']
+        # DataFrame બનાવો અને ખાતરી કરો કે કોલમનો ક્રમ સાચો છે
+        patient = pd.DataFrame([inputs])[features] 
+        
+        # Stacking મોડેલમાંથી RF મોડેલ કાઢો
+        try:
+            rf_model = m['model'].named_estimators_['rf']
+        except KeyError:
+            # જો 'rf' નામ ન મળે, તો પહેલું ઉપલબ્ધ મોડેલ લો
+            rf_model = list(m['model'].named_estimators_.values())[0]
+        
+        # SHAP વેલ્યુઝ મેળવો
         sv = get_shap_values(rf_model, patient)
-        if sv is None: return jsonify({'error': 'SHAP failed'}), 500
+        
+        if sv is None: 
+            return jsonify({'error': 'SHAP calculation failed. Check terminal logs.'}), 500
+            
+        # Explanation લિસ્ટ બનાવો
         explanation = build_explanation(features, patient.values[0], sv)
         return jsonify({'explanation': explanation, 'top_factors': explanation[:3]})
+        
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
+
  
 # ── XAI — Brain ────────────────────────────────────────────
 @app.route('/api/explain/brain', methods=['POST'])
@@ -1636,10 +2313,15 @@ def explain_eye():
                         'note': 'CNN confidence scores per class'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    
+@app.route('/about-contact')
+def about_contact():
+    return render_template('about_contact.html')
  
 if __name__ == '__main__':
     print("\n" + "="*55)
-    print("  VitalsAI — http://localhost:5000  Gemini AI — Active (Free)")
+    print("  VitalsAI — http://localhost:5000  SQLite DB — Active ✅")
     print("  Login     — http://localhost:5000/login")
     print("  Assistant — http://localhost:5000/assistant")
     print("  Status    — http://localhost:5000/status")
