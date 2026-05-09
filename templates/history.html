@@ -162,6 +162,17 @@ header p{font-size:14px;opacity:0.85;position:relative;z-index:1;color:rgba(255,
   box-shadow:0 4px 16px rgba(245,158,11,0.35);
 }
 
+
+.trend-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:22px;box-shadow:var(--card-shadow)}
+.trend-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.trend-head h3{font-size:16px;font-weight:900;color:var(--gold)}
+.trend-chart{height:180px;display:flex;align-items:end;gap:8px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);overflow:hidden}
+.trend-bar{flex:1;min-width:18px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--g1),var(--g2));position:relative}
+.trend-bar.high{background:linear-gradient(180deg,#f87171,#ef4444)}
+.trend-bar.medium{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+.trend-bar.low{background:linear-gradient(180deg,#34d399,#10b981)}
+.trend-bar span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text2);white-space:nowrap;margin-bottom:4px}
+.trend-empty{color:var(--text2);font-size:13px;padding:18px;text-align:center}
 /* ── Records ── */
 .record{
   background:var(--surface);border-radius:16px;padding:20px;margin-bottom:14px;
@@ -419,6 +430,7 @@ header p{font-size:14px;opacity:0.85;position:relative;z-index:1;color:rgba(255,
     <button class="filter-btn" onclick="filter('eye',this)">👁️ Eye</button>
     <button class="filter-btn" onclick="filter('lung',this)">🫁 Lung</button>
   </div>
+  <div id="trendCard" class="trend-card"></div>
   <div id="list"></div>
 </div>
 <script>
@@ -427,7 +439,7 @@ let allRecords=[], currentFilter='all';
 async function load(){
   const res=await fetch('/api/history');
   allRecords=await res.json();
-  renderStats(); render();
+  renderStats(); renderTrend(); render();
 }
 function renderStats(){
   const total=allRecords.length;
@@ -442,7 +454,30 @@ function renderStats(){
 function filter(f,btn){
   currentFilter=f;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); render();
+  btn.classList.add('active'); renderTrend(); render();
+}
+function riskScoreFromRecord(r){
+  const result = r.result || {};
+  const rawRisk = String(result.risk || result.prediction || '').toLowerCase();
+  const score = parseFloat(result.probability || result.confidence || result.survival_probability || 0);
+  if(score) return Math.min(100, Math.max(5, score));
+  if(rawRisk.includes('severe') || rawRisk.includes('high')) return 90;
+  if(rawRisk.includes('moderate') || rawRisk.includes('medium')) return 55;
+  if(rawRisk.includes('low')) return 25;
+  return 10;
+}
+function renderTrend(){
+  const el=document.getElementById('trendCard');
+  if(!el) return;
+  const records=(currentFilter==='all'?allRecords:allRecords.filter(r=>r.disease===currentFilter)).slice(-12);
+  if(!records.length){el.innerHTML='<div class="trend-empty">No timeline data yet.</div>';return;}
+  const bars=records.map(r=>{
+    const score=riskScoreFromRecord(r);
+    const risk=String(r.result.risk||r.result.prediction||'').toLowerCase();
+    const cls=risk.includes('high')||risk.includes('severe')?'high':risk.includes('medium')||risk.includes('moderate')?'medium':'low';
+    return '<div class="trend-bar '+cls+'" style="height:'+Math.max(8,score)+'%"><span>'+Math.round(score)+'%</span></div>';
+  }).join('');
+  el.innerHTML='<div class="trend-head"><h3>Health Risk Timeline</h3><span class="stat-lbl">Last '+records.length+' predictions</span></div><div class="trend-chart">'+bars+'</div>';
 }
 function render(){
   const records=currentFilter==='all'?allRecords:allRecords.filter(r=>r.disease===currentFilter);
@@ -466,12 +501,12 @@ function render(){
 async function del(id){
   await fetch(`/api/history/delete/${id}`,{method:'DELETE'});
   allRecords=allRecords.filter(r=>r.id!==id);
-  renderStats(); render();
+  renderStats(); renderTrend(); render();
 }
 async function clearAll(){
   if(!confirm('Clear all history?'))return;
   await fetch('/api/history/clear',{method:'POST'});
-  allRecords=[]; renderStats(); render();
+  allRecords=[]; renderStats(); renderTrend(); render();
 }
 function toggleDark(){const t=document.documentElement;const d=t.getAttribute('data-theme')==='dark';t.setAttribute('data-theme',d?'light':'dark');document.getElementById('darkBtn').textContent=d?'🌙':'☀️';localStorage.setItem('theme',d?'light':'dark');}
 const saved=localStorage.getItem('theme');if(saved==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('darkBtn').textContent='☀️';}

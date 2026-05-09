@@ -502,7 +502,12 @@ async function predict() {
     el.scrollIntoView({behavior:'smooth'});
     if(data.doctor){const db=document.createElement('div');db.className='doctor-box';db.innerHTML='<div class="doctor-icon">👨‍⚕️</div><div class="doctor-info"><strong>'+data.doctor+'</strong><span>Recommended specialist</span></div>';el.appendChild(db);}
     const pb=document.createElement('button');pb.className='pdf-btn';pb.style.display='block';pb.textContent='📄 Download PDF Report';pb.onclick=()=>downloadPDF('diabetes',data,payload);el.appendChild(pb);
+    vaiRenderClinicalReview('diabetes', payload, data);
+    vaiAddResultActions('diabetes', data, payload);
     showLifestyle('diabetes',data.risk);
+    if (lv === 'high' && typeof vaiOpenEmergencyForRisk === 'function') {
+      vaiOpenEmergencyForRisk('Diabetes', data);
+    }
     fetchXAI('diabetes', payload);
   } catch(e){ alert('Server error: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Predict Diabetes Risk'; }
@@ -1021,6 +1026,473 @@ async function logoutUser() {
   window.location.href = '/login';
 }
 </script>
+
+
+
+
+
+
+
+<!-- VitalsAI Result Intelligence Add-ons -->
+<style id="vitalsai-result-intel-style">
+  .vai-review-card{margin-top:14px;padding:16px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:left}
+  .vai-review-card h4{margin:0 0 10px;font-size:15px;font-weight:900;color:var(--cyan,#66e3ff)}
+  .vai-review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+  .vai-review-item{padding:10px;border-radius:12px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08)}
+  .vai-review-name{font-size:11px;color:var(--text2,#9ca3af);font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+  .vai-review-val{font-size:16px;font-weight:900;margin-top:3px;color:var(--text,#fff)}
+  .vai-review-range{font-size:11px;color:var(--text2,#9ca3af);margin-top:2px}
+  .vai-review-badge{display:inline-block;margin-top:6px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:900}
+  .vai-ok{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(52,211,153,.25)}
+  .vai-warn{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.25)}
+  .vai-danger{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(248,113,113,.25)}
+  .vai-result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .vai-action-btn{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:inherit;border-radius:12px;padding:9px 12px;font:inherit;font-size:12px;font-weight:900;cursor:pointer}
+  .vai-action-btn:hover{background:rgba(255,255,255,.12)}
+</style>
+<script id="vitalsai-result-intel-script">
+  const VAI_RANGES = {
+    heart: {
+      Age:{label:'Age', unit:'years', warn:v=>v>=60, danger:v=>v>=75, normal:'Lower risk under 60'},
+      BMI:{label:'BMI', unit:'', warn:v=>v>=25, danger:v=>v>=30, normal:'18.5 - 24.9'},
+      BloodPressure:{label:'Blood Pressure', unit:'mmHg', warn:v=>v>=130, danger:v=>v>=140, normal:'Below 120'},
+      Cholesterol:{label:'Cholesterol', unit:'mg/dL', warn:v=>v>=200, danger:v=>v>=240, normal:'Below 200'}
+    },
+    brain: {
+      age:{label:'Age', unit:'years', warn:v=>v>=60, danger:v=>v>=75, normal:'Lower risk under 60'},
+      avg_glucose_level:{label:'Average Glucose', unit:'mg/dL', warn:v=>v>=140, danger:v=>v>=200, normal:'70 - 140'},
+      bmi:{label:'BMI', unit:'', warn:v=>v>=25, danger:v=>v>=30, normal:'18.5 - 24.9'}
+    },
+    diabetes: {
+      Glucose:{label:'Glucose', unit:'mg/dL', warn:v=>v>=140, danger:v=>v>=200, normal:'70 - 140'},
+      BloodPressure:{label:'Blood Pressure', unit:'mmHg', warn:v=>v>=130, danger:v=>v>=140, normal:'Below 120'},
+      BMI:{label:'BMI', unit:'', warn:v=>v>=25, danger:v=>v>=30, normal:'18.5 - 24.9'},
+      Age:{label:'Age', unit:'years', warn:v=>v>=45, danger:v=>v>=65, normal:'Lower risk under 45'}
+    },
+    kidney: {
+      'Blood Pressure (mm/Hg)':{label:'Blood Pressure', unit:'mmHg', warn:v=>v>=130, danger:v=>v>=140, normal:'Below 120'},
+      'Blood urea (mg/dl)':{label:'Blood Urea', unit:'mg/dL', warn:v=>v>45, danger:v=>v>80, normal:'7 - 45'},
+      'Serum creatinine (mg/dl)':{label:'Creatinine', unit:'mg/dL', warn:v=>v>1.2, danger:v=>v>=3, normal:'0.6 - 1.2'},
+      'Estimated Glomerular Filtration Rate (eGFR)':{label:'eGFR', unit:'', warn:v=>v<90, danger:v=>v<60, normal:'90+'},
+      'Hemoglobin level (gms)':{label:'Hemoglobin', unit:'g/dL', warn:v=>v<12, danger:v=>v<9, normal:'12 - 17'},
+      'Urine output (ml/day)':{label:'Urine Output', unit:'ml/day', warn:v=>v<800, danger:v=>v<400, normal:'800+'},
+      'Serum albumin level':{label:'Albumin', unit:'g/dL', warn:v=>v<3.5, danger:v=>v<2.8, normal:'3.5 - 5.0'}
+    },
+    lung: {
+      Age:{label:'Age', unit:'years', warn:v=>v>=60, danger:v=>v>=75, normal:'Lower risk under 60'},
+      BMI:{label:'BMI', unit:'', warn:v=>v<18.5||v>=30, danger:v=>v<16||v>=35, normal:'18.5 - 24.9'},
+      CholesterolLevel:{label:'Cholesterol', unit:'mg/dL', warn:v=>v>=200, danger:v=>v>=240, normal:'Below 200'}
+    }
+  };
+  function vaiGetStatus(rule, value){
+    if(typeof value !== 'number' || Number.isNaN(value)) return null;
+    if(rule.danger && rule.danger(value)) return {cls:'vai-danger', label:'Needs attention'};
+    if(rule.warn && rule.warn(value)) return {cls:'vai-warn', label:'Borderline'};
+    return {cls:'vai-ok', label:'In range'};
+  }
+  function vaiRenderClinicalReview(disease, inputs, result){
+    const target = document.getElementById('result') || document.getElementById('result-card');
+    if(!target) return;
+    const old = target.querySelector('.vai-review-card');
+    if(old) old.remove();
+    const ranges = VAI_RANGES[disease] || {};
+    const rows = [];
+    Object.entries(ranges).forEach(([key, rule])=>{
+      const raw = inputs && inputs[key];
+      const value = typeof raw === 'number' ? raw : parseFloat(raw);
+      const status = vaiGetStatus(rule, value);
+      if(!status) return;
+      rows.push('<div class="vai-review-item"><div class="vai-review-name">'+rule.label+'</div><div class="vai-review-val">'+value+(rule.unit ? ' '+rule.unit : '')+'</div><div class="vai-review-range">Normal: '+rule.normal+'</div><span class="vai-review-badge '+status.cls+'">'+status.label+'</span></div>');
+    });
+    if(!rows.length && disease === 'eye'){
+      const pred = (result && result.prediction || 'Eye result').replace(/_/g,' ');
+      rows.push('<div class="vai-review-item"><div class="vai-review-name">Image Classification</div><div class="vai-review-val">'+pred+'</div><div class="vai-review-range">Review with an ophthalmologist if symptoms are present.</div><span class="vai-review-badge vai-warn">Visual follow-up</span></div>');
+    }
+    if(!rows.length) return;
+    const card = document.createElement('div');
+    card.className = 'vai-review-card';
+    card.innerHTML = '<h4>Clinical Value Review</h4><div class="vai-review-grid">'+rows.join('')+'</div>';
+    target.appendChild(card);
+  }
+  function vaiAddResultActions(disease, result, inputs){
+    const target = document.getElementById('result') || document.getElementById('result-card');
+    if(!target || target.querySelector('.vai-result-actions')) return;
+    const actions = document.createElement('div');
+    actions.className = 'vai-result-actions';
+    actions.innerHTML = "<button class=\"vai-action-btn\" type=\"button\" onclick=\"vaiShareResult('" + disease + "')\">Share Result</button><button class=\"vai-action-btn\" type=\"button\" onclick=\"vaiSetHealthReminder('" + disease + "')\">Set Reminder</button><button class=\"vai-action-btn\" type=\"button\" onclick=\"vaiAskAssistantAboutResult('" + disease + "')\">AI Summary</button>";
+    target.appendChild(actions);
+    window.vaiLatestResult = {disease, result, inputs};
+  }
+  async function vaiShareResult(disease){
+    const latest = window.vaiLatestResult || {};
+    const result = latest.result || {};
+    const status = result.risk || result.prediction || result.stage || 'Result';
+    const score = result.probability || result.confidence || result.survival_probability || '';
+    const text = 'VitalsAI '+disease+' result: '+String(status).replace(/_/g,' ')+(score ? ' ('+score+'%)' : '')+'. Please review the report with a doctor.';
+    if(navigator.share){ try{ await navigator.share({title:'VitalsAI Result', text}); return; }catch(e){} }
+    try{ await navigator.clipboard.writeText(text); alert('Result summary copied.'); }catch(e){ alert(text); }
+  }
+  function vaiSetHealthReminder(disease){
+    const label = prompt('Reminder name:', disease + ' follow-up check');
+    if(!label) return;
+    const days = parseInt(prompt('Remind after how many days?', '7'), 10);
+    if(!days || days < 1) return;
+    const reminders = JSON.parse(localStorage.getItem('vitals_health_reminders') || '[]');
+    reminders.push({label, disease, due: Date.now() + days*86400000, created: Date.now()});
+    localStorage.setItem('vitals_health_reminders', JSON.stringify(reminders));
+    alert('Reminder saved in this browser.');
+  }
+  function vaiAskAssistantAboutResult(disease){
+    const latest = window.vaiLatestResult || {};
+    const result = latest.result || {};
+    const status = result.risk || result.prediction || result.stage || '';
+    const q = encodeURIComponent('Explain my '+disease+' prediction result '+String(status).replace(/_/g,' ')+' and give next steps.');
+    window.location.href = '/assistant?question=' + q;
+  }
+</script>
+
+<!-- VitalsAI Emergency Widget -->
+<style id="vitalsai-emergency-widget-style">
+  .em-fab,.em-overlay{display:none!important}
+  .vai-emergency-fab{
+    position:fixed;left:22px;bottom:22px;z-index:9998;
+    font-family:'Poppins','DM Sans',system-ui,sans-serif;
+  }
+  .vai-emergency-fab button{
+    min-width:178px;height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.18);
+    background:linear-gradient(135deg,#be123c,#f97316);color:#fff;
+    box-shadow:0 16px 40px rgba(190,18,60,.36);cursor:pointer;
+    font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:9px;
+    transition:transform .2s,box-shadow .2s;letter-spacing:.1px;
+  }
+  .vai-emergency-fab button:hover{transform:translateY(-2px);box-shadow:0 20px 52px rgba(190,18,60,.48)}
+  .vai-emergency-overlay{
+    position:fixed;inset:0;z-index:10002;background:rgba(4,8,20,.72);
+    display:none;align-items:center;justify-content:center;padding:18px;
+    backdrop-filter:blur(12px);font-family:'Poppins','DM Sans',system-ui,sans-serif;
+  }
+  .vai-emergency-overlay.open{display:flex}
+  .vai-emergency-modal{
+    width:min(760px,100%);max-height:90vh;overflow:auto;border-radius:24px;
+    background:linear-gradient(180deg,#ffffff,#f7fbff);color:#111827;
+    box-shadow:0 28px 90px rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.7);
+  }
+  .vai-emergency-head{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:18px 20px;background:linear-gradient(135deg,#be123c,#f97316);color:#fff;
+  }
+  .vai-emergency-title{display:flex;align-items:center;gap:12px}
+  .vai-emergency-title .mark{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:22px}
+  .vai-emergency-title h2{font-size:20px;margin:0;font-weight:900;letter-spacing:0}
+  .vai-emergency-title p{font-size:12px;margin:2px 0 0;opacity:.92}
+  .vai-emergency-close{
+    width:38px;height:38px;border:0;border-radius:12px;background:rgba(255,255,255,.2);
+    color:#fff;font-size:22px;cursor:pointer;
+  }
+  .vai-emergency-body{padding:18px;display:grid;gap:14px}
+  .vai-emergency-consent{
+    display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;
+    background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;font-size:13px;line-height:1.45;
+  }
+  .vai-emergency-consent input{width:18px;height:18px;margin-top:1px;accent-color:#be123c;flex-shrink:0}
+  .vai-emergency-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .vai-emergency-action{
+    border:1px solid #e5e7eb;background:#fff;border-radius:16px;padding:13px;
+    display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;
+    color:#111827;text-decoration:none;font-weight:800;font-size:13px;
+    box-shadow:0 8px 22px rgba(15,23,42,.06);transition:transform .15s,border-color .15s;
+  }
+  .vai-emergency-action:hover{transform:translateY(-1px);border-color:#be123c}
+  .vai-emergency-action .ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#fee2e2;font-size:13px;font-weight:900;flex-shrink:0;color:#991b1b}
+  .vai-emergency-action small{display:block;color:#6b7280;font-size:11px;font-weight:600;margin-top:1px}
+  .vai-emergency-card{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#fff}
+  .vai-emergency-card h3{font-size:14px;margin:0 0 10px;color:#111827;display:flex;align-items:center;gap:8px}
+  .vai-emergency-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+  .vai-emergency-fields input{
+    min-width:0;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;
+    font:inherit;font-size:13px;outline:none;
+  }
+  .vai-emergency-fields input:focus{border-color:#be123c;box-shadow:0 0 0 3px rgba(190,18,60,.1)}
+  .vai-emergency-save{
+    border:0;border-radius:12px;background:#111827;color:#fff;font-weight:800;padding:0 14px;cursor:pointer;
+  }
+  .vai-emergency-firstaid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .vai-emergency-tip{border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb;padding:12px;font-size:12px;line-height:1.45;color:#374151}
+  .vai-emergency-tip b{display:block;color:#111827;margin-bottom:4px}
+  .vai-emergency-status{display:none;padding:10px 12px;border-radius:12px;background:#fef2f2;color:#991b1b;font-size:12px;font-weight:700;line-height:1.45}
+  .vai-emergency-status.show{display:block}
+  .vai-sym-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .vai-sym-btn{border:1px solid #e5e7eb;background:#f8fafc;border-radius:12px;padding:10px 8px;font-size:12px;font-weight:800;cursor:pointer;color:#374151}
+  .vai-sym-btn.active{background:#fee2e2;border-color:#fb7185;color:#9f1239}
+  .vai-tab-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .vai-aid-tab{border:1px solid #e5e7eb;background:#f8fafc;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;color:#374151}
+  .vai-aid-tab.active{background:#111827;color:#fff;border-color:#111827}
+  .vai-aid-panel{display:none;border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb;padding:12px;color:#374151;font-size:13px;line-height:1.55}
+  .vai-aid-panel.active{display:block}
+  .vai-aid-panel ol{margin:8px 0 0;padding-left:20px}
+  .vai-aid-panel li{margin:4px 0}
+  @media(max-width:640px){
+    .vai-emergency-fab{left:14px;bottom:14px}
+    .vai-emergency-fab button{min-width:150px;height:48px;font-size:13px}
+    .vai-emergency-grid,.vai-emergency-firstaid,.vai-emergency-fields,.vai-sym-grid{grid-template-columns:1fr}
+  }
+</style>
+
+<div class="vai-emergency-fab" id="vaiEmergencyFab">
+  <button type="button" onclick="vaiOpenEmergency()" title="Emergency assistance">
+    <span>Emergency Assist</span>
+  </button>
+</div>
+
+<div class="vai-emergency-overlay" id="vaiEmergencyOverlay" onclick="vaiEmergencyOverlayClick(event)">
+  <div class="vai-emergency-modal" role="dialog" aria-modal="true" aria-labelledby="vaiEmergencyTitle">
+    <div class="vai-emergency-head">
+      <div class="vai-emergency-title">
+        <div class="mark">+</div>
+        <div>
+          <h2 id="vaiEmergencyTitle">Emergency Assist</h2>
+          <p>Calls, SOS message, symptoms, first aid, voice command, and siren.</p>
+        </div>
+      </div>
+      <button class="vai-emergency-close" type="button" onclick="vaiCloseEmergency()" aria-label="Close">×</button>
+    </div>
+    <div class="vai-emergency-body">
+      <label class="vai-emergency-consent">
+        <input type="checkbox" id="vaiEmergencyConsent" onchange="vaiSaveEmergencyConsent()">
+        <span><b>I allow emergency phone/SMS actions.</b><br>VitalsAI will only open call or SMS after you tick this checkbox and press a call/message button. No automatic call or message is sent by the app.</span>
+      </label>
+      <div class="vai-emergency-status" id="vaiEmergencyStatus"></div>
+
+      <div class="vai-emergency-card">
+        <h3>Emergency Calls</h3>
+        <div class="vai-emergency-grid">
+          <button class="vai-emergency-action" type="button" onclick="vaiEmergencyAction('call','108')">
+            <span class="ico">108</span><span>Call Ambulance<small>Emergency medical service</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiEmergencyAction('call','112')">
+            <span class="ico">112</span><span>Call All Emergency<small>National emergency helpline</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiFindHospital()">
+            <span class="ico">MAP</span><span>Find Hospital<small>Open nearby hospitals in Maps</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiPlaySiren()">
+            <span class="ico">SIR</span><span>Play Loud Siren<small>Audible alert for nearby help</small></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>Family Emergency Contact</h3>
+        <div class="vai-emergency-fields">
+          <input id="vaiEmergencyName" type="text" placeholder="Name">
+          <input id="vaiEmergencyPhone" type="tel" placeholder="Phone number">
+          <button class="vai-emergency-save" type="button" onclick="vaiSaveEmergencyContact()">Save</button>
+        </div>
+        <div class="vai-emergency-grid" style="margin-top:10px">
+          <button class="vai-emergency-action" type="button" onclick="vaiCallFamily()">
+            <span class="ico">CALL</span><span>Call Family<small>Uses saved emergency contact</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiSendEmergencySMS()">
+            <span class="ico">SMS</span><span>Send SOS SMS<small>Includes location when available</small></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>Voice Command</h3>
+        <button class="vai-emergency-action" type="button" onclick="vaiStartVoiceCommand()" style="width:100%">
+          <span class="ico">MIC</span><span>Start Voice Command<small>Say: heart attack, stroke, accident, burn, bleeding, choking</small></span>
+        </button>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>Symptom Check</h3>
+        <div class="vai-sym-grid">
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'chest')">Chest pain</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'breath')">Breathless</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'stroke')">Weakness</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'bleed')">Bleeding</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'faint')">Fainting</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'burn')">Burn</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'choke')">Choking</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'vomit')">Vomiting</button>
+        </div>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>First Aid Guide</h3>
+        <div class="vai-tab-row">
+          <button class="vai-aid-tab active" type="button" onclick="vaiShowAid('heart',this)">Heart</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('stroke',this)">Stroke</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('bleed',this)">Bleeding</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('burn',this)">Burn</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('choke',this)">Choking</button>
+        </div>
+        <div class="vai-aid-panel active" id="vaiAid-heart"><b>Heart attack / chest pain</b><ol><li>Sit or lie down and stay calm.</li><li>Loosen tight clothing.</li><li>Do not eat or drink.</li><li>Call 108 immediately if pain is severe, sweating, or breathlessness occurs.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-stroke"><b>Stroke FAST check</b><ol><li>Face drooping?</li><li>Arm weakness?</li><li>Speech slurred?</li><li>If yes to any, call 108 immediately.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-bleed"><b>Severe bleeding</b><ol><li>Apply firm pressure with clean cloth.</li><li>Raise injured part if possible.</li><li>Do not remove deep objects.</li><li>Call 108 for heavy bleeding.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-burn"><b>Burn injury</b><ol><li>Cool under running water for 10-20 minutes.</li><li>Remove jewelry near burn.</li><li>Cover with clean cloth.</li><li>Do not use ice, butter, or toothpaste.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-choke"><b>Choking</b><ol><li>Encourage coughing if able.</li><li>Give 5 back blows.</li><li>Give 5 abdominal thrusts.</li><li>If unconscious, call 108 and start CPR if trained.</li></ol></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="vitalsai-emergency-widget-script">
+  var vaiSelectedSymptoms = new Set();
+  function vaiOpenEmergency(){
+    var overlay=document.getElementById('vaiEmergencyOverlay');
+    if(overlay) overlay.classList.add('open');
+    document.body.style.overflow='hidden';
+    vaiLoadEmergencyContact();
+    var consent=document.getElementById('vaiEmergencyConsent');
+    if(consent) consent.checked=localStorage.getItem('vitals_emergency_consent')==='yes';
+  }
+  function vaiCloseEmergency(){
+    var overlay=document.getElementById('vaiEmergencyOverlay');
+    if(overlay) overlay.classList.remove('open');
+    document.body.style.overflow='';
+  }
+  function vaiEmergencyOverlayClick(e){ if(e.target && e.target.id==='vaiEmergencyOverlay') vaiCloseEmergency(); }
+  function vaiSaveEmergencyConsent(){
+    var consent=document.getElementById('vaiEmergencyConsent');
+    localStorage.setItem('vitals_emergency_consent', consent && consent.checked ? 'yes' : 'no');
+    vaiSetEmergencyStatus(consent && consent.checked ? 'Emergency call/SMS actions are enabled for button clicks.' : 'Emergency call/SMS actions are disabled until you allow them.', false);
+  }
+  function vaiHasEmergencyConsent(){
+    var consent=document.getElementById('vaiEmergencyConsent');
+    return (consent && consent.checked) || localStorage.getItem('vitals_emergency_consent')==='yes';
+  }
+  function vaiSetEmergencyStatus(message, isError){
+    var box=document.getElementById('vaiEmergencyStatus');
+    if(!box) return;
+    box.innerHTML=message;
+    box.style.background=isError ? '#fef2f2' : '#ecfdf5';
+    box.style.color=isError ? '#991b1b' : '#065f46';
+    box.classList.add('show');
+  }
+  function vaiRequireEmergencyConsent(targetUrl){
+    if(!vaiHasEmergencyConsent()){
+      vaiOpenEmergency();
+      vaiSetEmergencyStatus('Please tick the consent checkbox before opening a call or SMS action.', true);
+      return false;
+    }
+    if(targetUrl){ window.location.href=targetUrl; return false; }
+    return true;
+  }
+  function vaiOpenEmergencyForRisk(diseaseName, result){
+    var status='', score='';
+    if(result){ status=result.risk||result.prediction||result.stage||result.status||''; score=result.probability||result.confidence||result.survival_probability||''; }
+    vaiOpenEmergency();
+    var scoreText=score!==''&&score!==undefined&&score!==null?' Score: '+score+'%.':'';
+    vaiSetEmergencyStatus('High-risk '+diseaseName+' result detected: '+String(status).replace(/_/g,' ')+'.'+scoreText+' No call or SMS has been sent automatically. Tick consent, then choose a call/SMS action only if emergency help is needed.', true);
+  }
+  function vaiEmergencyAction(type,value){ if(!vaiRequireEmergencyConsent()) return; if(type==='call') window.location.href='tel:'+value; }
+  function vaiSaveEmergencyContact(){
+    var name=(document.getElementById('vaiEmergencyName')||{}).value||'';
+    var phone=(document.getElementById('vaiEmergencyPhone')||{}).value||'';
+    name=name.trim(); phone=phone.trim();
+    if(!name||!phone){ vaiSetEmergencyStatus('Please enter both name and phone number.', true); return; }
+    localStorage.setItem('vitals_emergency_contact_name',name);
+    localStorage.setItem('vitals_emergency_contact_phone',phone);
+    localStorage.setItem('em_contact_name',name);
+    localStorage.setItem('em_contact_num',phone);
+    vaiSetEmergencyStatus('Emergency contact saved.', false);
+  }
+  function vaiLoadEmergencyContact(){
+    var name=localStorage.getItem('vitals_emergency_contact_name')||localStorage.getItem('em_contact_name')||'';
+    var phone=localStorage.getItem('vitals_emergency_contact_phone')||localStorage.getItem('em_contact_num')||'';
+    var nameEl=document.getElementById('vaiEmergencyName'), phoneEl=document.getElementById('vaiEmergencyPhone');
+    if(nameEl) nameEl.value=name; if(phoneEl) phoneEl.value=phone;
+  }
+  function vaiCallFamily(){
+    if(!vaiRequireEmergencyConsent()) return;
+    var phone=localStorage.getItem('vitals_emergency_contact_phone')||localStorage.getItem('em_contact_num')||'';
+    if(!phone){ vaiSetEmergencyStatus('Please save a family emergency contact first.', true); return; }
+    window.location.href='tel:'+phone;
+  }
+  function vaiFindHospital(){
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(pos){
+        window.open('https://www.google.com/maps/search/hospital/@'+pos.coords.latitude+','+pos.coords.longitude+',14z','_blank');
+      }, function(){ window.open('https://www.google.com/maps/search/hospital+near+me','_blank'); }, {timeout:7000, enableHighAccuracy:true});
+    } else window.open('https://www.google.com/maps/search/hospital+near+me','_blank');
+  }
+  function vaiSendEmergencySMS(){
+    if(!vaiRequireEmergencyConsent()) return;
+    var phone=localStorage.getItem('vitals_emergency_contact_phone')||localStorage.getItem('em_contact_num')||'';
+    if(!phone){ vaiSetEmergencyStatus('Please save a family emergency contact first.', true); return; }
+    var openSms=function(body){ window.location.href='sms:'+phone+'?body='+encodeURIComponent(body); };
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(pos){
+        openSms('EMERGENCY! I need help immediately. My location: https://maps.google.com/?q='+pos.coords.latitude+','+pos.coords.longitude+' - VitalsAI Emergency Assist');
+      }, function(){ openSms('EMERGENCY! I need help immediately. Please call 108 for me. - VitalsAI Emergency Assist'); }, {timeout:7000, enableHighAccuracy:true});
+    } else openSms('EMERGENCY! I need help immediately. Please call 108 for me. - VitalsAI Emergency Assist');
+  }
+  function vaiPlaySiren(){
+    try{
+      var audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      var oscillator=audioCtx.createOscillator();
+      var gain=audioCtx.createGain();
+      oscillator.type='square'; oscillator.frequency.setValueAtTime(520,audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(980,audioCtx.currentTime+.45);
+      gain.gain.setValueAtTime(.85,audioCtx.currentTime);
+      oscillator.connect(gain); gain.connect(audioCtx.destination); oscillator.start();
+      setTimeout(function(){ try{oscillator.stop();audioCtx.close();}catch(e){} },3200);
+      vaiSetEmergencyStatus('Loud siren played for nearby attention.', false);
+    }catch(e){ vaiSetEmergencyStatus('Siren is not supported in this browser.', true); }
+  }
+  function vaiStartVoiceCommand(){
+    if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){ vaiSetEmergencyStatus('Voice command is not supported. Please use Chrome.', true); return; }
+    var recog=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+    recog.lang='en-IN'; recog.continuous=false; recog.interimResults=false;
+    vaiSetEmergencyStatus('Listening... say heart attack, stroke, accident, burn, bleeding, or choking.', false);
+    recog.onresult=function(e){
+      var said=e.results[0][0].transcript.toLowerCase();
+      var msg='Heard: <b>'+said+'</b><br>';
+      if(said.includes('heart')){ vaiShowAid('heart'); msg+='Possible heart emergency. Call 108 if symptoms are severe.'; }
+      else if(said.includes('stroke')){ vaiShowAid('stroke'); msg+='Possible stroke. Call 108 immediately.'; }
+      else if(said.includes('bleed')||said.includes('accident')){ vaiShowAid('bleed'); msg+='Apply pressure for bleeding and call 108 if severe.'; }
+      else if(said.includes('burn')){ vaiShowAid('burn'); msg+='Cool the burn under running water.'; }
+      else if(said.includes('chok')){ vaiShowAid('choke'); msg+='Follow choking first aid and call 108 if needed.'; }
+      else msg+='Command not recognized. Try heart attack, stroke, burn, bleeding, choking.';
+      vaiSetEmergencyStatus(msg,true);
+    };
+    recog.onerror=function(){ vaiSetEmergencyStatus('Voice command stopped or permission was denied.', true); };
+    recog.start();
+  }
+  function vaiToggleSymptom(btn,sym){
+    if(vaiSelectedSymptoms.has(sym)){ vaiSelectedSymptoms.delete(sym); btn.classList.remove('active'); }
+    else{ vaiSelectedSymptoms.add(sym); btn.classList.add('active'); }
+    vaiCheckSymptoms();
+  }
+  function vaiCheckSymptoms(){
+    var s=vaiSelectedSymptoms;
+    if(s.size===0){ vaiSetEmergencyStatus('Select symptoms to see emergency guidance.', false); return; }
+    if(s.has('chest')&&s.has('breath')){ vaiShowAid('heart'); vaiSetEmergencyStatus('Chest pain with breathlessness can be serious. Call 108 immediately if severe or sudden.', true); return; }
+    if(s.has('stroke')){ vaiShowAid('stroke'); vaiSetEmergencyStatus('Stroke signs need urgent care. Call 108 immediately.', true); return; }
+    if(s.has('bleed')||s.has('faint')){ vaiShowAid('bleed'); vaiSetEmergencyStatus('Bleeding or fainting may need emergency care. Apply first aid and call 108 if severe.', true); return; }
+    if(s.has('burn')){ vaiShowAid('burn'); vaiSetEmergencyStatus('Cool burn under running water. Call 108 for large/deep burns.', true); return; }
+    if(s.has('choke')){ vaiShowAid('choke'); vaiSetEmergencyStatus('Choking can become critical. Use first aid and call 108 if breathing is blocked.', true); return; }
+    vaiSetEmergencyStatus('Symptoms noted. Monitor closely and seek medical care if worsening.', false);
+  }
+  function vaiShowAid(type,tabBtn){
+    document.querySelectorAll('.vai-aid-panel').forEach(function(el){el.classList.remove('active')});
+    document.querySelectorAll('.vai-aid-tab').forEach(function(el){el.classList.remove('active')});
+    var panel=document.getElementById('vaiAid-'+type); if(panel) panel.classList.add('active');
+    if(tabBtn) tabBtn.classList.add('active');
+    else{
+      document.querySelectorAll('.vai-aid-tab').forEach(function(el){ if(el.textContent.toLowerCase().includes(type)) el.classList.add('active'); });
+    }
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    vaiLoadEmergencyContact();
+    var consent=document.getElementById('vaiEmergencyConsent');
+    if(consent) consent.checked=localStorage.getItem('vitals_emergency_consent')==='yes';
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') vaiCloseEmergency(); });
+  });
+</script>
+
 
 </body>
 </html>

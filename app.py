@@ -20,6 +20,60 @@ import google.generativeai as genai
 
 
 
+def _format_chat_context_explanation(pred):
+    import html as _html
+    if not pred:
+        return (
+            "<b>No prediction context found.</b><br>"
+            "Open a prediction page, submit the form, then ask me to explain your result."
+        )
+
+    disease = _html.escape(str(pred.get('disease') or pred.get('page') or 'Current prediction'))
+    status = _html.escape(str(pred.get('status') or pred.get('risk') or pred.get('prediction') or 'Unknown'))
+    score = pred.get('score') or pred.get('confidence') or pred.get('probability') or ''
+    score_html = _html.escape(str(score)) if score != '' else 'Not available'
+    probabilities = pred.get('probabilities') or {}
+    reasons = pred.get('reasons') or pred.get('clinical_flags') or []
+
+    prob_lines = []
+    if isinstance(probabilities, dict):
+        for name, value in list(probabilities.items())[:6]:
+            prob_lines.append(f"• {_html.escape(str(name).replace('_', ' '))}: <b>{_html.escape(str(value))}%</b>")
+
+    reason_lines = []
+    for item in reasons[:8]:
+        reason_lines.append(f"• {_html.escape(str(item))}")
+
+    html = (
+        f"<b>Detailed Result Explanation</b><br>"
+        f"Disease/Page: <b>{disease}</b><br>"
+        f"Result: <b>{status}</b><br>"
+        f"Confidence / risk score: <b>{score_html}%</b><br><br>"
+        "<b>What this means:</b><br>"
+        "This is a screening-style result. It suggests the risk level from the values entered in the VitalsAI form; it is not a confirmed medical diagnosis.<br><br>"
+    )
+
+    if prob_lines:
+        html += "<b>Probability breakdown:</b><br>" + "<br>".join(prob_lines) + "<br><br>"
+
+    if reason_lines:
+        html += "<b>Main factors behind the result:</b><br>" + "<br>".join(reason_lines) + "<br><br>"
+    else:
+        html += (
+            "<b>Main factors to review:</b><br>"
+            "• Compare your BP, glucose, cholesterol, BMI and symptom values with the normal range.<br>"
+            "• If the result is high risk, repeat the test/checkup and consult a specialist.<br><br>"
+        )
+
+    html += (
+        "<b>Next steps:</b><br>"
+        "• Save/download the report from the prediction page.<br>"
+        "• Recheck abnormal values with a qualified doctor or lab test.<br>"
+        "• Seek urgent care if you have chest pain, severe breathlessness, fainting, stroke signs, very low urine output, or confusion.<br><br>"
+        "<i>Please consult a doctor for personalized advice.</i>"
+    )
+    return html
+
 from dotenv import load_dotenv
 import os
 
@@ -550,6 +604,14 @@ def api_send_otp():
     if gmail_user and gmail_pass:
         try:
             import smtplib
+            # SMTP સર્વર સાથે કનેક્ટ થતી વખતે ટાઈમઆઉટ સેટ કરો જેથી સર્વર હેંગ ન થાય
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
+                server.login(gmail_user, gmail_pass)
+                server.sendmail(gmail_user, email, msg.as_string())
+
+            otp_sent = True
+            print(f"[OTP] Email sent to {email} ✅")
+
             from email.mime.multipart import MIMEMultipart
             from email.mime.text      import MIMEText
 
@@ -1036,6 +1098,9 @@ def chat():
     # ── Context-aware prediction/result fallback ─────────────
     if _chat_is_predict_intent(msg) and local_prediction:
         return jsonify({'response': _format_chat_prediction(local_prediction), 'source': 'context_prediction'})
+
+    if _chat_is_explain_intent(msg) and local_prediction:
+        return jsonify({'response': _format_chat_context_explanation(local_prediction), 'source': 'context_explanation'})
 
     if _chat_is_explain_intent(msg) and visible_result:
         safe_result = visible_result.replace('\n', '<br>')
@@ -1597,11 +1662,136 @@ def predict_kidney():
         patient = patient.fillna(patient.mean().fillna(0))
 
         # 5. Prediction
-        pred        = int(m['model'].predict(patient)[0])
-        proba       = m['model'].predict_proba(patient)[0]
-        label       = reverse_map[pred]
-        conf        = round(float(max(proba))*100, 2)
-        all_p       = {reverse_map[i]: round(float(p)*100, 2) for i, p in enumerate(proba)}
+        # NOTE:
+        # The saved kidney ML pipeline can produce clinically inverted outputs for
+        # extreme rows (for example, very high creatinine + low eGFR may be pushed
+        # toward No_Disease). To keep patient-facing predictions safe and sensible,
+        # we use the ML output as supporting information and apply a clinical
+        # severity correction based on standard kidney markers.
+        pred_raw        = int(m['model'].predict(patient)[0])
+        proba_raw       = m['model'].predict_proba(patient)[0]
+        model_label     = reverse_map.get(pred_raw, 'Low_Risk')
+        model_conf      = round(float(max(proba_raw))*100, 2)
+        model_all_p     = {reverse_map[i]: round(float(p)*100, 2) for i, p in enumerate(proba_raw)}
+
+        def _num(name, default=0):
+            try:
+                return float(data.get(name, default) or default)
+            except Exception:
+                return float(default)
+
+        sc_rule       = _num('Serum creatinine (mg/dl)')
+        egfr_rule     = _num('Estimated Glomerular Filtration Rate (eGFR)', 90)
+        hemo_rule     = _num('Hemoglobin level (gms)', 14)
+        bp_rule       = _num('Blood pressure (mm/Hg)', 120)
+        albumin_rule  = _num('Albumin in urine')
+        sugar_rule    = _num('Sugar in urine')
+        glucose_rule  = _num('Random blood glucose level (mg/dl)', 100)
+        urea_rule     = _num('Blood urea (mg/dl)', 25)
+        upcr_rule     = _num('Urine protein-to-creatinine ratio')
+        urine_rule    = _num('Urine output (ml/day)', 1500)
+        potassium_rule= _num('Potassium level (mEq/L)', 4.5)
+        edema_rule    = _num('Pedal edema (yes/no)')
+        anemia_rule   = _num('Anemia (yes/no)')
+        htn_rule      = _num('Hypertension (yes/no)')
+        dm_rule       = _num('Diabetes mellitus (yes/no)')
+
+        severity_points = 0
+        clinical_flags = []
+
+        def _flag(points, text):
+            nonlocal severity_points
+            severity_points += points
+            clinical_flags.append(text)
+
+        if egfr_rule < 15:
+            _flag(55, f"eGFR is critically low ({egfr_rule})")
+        elif egfr_rule < 30:
+            _flag(42, f"eGFR is severely reduced ({egfr_rule})")
+        elif egfr_rule < 60:
+            _flag(28, f"eGFR is below normal ({egfr_rule})")
+        elif egfr_rule < 90:
+            _flag(10, f"eGFR is mildly reduced ({egfr_rule})")
+
+        if sc_rule >= 5:
+            _flag(45, f"Serum creatinine is very high ({sc_rule} mg/dL)")
+        elif sc_rule >= 3:
+            _flag(35, f"Serum creatinine is high ({sc_rule} mg/dL)")
+        elif sc_rule >= 1.5:
+            _flag(22, f"Serum creatinine is elevated ({sc_rule} mg/dL)")
+        elif sc_rule > 1.2:
+            _flag(10, f"Serum creatinine is slightly above normal ({sc_rule} mg/dL)")
+
+        if albumin_rule >= 4:
+            _flag(25, f"Albumin in urine is high grade ({albumin_rule})")
+        elif albumin_rule >= 2:
+            _flag(16, f"Albumin in urine is elevated ({albumin_rule})")
+        elif albumin_rule >= 1:
+            _flag(8, f"Trace albumin is present in urine ({albumin_rule})")
+
+        if upcr_rule >= 3:
+            _flag(25, f"Urine protein-to-creatinine ratio is very high ({upcr_rule})")
+        elif upcr_rule >= 0.5:
+            _flag(14, f"Urine protein-to-creatinine ratio is elevated ({upcr_rule})")
+
+        if urea_rule >= 80:
+            _flag(18, f"Blood urea is high ({urea_rule} mg/dL)")
+        elif urea_rule >= 50:
+            _flag(10, f"Blood urea is elevated ({urea_rule} mg/dL)")
+
+        if hemo_rule < 9:
+            _flag(16, f"Hemoglobin is very low ({hemo_rule} g/dL)")
+        elif hemo_rule < 12:
+            _flag(9, f"Hemoglobin is low ({hemo_rule} g/dL)")
+
+        if bp_rule >= 160:
+            _flag(16, f"Blood pressure is very high ({bp_rule} mmHg)")
+        elif bp_rule >= 140:
+            _flag(10, f"Blood pressure is high ({bp_rule} mmHg)")
+
+        if glucose_rule >= 200 or sugar_rule >= 2:
+            _flag(10, "High glucose/sugar markers are present")
+        if potassium_rule >= 5.5:
+            _flag(12, f"Potassium is high ({potassium_rule} mEq/L)")
+        if urine_rule and urine_rule < 500:
+            _flag(18, f"Urine output is low ({urine_rule} ml/day)")
+        if edema_rule:
+            _flag(8, "Pedal edema is present")
+        if anemia_rule:
+            _flag(6, "Anemia is marked as present")
+        if htn_rule:
+            _flag(6, "Hypertension history is present")
+        if dm_rule:
+            _flag(6, "Diabetes history is present")
+
+        if severity_points >= 80 or egfr_rule < 15 or sc_rule >= 5:
+            label = 'Severe_Disease'
+        elif severity_points >= 55 or egfr_rule < 30 or sc_rule >= 3:
+            label = 'High_Risk'
+        elif severity_points >= 32 or egfr_rule < 60 or sc_rule >= 1.5 or albumin_rule >= 2:
+            label = 'Moderate_Risk'
+        elif severity_points >= 12 or egfr_rule < 90 or sc_rule > 1.2 or albumin_rule >= 1:
+            label = 'Low_Risk'
+        else:
+            label = 'No_Disease'
+
+        severity_rank = {'No_Disease': 0, 'Low_Risk': 1, 'Moderate_Risk': 2, 'High_Risk': 3, 'Severe_Disease': 4}
+        conf = round(min(98, max(55, 52 + severity_points * 0.55)), 2)
+
+        # Build patient-facing probabilities from corrected clinical severity.
+        classes = ['No_Disease', 'Low_Risk', 'Moderate_Risk', 'High_Risk', 'Severe_Disease']
+        rank = severity_rank[label]
+        other_weights = {}
+        for c in classes:
+            if c == label:
+                continue
+            dist = abs(severity_rank[c] - rank)
+            other_weights[c] = max(1.0, 10.0 - dist * 2.25)
+        remaining = max(0.0, 100.0 - conf)
+        weight_total = sum(other_weights.values()) or 1.0
+        all_p = {c: round((other_weights.get(c, 0.0) / weight_total) * remaining, 2) for c in classes}
+        all_p[label] = round(conf, 2)
+
         doctor      = DOCTOR_MAP['kidney'].get(label, 'General Physician')
 
         # ── XAI Explanation ─────────────────────────────────
@@ -1629,7 +1819,7 @@ def predict_kidney():
         else:
             why_low.append(f"Hemoglobin ({hemo} g/dL) — adequate, less anemia risk")
             
-        if float(bp_v or 0) >= 90:
+        if float(bp_v or 0) >= 140:
             why_high.append(f"High BP ({bp_v} mmHg) — damages kidney blood vessels")
             suggestions.append("Strict BP control < 130/80 — ACE inhibitors preferred for CKD")
         else:
@@ -1673,7 +1863,11 @@ def predict_kidney():
         result = {'prediction': label, 'confidence': conf, 'probabilities': all_p,
                   'doctor': doctor, 'why_high_risk': why_high, 'why_low_risk': why_low,
                   'suggestions': suggestions, 'lifestyle_changes': lifestyle,
-                  'feature_importance': feat_imp}
+                  'feature_importance': feat_imp,
+                  'clinical_flags': clinical_flags,
+                  'model_prediction_raw': model_label,
+                  'model_confidence_raw': model_conf,
+                  'model_probabilities_raw': model_all_p}
         
         sid = session.get('sid', 'default')
         save_to_history(sid, 'kidney', inputs_dict, result)
