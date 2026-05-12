@@ -17,6 +17,9 @@ import warnings
 warnings.filterwarnings('ignore')
 from authlib.integrations.flask_client import OAuth
 import google.generativeai as genai
+import shap
+import os
+from flask import send_from_directory
 
 
 
@@ -2508,11 +2511,578 @@ def explain_eye():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+
+
+
+# SHAP Explainability Route — Fixed (redirects to disease-specific routes)
+# UPDATED CODE (Add this to app.py)
+@app.route('/api/explain-shap', methods=['POST'])
+def explain_shap():
+    try:
+        data = request.json
+        if not data or 'inputs' not in data:
+            return jsonify({'error': 'No input data received'}), 400
+
+        disease = data.get('disease')
+        inputs = data.get('inputs')
+        if not inputs or len(inputs) == 0:
+            return jsonify({'error': 'Backend received empty inputs. Check your frontend code.'}), 400
+        # ૧. મોડલ લોડિંગ
+        model_path = os.path.join('models', f'{disease}_model.pkl')
+        if not os.path.exists(model_path):
+            return jsonify({'error': f'Model for {disease} not found'}), 404
+        
+        model = joblib.load(model_path)
+        
+        # ૨. ડેટા પ્રિપેરેશન (ફીચરના નામ અને વેલ્યુઝ)
+        feature_names = list(inputs.keys())
+        # ખાતરી કરો કે બધી વેલ્યુ નંબર (float) છે
+        input_values = np.array([[float(v) for v in inputs.values()]], dtype=np.float32)
+        
+        # ૩. SHAP લોજિક
+        def model_predict(d):
+            # Stacking model માટે પ્રોબેબિલિટી પ્રેડિક્શન
+            return model.predict_proba(d)[:, 1]
+
+        # બેકગ્રાઉન્ડ ડેટા સેટ કરવો (0-reference)
+        background = np.zeros((1, len(feature_names))) 
+        explainer = shap.KernelExplainer(model_predict, background)
+        
+        # SHAP વેલ્યુ ગણો (આમાં ૫-૧૦ સેકન્ડ લાગી શકે છે)
+        shap_values = explainer.shap_values(input_values)
+        
+    # ૪. SHAP વેલ્યુ ગણો
+        shap_values = explainer.shap_values(input_values)
+        
+        explanation = []
+        
+        # --- આ લોજિક એરર વગર ડેટા કાઢશે ---
+        # જો shap_values લિસ્ટ હોય (જેમ કે Stacking માં ઘણીવાર હોય છે), તો પહેલો એલિમેન્ટ લો
+        if isinstance(shap_values, list):
+            # Binary classification માં ક્યારેક [array, array] હોય છે, આપણે 1st array જોઈએ
+            actual_vals = shap_values[1] if len(shap_values) > 1 else shap_values[0]
+        else:
+            actual_vals = shap_values
+
+        for i, name in enumerate(feature_names):
+            try:
+                # જો ડેટા 2D હોય (1, 9), તો [0][i] વાપરો, નહીંતર [i]
+                if len(actual_vals.shape) > 1:
+                    val = float(actual_vals[0][i])
+                else:
+                    val = float(actual_vals[i])
+            except:
+                val = 0.0
+                
+            explanation.append({
+                'feature': name,
+                'shap_value': val,
+                'impact': 'High Risk Factor' if val > 0 else 'Low Risk Factor'
+            })
+            
+        # ૫. રિસ્પોન્સ (સાથે શોર્ટેડ લિસ્ટ)
+        return jsonify({
+            'status': 'success',
+            'explanation': sorted(explanation, key=lambda x: abs(x['shap_value']), reverse=True)
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"SHAP Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
     
 @app.route('/about-contact')
 def about_contact():
     return render_template('about_contact.html')
  
+
+# ══════════════════════════════════════════════════════════════
+# EMERGENCY ASSIST API ROUTES  (SQLite-backed)
+# ══════════════════════════════════════════════════════════════
+
+def _ensure_emergency_tables():
+    with get_db() as conn:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS emergency_contacts (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_email TEXT NOT NULL,
+                name       TEXT NOT NULL,
+                num        TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS medical_id (
+                user_email  TEXT PRIMARY KEY,
+                blood_group TEXT DEFAULT '',
+                allergies   TEXT DEFAULT '',
+                conditions  TEXT DEFAULT '',
+                updated_at  TEXT DEFAULT (datetime('now'))
+            );
+        """)
+
+_ensure_emergency_tables()
+
+# ── Emergency Contacts ─────────────────────────────────────────
+@app.route('/api/emergency/contacts', methods=['GET'])
+@login_required
+def get_emergency_contacts():
+    email = session['user']['email']
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT id, name, num FROM emergency_contacts WHERE user_email=? ORDER BY id LIMIT 6',
+            (email,)
+        ).fetchall()
+    return jsonify({'contacts': [dict(r) for r in rows]})
+
+@app.route('/api/emergency/contacts', methods=['POST'])
+@login_required
+def save_emergency_contact():
+    email = session['user']['email']
+    data  = request.json or {}
+    name  = data.get('name', '').strip()
+    num   = data.get('num', '').strip()
+    if not name or not num:
+        return jsonify({'success': False, 'error': 'Name and number required'}), 400
+    with get_db() as conn:
+        count = conn.execute(
+            'SELECT COUNT(*) FROM emergency_contacts WHERE user_email=?', (email,)
+        ).fetchone()[0]
+        if count >= 6:
+            return jsonify({'success': False, 'error': 'Maximum 6 contacts allowed'}), 400
+        dup = conn.execute(
+            'SELECT 1 FROM emergency_contacts WHERE user_email=? AND num=?', (email, num)
+        ).fetchone()
+        if dup:
+            return jsonify({'success': False, 'error': 'This number already saved'}), 400
+        conn.execute(
+            'INSERT INTO emergency_contacts (user_email, name, num) VALUES (?,?,?)',
+            (email, name, num)
+        )
+        rows = conn.execute(
+            'SELECT id, name, num FROM emergency_contacts WHERE user_email=? ORDER BY id LIMIT 6',
+            (email,)
+        ).fetchall()
+    return jsonify({'success': True, 'contacts': [dict(r) for r in rows]})
+
+@app.route('/api/emergency/contacts/<int:contact_id>', methods=['DELETE'])
+@login_required
+def delete_emergency_contact(contact_id):
+    email = session['user']['email']
+    with get_db() as conn:
+        conn.execute(
+            'DELETE FROM emergency_contacts WHERE id=? AND user_email=?',
+            (contact_id, email)
+        )
+        rows = conn.execute(
+            'SELECT id, name, num FROM emergency_contacts WHERE user_email=? ORDER BY id LIMIT 6',
+            (email,)
+        ).fetchall()
+    return jsonify({'success': True, 'contacts': [dict(r) for r in rows]})
+
+# ── Medical ID ─────────────────────────────────────────────────
+@app.route('/api/emergency/medical-id', methods=['GET'])
+@login_required
+def get_medical_id():
+    email = session['user']['email']
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT blood_group, allergies, conditions FROM medical_id WHERE user_email=?',
+            (email,)
+        ).fetchone()
+    return jsonify(dict(row) if row else {'blood_group': '', 'allergies': '', 'conditions': ''})
+
+@app.route('/api/emergency/medical-id', methods=['POST'])
+@login_required
+def save_medical_id_api():
+    email = session['user']['email']
+    data  = request.json or {}
+    bg    = data.get('blood_group', '').strip()
+    al    = data.get('allergies', '').strip()
+    co    = data.get('conditions', '').strip()
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO medical_id (user_email, blood_group, allergies, conditions, updated_at)
+            VALUES (?,?,?,?,datetime('now'))
+            ON CONFLICT(user_email) DO UPDATE SET
+                blood_group=excluded.blood_group,
+                allergies=excluded.allergies,
+                conditions=excluded.conditions,
+                updated_at=excluded.updated_at
+        """, (email, bg, al, co))
+    return jsonify({'success': True})
+
+# ── Voice Command (server-side processing) ─────────────────────
+@app.route('/api/emergency/voice-command', methods=['POST'])
+@login_required
+def process_voice_command():
+    data = request.json or {}
+    said = (data.get('text') or '').lower().strip()
+    if not said:
+        return jsonify({'matched': False, 'message': 'No speech detected'})
+    VOICE_COMMANDS = [
+        {'kws': ['call 108','108 call','ambulance','108 dial','ek sau aath'],
+         'action': 'call', 'target': '108', 'guide': None,
+         'message': '🚑 Calling 108 Ambulance...', 'level': 'critical'},
+        {'kws': ['call 112','112','all emergency'],
+         'action': 'call', 'target': '112', 'guide': None,
+         'message': '🚨 Calling 112 Emergency...', 'level': 'critical'},
+        {'kws': ['call 100','police'],
+         'action': 'call', 'target': '100', 'guide': None,
+         'message': '🚔 Calling 100 Police...', 'level': 'critical'},
+        {'kws': ['call 101','fire brigade','fire call'],
+         'action': 'call', 'target': '101', 'guide': None,
+         'message': '🔥 Calling 101 Fire Brigade...', 'level': 'critical'},
+        {'kws': ['call family','family call','parivar','kuttumb','ghar'],
+         'action': 'call_family', 'target': None, 'guide': None,
+         'message': '👨‍👩‍👧 Calling Family Emergency Contact...', 'level': 'critical'},
+        {'kws': ['send sos','sos','send help','bachao','madad'],
+         'action': 'sos', 'target': None, 'guide': None,
+         'message': '📍 Sending SOS with your location...', 'level': 'critical'},
+        {'kws': ['find hospital','nearest hospital','hospital find'],
+         'action': 'hospital', 'target': None, 'guide': None,
+         'message': '🏥 Finding nearest hospitals...', 'level': 'critical'},
+        {'kws': ['heart attack','chest pain','hraday','dil ka dora'],
+         'action': 'call', 'target': '108', 'guide': 'heart',
+         'message': '🔴 Heart Attack! Calling 108. See CPR guide.', 'level': 'critical'},
+        {'kws': ['stroke','brain stroke','paralysis','laqva'],
+         'action': 'call', 'target': '108', 'guide': 'stroke',
+         'message': '🔴 Stroke! Calling 108. Do FAST test.', 'level': 'critical'},
+        {'kws': ['unconscious','fainted','behosh','murcha'],
+         'action': 'call', 'target': '108', 'guide': 'heart',
+         'message': '🔴 Unconscious! Calling 108. Start CPR.', 'level': 'critical'},
+        {'kws': ['accident','road accident','apghaat','hadsa'],
+         'action': 'call', 'target': '108', 'guide': 'bleed',
+         'message': '🔴 Accident! Calling 108.', 'level': 'critical'},
+        {'kws': ['bleeding','blood','rakat','khun'],
+         'action': 'call', 'target': '108', 'guide': 'bleed',
+         'message': '🔴 Bleeding! Apply pressure. Calling 108.', 'level': 'critical'},
+        {'kws': ['choke','choking','ghuti'],
+         'action': 'call', 'target': '108', 'guide': 'choke',
+         'message': '🔴 Choking! Heimlich now. Calling 108.', 'level': 'critical'},
+        {'kws': ['burn','jalavu','daajyu'],
+         'action': None, 'target': None, 'guide': 'burn',
+         'message': '🟡 Burn! Cool with water 15 min.', 'level': 'moderate'},
+        {'kws': ['fracture','broken bone','hadku'],
+         'action': 'call', 'target': '108', 'guide': 'fracture',
+         'message': '🔴 Fracture! Immobilize limb. Calling 108.', 'level': 'critical'},
+        {'kws': ['poison','poisoning','zaher'],
+         'action': 'call', 'target': '108', 'guide': 'poison',
+         'message': '🔴 Poisoning! Do NOT induce vomiting. Calling 108.', 'level': 'critical'},
+        {'kws': ['snake','snake bite','saap'],
+         'action': 'call', 'target': '108', 'guide': 'snake',
+         'message': '🔴 Snake bite! Keep still. Calling 108.', 'level': 'critical'},
+        {'kws': ['sugar low','sugar high','diabetic'],
+         'action': None, 'target': None, 'guide': 'diabetic',
+         'message': '🟡 Diabetic emergency! Give sugar if conscious.', 'level': 'moderate'},
+        {'kws': ['siren','play siren'],
+         'action': 'siren', 'target': None, 'guide': None,
+         'message': '📢 Playing loud siren!', 'level': 'critical'},
+    ]
+    matched = next((c for c in VOICE_COMMANDS if any(kw in said for kw in c['kws'])), None)
+    if not matched:
+        return jsonify({'matched': False, 'heard': said,
+                        'message': 'Not recognized. Try: "Call 108", "Heart attack", "Send SOS"'})
+    resp = {'matched': True, 'heard': said, 'action': matched['action'],
+            'target': matched['target'], 'guide': matched['guide'],
+            'message': matched['message'], 'level': matched['level']}
+    if matched['guide'] and matched['guide'] in FIRST_AID_DATA:
+        resp['first_aid'] = FIRST_AID_DATA[matched['guide']]
+    print(f"[VOICE] '{said}' → {matched['action']} {matched.get('target','')}")
+    return jsonify(resp)
+
+# ── SOS with location ──────────────────────────────────────────
+@app.route('/api/emergency/sos', methods=['POST'])
+@login_required
+def send_sos():
+    email = session['user']['email']
+    data  = request.json or {}
+    lat   = data.get('lat')
+    lng   = data.get('lng')
+    loc_link = f'https://maps.google.com/?q={lat},{lng}' if lat and lng else None
+    loc_text = f'📍 My Location: {loc_link}' if loc_link else '📍 Location not available'
+    with get_db() as conn:
+        mid = conn.execute(
+            'SELECT blood_group, conditions FROM medical_id WHERE user_email=?', (email,)
+        ).fetchone()
+        rows = conn.execute(
+            'SELECT name, num FROM emergency_contacts WHERE user_email=? ORDER BY id LIMIT 6',
+            (email,)
+        ).fetchall()
+    contacts = [dict(r) for r in rows]
+    med_info = ''
+    if mid:
+        bg, co = mid['blood_group'], mid['conditions']
+        if bg or co:
+            med_info = f'\n🩸 Blood: {bg or "Unknown"} | 💊 Conditions: {co or "None"}'
+    now_str  = datetime.now().strftime('%d %b %Y, %H:%M')
+    msg_body = (
+        f'🚨 EMERGENCY — VitalsAI SOS Alert!\n'
+        f'I need IMMEDIATE medical help!\n'
+        f'{loc_text}{med_info}\n'
+        f'⏰ Time: {now_str}\n'
+        f'🚑 Please call 108 for me or come NOW!\n'
+        f'— VitalsAI Health App'
+    )
+    print(f'[SOS] Triggered by {email} | location: {loc_link} | contacts: {len(contacts)}')
+    return jsonify({
+        'success':      True,
+        'contacts':     contacts,
+        'message_body': msg_body,
+        'location_link': loc_link,
+        'note': f'Open SMS for {len(contacts)} contact(s) on your device'
+    })
+
+# ── Log SOS Event ──────────────────────────────────────────────
+@app.route('/api/emergency/sos-log', methods=['POST'])
+@login_required
+def log_sos_event():
+    """Log when SOS was triggered (for audit/safety)."""
+    user  = session.get('user', {})
+    email = user.get('email', '')
+    data  = request.json or {}
+    lat   = data.get('lat')
+    lng   = data.get('lng')
+    contacts_notified = data.get('contacts', [])
+    log_entry = {
+        'time':     datetime.now().isoformat(),
+        'email':    email,
+        'lat':      lat,
+        'lng':      lng,
+        'contacts': contacts_notified,
+    }
+    print(f"[SOS] 🚨 SOS triggered by {email} at {log_entry['time']}")
+    if lat and lng:
+        print(f"[SOS] Location: https://maps.google.com/?q={lat},{lng}")
+    print(f"[SOS] Notified {len(contacts_notified)} contact(s)")
+    return jsonify({'success': True, 'logged': log_entry})
+
+# ── Voice Command Log ──────────────────────────────────────────
+@app.route('/api/emergency/voice-log', methods=['POST'])
+@login_required
+def log_voice_command():
+    """Log voice command used (for analytics)."""
+    user    = session.get('user', {})
+    email   = user.get('email', '')
+    data    = request.json or {}
+    command = data.get('command', '')
+    action  = data.get('action', '')
+    print(f"[VOICE] User {email} said: '{command}' → action: {action}")
+    return jsonify({'success': True})
+
+# ── Get First Aid Content (Dynamic) ───────────────────────────
+FIRST_AID_DATA = {
+    'heart': {
+        'title': '❤️ Heart Attack — CPR Guide',
+        'tags':  ['heart attack', 'chest pain', 'cpr', 'cardiac', 'hraday', 'hirday'],
+        'steps': [
+            'Call 108 immediately',
+            'Sit or lie down in comfortable position — keep calm',
+            'Loosen all tight clothing (belt, collar)',
+            'Chew 1 aspirin 325mg if NOT allergic',
+            'Do NOT eat, drink, or let person walk',
+            'If unconscious + not breathing → Start CPR',
+        ],
+        'cpr': 'CPR: 30 chest compressions (hard + fast, 100/min) + 2 rescue breaths. Repeat until help arrives.',
+        'call': '108',
+        'level': 'critical',
+    },
+    'stroke': {
+        'title': '🧠 Stroke — FAST Test',
+        'tags':  ['stroke', 'brain', 'paralysis', 'laqva', 'face drooping', 'speech'],
+        'steps': [
+            'F — Face: Ask to smile — is one side drooping?',
+            'A — Arm: Raise both arms — does one drift down?',
+            'S — Speech: Repeat sentence — is it slurred?',
+            'T — Time: Any YES above → Call 108 IMMEDIATELY',
+            'Lay patient on side, head slightly raised',
+            'Do NOT give food, water, or medications',
+        ],
+        'warn': 'Every minute = 2 million brain cells lost. Act NOW.',
+        'call': '108',
+        'level': 'critical',
+    },
+    'burn': {
+        'title': '🔥 Burn Injury',
+        'tags':  ['burn', 'fire', 'scald', 'jalavu', 'daajyu'],
+        'steps': [
+            'Cool under cold running water 10-20 minutes',
+            'Remove jewelry and tight clothing near burn',
+            'Cover loosely with clean non-fluffy cloth',
+            'DO NOT use ice, butter, toothpaste, or oil',
+            'DO NOT break blisters',
+            'If larger than palm or on face/hands → Call 108',
+        ],
+        'warn': 'Chemical burn: Flush with water 20 min. Remove clothes carefully.',
+        'call': None,
+        'level': 'moderate',
+    },
+    'bleed': {
+        'title': '🩸 Bleeding Control',
+        'tags':  ['bleeding', 'blood', 'wound', 'cut', 'accident', 'rakat'],
+        'steps': [
+            'Apply firm direct pressure with clean cloth',
+            'Elevate wound above heart level if possible',
+            'DO NOT remove cloth — add more layers if soaked',
+            'Press continuously for 10-15 minutes',
+            'For objects in wound — do NOT remove them',
+            'Severe bleeding → Call 108 immediately',
+        ],
+        'warn': 'Tourniquet: Only for limb bleeding. Tighten 5cm above wound. Note time applied.',
+        'call': '108',
+        'level': 'critical',
+    },
+    'choke': {
+        'title': '😮 Choking — Heimlich',
+        'tags':  ['choke', 'choking', 'heimlich', 'throat', 'food', 'ghuti'],
+        'steps': [
+            'Ask "Are you choking?" — if they can cough, encourage it',
+            'Lean person forward — give 5 firm back blows between shoulder blades',
+            'Stand behind, arms around waist — fist above navel',
+            'Thrust inward + upward 5 times (Heimlich)',
+            'Alternate back blows and thrusts until cleared',
+            'If unconscious → Start CPR, Call 108',
+        ],
+        'warn': 'Infant: Use 5 back blows + 5 chest thrusts (not abdominal). Hold face-down.',
+        'call': '108',
+        'level': 'critical',
+    },
+    'fracture': {
+        'title': '🦴 Fracture / Broken Bone',
+        'tags':  ['fracture', 'broken bone', 'hadku', 'todayu'],
+        'steps': [
+            'DO NOT move the person unless unsafe',
+            'Immobilize the broken limb with splint or padded boards',
+            'Apply ice pack wrapped in cloth (not directly on skin)',
+            'Elevate if possible — DO NOT try to straighten bone',
+            'Control any bleeding with gentle pressure',
+            'Open fracture (bone visible) → Call 108 immediately',
+        ],
+        'warn': 'Spine/neck injury: Do NOT move patient. Wait for paramedics.',
+        'call': '108',
+        'level': 'critical',
+    },
+    'poison': {
+        'title': '☠️ Poisoning',
+        'tags':  ['poison', 'poisoning', 'chemical', 'zaher', 'nasha'],
+        'steps': [
+            'Call 108 or Poison Control immediately',
+            'DO NOT induce vomiting unless told to',
+            'If chemical on skin → Remove clothes, rinse with water 15 min',
+            'If in eyes → Rinse with clean water 15 min',
+            'Bring the poison container/label to hospital',
+            'If unconscious + breathing → Recovery position',
+        ],
+        'warn': 'India Poison Control: 1800-116-117 (24hr free). Keep number saved!',
+        'call': '108',
+        'level': 'critical',
+    },
+    'snake': {
+        'title': '🐍 Snake Bite',
+        'tags':  ['snake', 'snake bite', 'venom', 'saap', 'naag'],
+        'steps': [
+            'Move away from snake — do NOT try to catch it',
+            'Keep person calm and still — movement spreads venom faster',
+            'Remove watches, rings, tight clothing near bite',
+            'Keep bite below heart level',
+            'Mark edge of swelling with pen + note time',
+            'Get to hospital within 1 hour — Call 108',
+        ],
+        'warn': 'DO NOT: cut the bite, suck venom, apply tourniquet, or give alcohol.',
+        'call': '108',
+        'level': 'critical',
+    },
+    'diabetic': {
+        'title': '💉 Diabetic Emergency',
+        'tags':  ['diabetic', 'sugar low', 'sugar high', 'blood sugar', 'insulin', 'glucose'],
+        'low_sugar': [
+            'Give 4 glucose tablets or 150ml fruit juice or sugar water',
+            'Wait 15 min — recheck symptoms',
+            'Give small snack (biscuits, bread)',
+            'If unconscious — DO NOT give anything by mouth. Call 108',
+        ],
+        'high_sugar': [
+            'Encourage drinking water',
+            'Check for ketones if possible',
+            'Administer prescribed insulin if available',
+            'If vomiting/confusion → Call 108 immediately',
+        ],
+        'warn': 'Confusion + sweating + shakiness = LOW sugar. Always carry glucose tablets.',
+        'call': '108',
+        'level': 'moderate',
+    },
+    'drown': {
+        'title': '🌊 Drowning',
+        'tags':  ['drowning', 'water', 'drown', 'dubayu'],
+        'steps': [
+            'Do NOT jump in unless trained — throw a rope/float object',
+            'Once out of water — lay flat on firm surface',
+            'Check breathing — if not breathing → Start CPR immediately',
+            '30 compressions + 2 rescue breaths',
+            'Turn to recovery position once breathing returns',
+            'Call 108 — all drowning victims need hospital check',
+        ],
+        'warn': 'Secondary drowning can occur hours later. Always get medical evaluation.',
+        'call': '108',
+        'level': 'critical',
+    },
+}
+
+@app.route('/api/emergency/first-aid', methods=['GET'])
+def get_first_aid_all():
+    """Return all first aid guides."""
+    result = {}
+    for key, data in FIRST_AID_DATA.items():
+        result[key] = {
+            'title': data['title'],
+            'tags':  data.get('tags', []),
+            'level': data.get('level', 'moderate'),
+            'call':  data.get('call'),
+        }
+    return jsonify({'guides': result})
+
+@app.route('/api/emergency/first-aid/<condition>', methods=['GET'])
+def get_first_aid(condition):
+    """Return first aid guide for specific condition."""
+    condition = condition.lower()
+    data = FIRST_AID_DATA.get(condition)
+    if not data:
+        # Try partial match
+        for key, val in FIRST_AID_DATA.items():
+            tags = val.get('tags', [])
+            if any(condition in tag for tag in tags):
+                data = val
+                break
+    if not data:
+        return jsonify({'error': f'No first aid guide found for: {condition}'}), 404
+    return jsonify(data)
+
+@app.route('/api/emergency/search-first-aid', methods=['GET'])
+def search_first_aid():
+    """Search first aid guides by keyword."""
+    query = request.args.get('q', '').lower().strip()
+    if not query:
+        return jsonify({'results': list(FIRST_AID_DATA.keys())})
+    matches = []
+    for key, data in FIRST_AID_DATA.items():
+        tags  = ' '.join(data.get('tags', []))
+        title = data.get('title', '').lower()
+        steps = ' '.join(data.get('steps', data.get('low_sugar', [])))
+        if query in tags or query in title or query in steps.lower():
+            matches.append({
+                'key':   key,
+                'title': data['title'],
+                'level': data.get('level', 'moderate'),
+                'call':  data.get('call'),
+            })
+    return jsonify({'results': matches, 'query': query})
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static', 'favicon.ico')
+
+
+
 if __name__ == '__main__':
     print("\n" + "="*55)
     print("  VitalsAI — http://localhost:5000  SQLite DB — Active ✅")

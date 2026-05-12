@@ -5,6 +5,8 @@
 <title>VitalsAI — Heart Disease</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
 <style>
 
 :root{
@@ -296,7 +298,14 @@ header p{font-size:13px;opacity:0.85;margin-top:6px;position:relative;z-index:1}
 .ls-item:hover{border-color:var(--cyan);background:rgba(0,217,255,0.08)}
 .ls-icon{font-size:28px;margin-bottom:6px}
 .ls-title{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--text)}
-.ls-tips{font-size:11px;color:var(--text2);line-height:1.5;text-align:left}
+.ls-tips {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.6; /* લાઈન વચ્ચે જગ્યા રાખવા માટે */
+  text-align: left;
+  display: block;
+}
+
 
 /* ── Chatbot ── */
 #chatBubble{position:fixed;bottom:24px;right:24px;z-index:1000}
@@ -530,7 +539,7 @@ async function predict(){
     const pb=document.createElement('button');pb.className='pdf-btn';pb.style.display='block';pb.textContent='📄 Download PDF Report';pb.onclick=()=>downloadPDF('heart',data,lastInputs||{});el.appendChild(pb);
     vaiRenderClinicalReview('heart', lastInputs, data);
     vaiAddResultActions('heart', data, lastInputs);
-    showLifestyle('heart',data.risk);
+    showLifestyle('heart', data.lifestyle_changes);
     if (lv === 'high' && typeof vaiOpenEmergencyForRisk === 'function') {
       vaiOpenEmergencyForRisk('Heart Disease', data);
     }
@@ -788,41 +797,49 @@ const LS_DATA={
   }
 };
 
-function showLifestyle(disease, riskOrPrediction){
-  const card=document.getElementById('lifestyleCard');
-  const grid=document.getElementById('lsGrid');
-  if(!card||!grid)return;
-  
-  let ls=null;
-  const risk=riskOrPrediction||'';
-  
-  if(disease==='kidney'||disease==='eye'){
-    ls=LS_DATA[disease]?.[risk]||LS_DATA[disease]?.default||LS_DATA.heart.LOW;
-  } else {
-    const lvl=risk.includes('HIGH')?'HIGH':risk.includes('MEDIUM')?'MEDIUM':'LOW';
-    ls=LS_DATA[disease]?.[lvl]||LS_DATA.heart.LOW;
+function showLifestyle(disease, lifestyleData) {
+  const card = document.getElementById('lifestyleCard');
+  const grid = document.getElementById('lsGrid');
+  if (!card || !grid) return;
+
+  // જો Backend માંથી ડેટા ન આવે તો default ડેટા રાખવો
+  if (!lifestyleData) {
+    grid.innerHTML = '<p style="color:var(--text2)">No specific recommendations available.</p>';
+    card.style.display = 'block';
+    return;
   }
-  
-  grid.innerHTML=`
+
+  // ટીપ્સને ફોર્મેટ કરવા માટેનું હેલ્પર ફંક્શન
+  const formatTips = (tips) => {
+    if (Array.isArray(tips)) {
+      return tips.map(tip => `• ${tip}`).join('<br>');
+    }
+    return tips; // જો સ્ટ્રિંગ હોય તો સીધું જ બતાવો
+  };
+
+  // ડાયનેમિકલી HTML જનરેટ કરો
+  grid.innerHTML = `
     <div class="ls-item">
       <div class="ls-icon">🍎</div>
       <div class="ls-title">Diet</div>
-      <div class="ls-tips">${ls.diet}</div>
+      <div class="ls-tips">${formatTips(lifestyleData.diet || 'Follow a balanced diet')}</div>
     </div>
     <div class="ls-item">
       <div class="ls-icon">🏃</div>
       <div class="ls-title">Exercise</div>
-      <div class="ls-tips">${ls.exercise}</div>
+      <div class="ls-tips">${formatTips(lifestyleData.exercise || 'Keep moving daily')}</div>
     </div>
     <div class="ls-item">
       <div class="ls-icon">😴</div>
       <div class="ls-title">Sleep</div>
-      <div class="ls-tips">${ls.sleep}</div>
+      <div class="ls-tips">${formatTips(lifestyleData.sleep || 'Get 7-8 hours of rest')}</div>
     </div>
   `;
-  card.style.display='block';
-  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
 
 // ── PDF Download ──────────────────────────────────────────
 async function downloadPDF(disease, result, inputs){
@@ -844,57 +861,16 @@ async function downloadPDF(disease, result, inputs){
   }
 }
 
-// After prediction result shown — fetch explanation
-async function fetchExplanation(inputs) {
-    try {
-        const res = await fetch('/api/explain/heart', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(inputs)
-        });
-        const data = await res.json();
-        if (data.explanation) showXAI(data.explanation);
-    } catch(e) { console.log('XAI error:', e); }
-}
-
-function showXAI(explanation) {
-    const el = document.getElementById('xai-section');
-    if (!el) return;
-
-    let html = `
-        <div class="xai-card">
-            <h3>🔍 Why this prediction?</h3>
-            <p class="xai-sub">SHAP values — which factors affected your result</p>
-            <div class="xai-bars">
-    `;
-
-    const maxImp = Math.max(...explanation.map(e => e.importance));
-
-    explanation.slice(0, 6).forEach(item => {
-        const pct = Math.round((item.importance / maxImp) * 100);
-        const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
-        const arrow = item.shap_value > 0 ? '↑' : '↓';
-        html += `
-            <div class="xai-row">
-                <span class="xai-feat">${item.feature}</span>
-                <span class="xai-val">${item.value}</span>
-                <div class="xai-bar-wrap">
-                    <div class="xai-bar" style="width:${pct}%;background:${color}"></div>
-                </div>
-                <span class="xai-impact" style="color:${color}">
-                    ${arrow} ${item.impact}
-                </span>
-            </div>
-        `;
-    });
-
-    html += `</div></div>`;
-    el.innerHTML = html;
-    el.style.display = 'block';
-}
-
 // ── Fetch XAI explanation (Heart / Brain / Diabetes / Kidney) ──
 async function fetchXAI(disease, payload) {
+  // Show loading state
+  const el = document.getElementById('xai-section');
+  if (el) {
+    el.innerHTML = '<div class="xai-card" style="text-align:center;padding:24px">' +
+      '<div style="font-size:24px;margin-bottom:8px">⏳</div>' +
+      '<p style="color:var(--text2);font-size:13px">Computing SHAP explanation...</p></div>';
+    el.style.display = 'block';
+  }
   try {
     const res = await fetch('/api/explain/' + disease, {
       method: 'POST',
@@ -902,44 +878,114 @@ async function fetchXAI(disease, payload) {
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if (data.error) { console.log('XAI API error:', data.error); return; }
-    if (data.explanation) showXAI(data.explanation, data.note);
-  } catch(e) { console.log('XAI error:', e); }
+    if (data.error) {
+      console.warn('XAI API error:', data.error);
+      if (el) {
+        el.innerHTML = '<div class="xai-card" style="padding:16px">' +
+          '<p style="color:#e53e3e;font-size:13px">⚠️ SHAP explanation failed: ' + data.error + '</p>' +
+          '<p style="color:var(--text2);font-size:12px;margin-top:8px">Check server terminal for detailed error logs.</p></div>';
+      }
+      return;
+    }
+    if (data.explanation && data.explanation.length > 0) {
+      showXAI(data.explanation, data.note);
+    } else {
+      if (el) el.innerHTML = '<div class="xai-card" style="padding:16px;text-align:center;color:var(--text2)">No explanation data received.</div>';
+    }
+  } catch(e) {
+    console.error('XAI fetch error:', e);
+    if (el) {
+      el.innerHTML = '<div class="xai-card" style="padding:16px">' +
+        '<p style="color:#e53e3e;font-size:13px">⚠️ Could not load SHAP explanation.</p></div>';
+    }
+  }
 }
 
 function showXAI(explanation, note) {
   const el = document.getElementById('xai-section');
-  if (!el || !explanation || explanation.length === 0) return;
+  if (!el) return;
 
-  const maxImp = Math.max(...explanation.map(e => e.importance)) || 1;
-  const top3 = explanation.slice(0, 3);
+  // Handle error case
+  if (!explanation || explanation.length === 0) {
+    el.innerHTML = '<div class="xai-card" style="padding:16px;text-align:center;color:#9ca3b5">' +
+      '<p>⚠️ SHAP explanation unavailable for this prediction.</p></div>';
+    el.style.display = 'block';
+    return;
+  }
 
-  let topHtml = '<div class="xai-top"><b>🎯 Top Factors:</b> ';
-  topHtml += top3.map(t =>
-    '<span style="color:' + (t.shap_value > 0 ? '#e53e3e' : '#38a169') + ';font-weight:600">' +
-    t.feature.replace(/_/g, ' ') + ' (' + t.value + ')</span>'
-  ).join(' · ');
-  topHtml += '</div>';
+  const maxImp = Math.max(...explanation.map(e => Math.abs(e.shap_value || e.importance))) || 1;
+  const top3   = explanation.slice(0, 3);
 
-  let barsHtml = '';
+  // ── Top Factors Banner ──
+  let topHtml = '<div class="xai-top"><b>🎯 Top 3 Factors:</b> ' +
+    top3.map(function(t) {
+      const c = t.shap_value > 0 ? '#e53e3e' : '#38a169';
+      const arrow = t.shap_value > 0 ? '▲' : '▼';
+      return '<span style="color:' + c + ';font-weight:700">' + arrow + ' ' +
+        t.feature.replace(/_/g,' ') + ' <small style="font-weight:400;color:#9ca3b5">(' + t.value + ')</small></span>';
+    }).join('<span style="color:#4a5568"> &nbsp;|&nbsp; </span>') + '</div>';
+
+  // ── SHAP Waterfall Bars ──
+  let barsHtml = '<div style="margin-top:12px">';
   explanation.slice(0, 8).forEach(function(item) {
-    const pct   = Math.round((item.importance / maxImp) * 100);
-    const color = item.shap_value > 0 ? '#e53e3e' : '#38a169';
-    const arrow = item.shap_value > 0 ? '↑' : '↓';
-    barsHtml += '<div class="xai-row">' +
-      '<span class="xai-feat">' + item.feature.replace(/_/g, ' ') + '</span>' +
-      '<span class="xai-val">' + item.value + '</span>' +
-      '<div class="xai-bar-wrap"><div class="xai-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
-      '<span class="xai-impact" style="color:' + color + '">' + arrow + ' ' + item.impact + '</span>' +
+    const sv    = item.shap_value || 0;
+    const imp   = Math.abs(sv);
+    const pct   = Math.round((imp / maxImp) * 100);
+    const isPos = sv > 0;
+    const color = isPos ? '#e53e3e' : '#38a169';
+    const bg    = isPos ? 'rgba(229,62,62,0.08)' : 'rgba(56,161,105,0.08)';
+    const arrow = isPos ? '↑' : '↓';
+    const featLabel = item.feature.replace(/_/g,' ');
+    const valLabel  = item.value !== undefined ? item.value : '';
+    const shapLabel = sv.toFixed ? sv.toFixed(4) : sv;
+    const impactLabel = isPos ? 'Increases Risk' : 'Decreases Risk';
+
+    barsHtml +=
+      '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;' +
+        'border-radius:8px;background:' + bg + ';margin-bottom:6px">' +
+        // Feature name
+        '<span style="font-size:12px;font-weight:600;width:130px;flex-shrink:0;color:var(--text)">' +
+          featLabel + '</span>' +
+        // Value
+        '<span style="font-size:11px;color:var(--text2);width:40px;text-align:right;flex-shrink:0">' +
+          valLabel + '</span>' +
+        // Bar
+        '<div style="flex:1;background:var(--border);border-radius:4px;height:10px;min-width:60px">' +
+          '<div style="width:' + pct + '%;background:' + color + ';height:10px;border-radius:4px;' +
+            'transition:width .6s ease"></div></div>' +
+        // SHAP value
+        '<span style="font-size:10px;color:' + color + ';width:54px;text-align:right;flex-shrink:0;' +
+          'font-family:monospace;font-weight:600">' + (sv >= 0 ? '+' : '') + shapLabel + '</span>' +
+        // Impact label
+        '<span style="font-size:11px;color:' + color + ';width:120px;flex-shrink:0;font-weight:700">' +
+          arrow + ' ' + impactLabel + '</span>' +
       '</div>';
   });
+  barsHtml += '</div>';
 
-  el.innerHTML = '<div class="xai-card">' +
-    '<h3>🔍 Why this prediction? — Explainable AI</h3>' +
-    '<p class="xai-sub">' + (note || 'SHAP values — which factors increased or decreased your risk') + '</p>' +
-    topHtml + barsHtml + '</div>';
+  // ── Legend ──
+  const legendHtml =
+    '<div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text2)">' +
+    '<span><span style="color:#e53e3e;font-weight:700">↑ Red bar</span> = increases disease risk</span>' +
+    '<span><span style="color:#38a169;font-weight:700">↓ Green bar</span> = decreases risk</span>' +
+    '<span>Bar width = importance</span></div>';
+
+  el.innerHTML =
+    '<div class="xai-card">' +
+      '<h3>🔍 Why this prediction? — Explainable AI (SHAP)</h3>' +
+      '<p class="xai-sub">' + (note || 'SHAP values show which factors push your risk UP (red) or DOWN (green)') + '</p>' +
+      topHtml +
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);' +
+        'padding:0 10px;margin-bottom:4px">' +
+        '<span>Feature</span><span>Value</span><span style="flex:1;text-align:center">Impact Bar</span>' +
+        '<span>SHAP</span><span>Direction</span></div>' +
+      barsHtml + legendHtml +
+    '</div>';
+
   el.style.display = 'block';
-  el.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  setTimeout(function() {
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 200);
 }
 
 // ── Custom Validation Popup ─────────────────────────────
@@ -1576,6 +1622,76 @@ async function logoutUser() {
     if(consent) consent.checked=localStorage.getItem('vitals_emergency_consent')==='yes';
     document.addEventListener('keydown',function(e){ if(e.key==='Escape') vaiCloseEmergency(); });
   });
+
+  // --- UPDATED CODE (Replace in heart.html) ---
+
+function getSHAPExplanation() {
+    // ૧. ફોર્મ સિલેક્ટ કરો
+    const heartForm = document.getElementById('heartForm') || document.querySelector('form');
+    const fd = new FormData(heartForm);
+    
+    // ૨. FormData ને સાદા 'Plain Object' માં ફેરવો
+    const plainInputs = {};
+    fd.forEach((value, key) => {
+        // વેલ્યુને નંબરમાં ફેરવવી જરૂરી છે
+        plainInputs[key] = parseFloat(value) || 0;
+    });
+
+    console.log("Sending Plain Data:", plainInputs); // ચેક કરવા માટે
+
+    // ૩. હવે Fetch કોલ કરો
+    fetch('/api/explain-shap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            disease: 'heart',
+            inputs: plainInputs // ✅ હવે સાચો ડેટા જશે
+        })
+    })
+    .then(res => res.json())
+  
+    .then(data => {
+        if (data.status === 'success') {
+            console.log("SHAP Result:", data.explanation);
+             displayShapResults(data.explanation);
+            // અહીં તમે UI માં રિઝલ્ટ બતાવી શકો
+            alert("Analysis Complete! Check console for impact factors.");
+        } else {
+            console.error("SHAP Error:", data.error);
+            alert("Error: " + data.error);
+        }
+    })
+    .catch(err => {
+        console.error("Fetch Error:", err);
+    });
+}
+function displayShapResults(explanation) {
+    // રિઝલ્ટ બતાવવા માટે એક નાનું ટેબલ અથવા લિસ્ટ બનાવો
+    let html = '<div style="margin-top:20px; padding:15px; background:rgba(255,255,255,0.1); border-radius:10px;">';
+    html += '<h4 style="color:#00ff88; margin-bottom:10px;"><i class="fas fa-microchip"></i> AI Analysis: Why this result?</h4>';
+    html += '<ul style="list-style:none; padding:0;">';
+
+    explanation.forEach(item => {
+        // જેની વેલ્યુ પોઝિટિવ હોય તે રિસ્ક વધારે છે (લાલ રંગ), નેગેટિવ હોય તે ઘટાડે છે (લીલો રંગ)
+        const color = item.shap_value > 0 ? '#ff1654' : '#00ff88';
+        const icon = item.shap_value > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        
+        html += `<li style="margin-bottom:8px; font-size:0.9rem; display:flex; justify-content:space-between;">
+                    <span>${item.feature}</span>
+                    <span style="color:${color}">
+                        <i class="fas ${icon}"></i> ${item.impact}
+                    </span>
+                 </li>`;
+    });
+
+    html += '</ul></div>';
+
+    // આને તમારા રિઝલ્ટ સેક્શનમાં એડ કરો
+    const resultDiv = document.getElementById('predictionResult'); // તમારા રિઝલ્ટ ડિબની ID ચેક કરી લેવી
+    if(resultDiv) {
+        resultDiv.innerHTML += html;
+    }
+}
 </script>
 
 
