@@ -3083,13 +3083,12 @@ def favicon():
 
 
 
-if __name__ == '__main__':
-    print("\n" + "="*55)
-    print("  VitalsAI — http://localhost:5000  SQLite DB — Active ✅")
-    print("  Login     — http://localhost:5000/login")
-    print("  Assistant — http://localhost:5000/assistant")
-    print("  Status    — http://localhost:5000/status")
-    print("  History   — http://localhost:5000/history")
-    print("  BMI       — http://localhost:5000/bmi")
-    print("="*55 + "\n")
-    app.run(debug=True, port=5000)
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 7860))
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )

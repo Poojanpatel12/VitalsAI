@@ -1,5 +1,0 @@
-runtime: python310 # તમારી runtime.txt મુજબ python 3.10
-instance_class: F2 # TensorFlow મોટી લાઈબ્રેરી છે, એટલે F1 ને બદલે F2 લેવું જેથી મેમરી ભૂલ ના આવે
-
-# App Engine ના સર્વર માટે સેટિંગ્સ
-entrypoint: gunicorn -b :$PORT app:app 
