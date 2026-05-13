@@ -97,7 +97,7 @@ app.secret_key = 'vitalsai-secret-2024'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
 # reCAPTCHA — replace with real keys from https://www.google.com/recaptcha/admin
-RECAPTCHA_SECRET = os.environ.get('RECAPTCHA_SECRET', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe')
+RECAPTCHA_SECRET = os.environ.get('RECAPTCHA_SECRET', '6LdoPNMsAAAAAGRGG6G41pbS5bKrrGzT6Cbwwwtf')
 IDLE_TIMEOUT = 3600  # 1 hour idle auto-logout
 
 GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '')
@@ -608,12 +608,7 @@ def api_send_otp():
         try:
             import smtplib
             # SMTP સર્વર સાથે કનેક્ટ થતી વખતે ટાઈમઆઉટ સેટ કરો જેથી સર્વર હેંગ ન થાય
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
-                server.login(gmail_user, gmail_pass)
-                server.sendmail(gmail_user, email, msg.as_string())
-
-            otp_sent = True
-            print(f"[OTP] Email sent to {email} ✅")
+           
 
             from email.mime.multipart import MIMEMultipart
             from email.mime.text      import MIMEText
@@ -660,7 +655,7 @@ def api_send_otp():
             msg.attach(MIMEText(f'Your VitalsAI OTP is: {otp}. Valid for 2 minutes. Do not share.', 'plain'))
             msg.attach(MIMEText(html_body, 'html'))
 
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
                 server.login(gmail_user, gmail_pass)
                 server.sendmail(gmail_user, email, msg.as_string())
 
@@ -3083,12 +3078,13 @@ def favicon():
 
 
 
-import os
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 7860))
-
-    app.run(
-        host="0.0.0.0",
-        port=port
-    )
+if __name__ == '__main__':
+    print("\n" + "="*55)
+    print("  VitalsAI — http://localhost:5000  SQLite DB — Active ✅")
+    print("  Login     — http://localhost:5000/login")
+    print("  Assistant — http://localhost:5000/assistant")
+    print("  Status    — http://localhost:5000/status")
+    print("  History   — http://localhost:5000/history")
+    print("  BMI       — http://localhost:5000/bmi")
+    print("="*55 + "\n")
+    app.run(debug=True , port=5000)
