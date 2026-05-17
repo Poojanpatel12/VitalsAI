@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitalsAI — Lifestyle Recommendations</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+<style>
+:root{
+  --bg:#0a0e27;--surface:#1a1f3a;--border:#2d3a5a;--text:#f0f4ff;--text-muted:#9ca3b5;
+  --cyan:#00d9ff;--magenta:#ff00ff;--orange:#ff6b35;--green:#00ff88;--yellow:#ffec19;--purple:#c77dff;
+  --card-shadow:0 8px 32px rgba(0,0,0,.3);--card-shadow-hover:0 20px 64px rgba(0,0,0,.5);
+}
+[data-theme="light"]{--bg:#f5f7ff;--surface:#ffffff;--border:#e5e9f5;--text:#0a0e27;--text-muted:#6b7280}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;transition:all .4s ease}
+
+/* Background */
+.bg-gradient{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.blob{position:absolute;filter:blur(80px);opacity:.3;border-radius:50%;animation:float 8s ease-in-out infinite}
+.blob-1{width:350px;height:350px;background:var(--green);top:-50px;left:5%}
+.blob-2{width:400px;height:400px;background:var(--cyan);bottom:80px;right:5%;animation-delay:2s}
+.blob-3{width:300px;height:300px;background:var(--purple);top:40%;right:15%;animation-delay:4s}
+.blob-4{width:320px;height:320px;background:var(--orange);bottom:10%;left:10%;animation-delay:3s}
+@keyframes float{0%,100%{transform:translate(0,0)}25%{transform:translate(20px,-20px)}50%{transform:translate(-10px,20px)}75%{transform:translate(10px,-10px)}}
+
+/* Navigation */
+ /* ──────── NAVIGATION ──────── */
+    nav {
+      background: rgba(26, 31, 58, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    [data-theme="light"] nav {
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      letter-spacing: -1.5px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-center a,
+    .nav-center button {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .nav-center a:hover,
+    .nav-center button:hover,
+    .nav-center a.active,
+    .nav-center button.active {
+      color: var(--cyan);
+      background: rgba(0, 217, 255, 0.15);
+      border: 1px solid var(--cyan);
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .dark-btn {
+      background: rgba(0, 217, 255, 0.2);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .dark-btn:hover {
+      background: var(--cyan);
+      color: var(--bg);
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 12px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      min-width: 280px;
+      display: none;
+      z-index: 200;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .nav-dropdown {
+      position: relative;
+    }
+
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown:focus-within .dropdown-menu {
+      display: grid;
+      gap: 6px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .dropdown-menu a:hover {
+      background: rgba(0, 217, 255, 0.15);
+      color: var(--cyan);
+      padding-left: 18px;
+    }
+
+
+    .hero-home {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    }
+
+    .hero {
+      position: relative;
+      padding: 120px 24px;
+      text-align: center;
+      overflow: hidden;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    user agent stylesheet section {
+      display: block;
+      unicode-bidi: isolate;
+    }
+
+    /* ──────── HERO SECTIONS ──────── */
+    .hero {
+      position: relative;
+      padding: 120px 24px;
+      text-align: center;
+      overflow: hidden;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+      margin: 0 auto;
+      animation: fadeInUp 1s ease 0.2s both;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-badge {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .hero h1 {
+      font-size: 64px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .hero p {
+      font-size: 18px;
+      opacity: 0.95;
+      margin-bottom: 32px;
+      line-height: 1.8;
+    }
+
+    /* ──────── HOME HERO ──────── */
+    .hero-home {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    }
+
+    .hero-home .hero-overlay {
+      background:
+        radial-gradient(circle at 20% 50%, rgba(255, 22, 84, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 217, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 0%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── HEART HERO ──────── */
+    .hero-heart {
+      background: linear-gradient(135deg, #2a0a10 0%, #3d1a2a 50%, #2a1a3a 100%);
+    }
+
+    .hero-heart .hero-overlay {
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255, 22, 84, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255, 107, 157, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── BRAIN HERO ──────── */
+    .hero-brain {
+      background: linear-gradient(135deg, #1a0a2e 0%, #2d1a4d 50%, #1a2a4e 100%);
+    }
+
+    .hero-brain .hero-overlay {
+      background:
+        radial-gradient(circle at 30% 40%, rgba(199, 125, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(0, 213, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── DIABETES HERO ──────── */
+    .hero-diabetes {
+      background: linear-gradient(135deg, #2a1a0a 0%, #3d2a1a 50%, #2a2a1a 100%);
+    }
+
+    .hero-diabetes .hero-overlay {
+      background:
+        radial-gradient(circle at 25% 35%, rgba(255, 235, 25, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 75% 65%, rgba(255, 107, 53, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── KIDNEY HERO ──────── */
+    .hero-kidney {
+      background: linear-gradient(135deg, #0a2a3a 0%, #1a3a4e 50%, #0a3a5a 100%);
+    }
+
+    .hero-kidney .hero-overlay {
+      background:
+        radial-gradient(circle at 30% 30%, rgba(0, 217, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(0, 255, 204, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── EYE HERO ──────── */
+    .hero-eye {
+      background: linear-gradient(135deg, #0a2a1a 0%, #1a4a3a 50%, #0a3a2a 100%);
+    }
+
+    .hero-eye .hero-overlay {
+      background:
+        radial-gradient(circle at 25% 40%, rgba(0, 255, 136, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 75% 60%, rgba(0, 217, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 30%, rgba(255, 235, 25, 0.1) 0%, transparent 50%);
+    }
+
+    /* ──────── LUNG HERO ──────── */
+    .hero-lung {
+      background: linear-gradient(135deg, #1a1a2a 0%, #2a2a3a 50%, #1a2a4a 100%);
+    }
+
+    .hero-lung .hero-overlay {
+      background:
+        radial-gradient(circle at 20% 35%, rgba(100, 200, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 80% 65%, rgba(100, 255, 200, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(199, 125, 255, 0.1) 0%, transparent 50%);
+    }
+
+
+    .tracker-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      margin-bottom:34px
+    }
+
+    /* ──────── CONTAINER ──────── */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section {
+      padding: 80px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .section-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 48px;
+      color: var(--text);
+      letter-spacing: -1px;
+      font-family: 'Space Grotesk', sans-serif;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+nav{background:rgba(26,31,58,.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.1);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+[data-theme="light"] nav{background:rgba(255,255,255,.9);border-bottom:1px solid var(--border)}
+.logo{font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--magenta),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;font-family:'Space Grotesk',sans-serif}
+.nav-center a{text-decoration:none;color:var(--text-muted);font-size:13px;font-weight:600;padding:8px 14px;border-radius:10px;transition:all .3s ease;background:transparent;border:none;cursor:pointer;font-family:inherit}
+.nav-center a:hover,.nav-center a.active{color:var(--green);background:rgba(0,255,136,.15);border:1px solid var(--green)}
+.nav-right{display:flex;gap:12px}
+.dark-btn{background:rgba(0,255,136,.2);border:1px solid var(--green);color:var(--green);width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease}
+.dark-btn:hover{background:var(--green);color:var(--bg);box-shadow:0 0 20px rgba(0,255,136,.4)}
+
+
+/* Header */
+header{background:linear-gradient(135deg,#00ff88 0%,#00d9ff 50%,#c77dff 100%);color:white;padding:60px 40px;text-align:center;position:relative;overflow:hidden;min-height:300px;display:flex;align-items:center;justify-content:center}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.1),transparent 50%)}
+header h1{font-size:48px;font-weight:800;margin-bottom:12px;letter-spacing:-1px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:2}
+header p{font-size:16px;opacity:.95;position:relative;z-index:2}
+
+/* Container */
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:2}
+.section{padding:80px 0}
+
+/* Grid Layout */
+.main{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:32px}
+.full{grid-column:1/-1}
+
+/* Card */
+.card{background:var(--surface);border-radius:20px;padding:32px;box-shadow:var(--card-shadow);border:1px solid var(--border);transition:all .4s ease;position:relative;overflow:hidden}
+.card::before{pointer-events: none;content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(0,255,136,.1));opacity:0;transition:opacity .4s ease}
+.card:hover{transform:translateY(-8px);box-shadow:var(--card-shadow-hover);border-color:var(--green)}
+.card:hover::before{opacity:1}
+.card h2{font-size:20px;font-weight:800;margin-bottom:20px;background:linear-gradient(135deg,var(--green),var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card p.sub{color:var(--text-muted);font-size:13px;margin-bottom:20px}
+.card {
+  position: relative;
+  z-index: 1;
+}
+
+.card * {
+  position: relative;
+  z-index: 2;
+}
+
+    .history-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+[data-theme="light"] .history-btn {
+  background: #2b6cb0;
+  color: white;
+}
+
+/* DARK MODE */
+[data-theme="dark"] .history-btn {
+  background: #3b82f6;
+  color: white;
+}
+/* Form Grid */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:20px}
+.fg label{display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;text-transform:uppercase}
+.fg input,.fg select{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:rgba(255,255,255,.05);color:var(--text);transition:all .3s ease;font-family:inherit}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--green);background:rgba(0,255,136,.1);box-shadow:0 0 12px rgba(0,255,136,.2)}
+
+/* Button */
+.btn-rec{width:100%;padding:14px;background:linear-gradient(135deg,var(--green),var(--cyan),var(--purple));color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;transition:all .3s ease}
+.btn-rec:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,255,136,.3)}
+
+/* Result */
+#rec-output{display:none}
+.score-wrap{text-align:center;padding:12px 0 28px}
+.score-circle{width:120px;height:120px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px;border:6px solid;animation:scaleIn .6s ease}
+@keyframes scaleIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.score-circle.good{border-color:var(--green);background:rgba(0,255,136,.15)}
+.score-circle.medium{border-color:var(--yellow);background:rgba(255,235,25,.15)}
+.score-circle.low{border-color:var(--orange);background:rgba(255,107,53,.15)}
+.score-num{font-size:32px;font-weight:800}
+.score-label{font-size:12px;color:var(--text-muted);font-weight:600}
+.risk-badge{display:inline-block;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:12px;text-transform:uppercase}
+.badge-low{background:rgba(255,107,53,.2);color:var(--orange);border:1px solid var(--orange)}
+.badge-medium{background:rgba(255,235,25,.2);color:var(--yellow);border:1px solid var(--yellow)}
+.badge-high{background:rgba(0,255,136,.2);color:var(--green);border:1px solid var(--green)}
+
+/* Recommendations */
+.rec-category{margin-bottom:24px}
+.rec-category h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.rec-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--surface);border-radius:10px;margin-bottom:8px;font-size:13px;border-left:3px solid;transition:all .3s ease}
+.rec-item:hover{transform:translateX(4px);border-color:var(--cyan)}
+.rec-item.diet{border-left-color:var(--green)}
+.rec-item.exercise{border-left-color:var(--orange)}
+.rec-item.sleep{border-left-color:var(--purple)}
+.rec-item.medical{border-left-color:var(--cyan)}
+.check{color:var(--green);font-weight:700;margin-top:2px;flex-shrink:0;font-size:14px}
+
+/* Tips Section */
+.tips-section{background:linear-gradient(135deg,rgba(0,255,136,.1),rgba(0,217,255,.1),rgba(199,125,255,.1));border-radius:16px;padding:32px;margin-top:48px;border:1px solid var(--border)}
+.tips-title{font-size:22px;font-weight:800;margin-bottom:28px;background:linear-gradient(135deg,var(--green),var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tips-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.tip-item{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border);transition:all .3s ease;text-align:center}
+.tip-item:hover{transform:translateY(-6px);border-color:var(--green);background:rgba(0,255,136,.1)}
+.tip-icon{font-size:36px;margin-bottom:10px}
+.tip-name{font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.tip-desc{font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* Responsive */
+@media(max-width:768px){
+  nav{padding:12px 16px;flex-wrap:wrap}
+  header{padding:40px 20px;min-height:240px}
+  header h1{font-size:32px}
+  .main{grid-template-columns:1fr}
+  .card{padding:24px}
+  .form-grid{grid-template-columns:1fr}
+  .tips-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+}
+
+  /* ── User Profile Widget ─────────────────────────────── */
+  .user-profile-wrap{position:relative;display:flex;align-items:center;gap:10px;margin-left:8px}
+  .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00d9ff,#ff00ff);
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;
+    color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .3s;
+    font-family:'Space Grotesk',sans-serif;flex-shrink:0;text-transform:uppercase}
+  .user-avatar:hover{transform:scale(1.08);box-shadow:0 0 16px rgba(0,217,255,.4)}
+  .user-name-label{font-size:13px;font-weight:600;color:var(--text,#f0f4ff);white-space:nowrap;
+    max-width:100px;overflow:hidden;text-overflow:ellipsis}
+  .user-dropdown{position:absolute;top:calc(100% + 10px);right:0;min-width:220px;
+    background:linear-gradient(135deg,rgba(26,31,58,.98),rgba(42,42,80,.98));
+    border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:8px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);backdrop-filter:blur(20px);
+    display:none;z-index:9999;animation:dropIn .2s ease}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .user-dropdown.open{display:block}
+  .ud-header{padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:6px}
+  .ud-avatar-big{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#00d9ff,#ff00ff);
+    display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;
+    color:#fff;margin:0 auto 10px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase}
+  .ud-name{font-size:15px;font-weight:700;color:#f0f4ff;text-align:center;font-family:'Space Grotesk',sans-serif}
+  .ud-email{font-size:11px;color:#9ca3b5;text-align:center;margin-top:2px;word-break:break-all}
+  .ud-divider{height:1px;background:rgba(255,255,255,.08);margin:6px 0}
+  .ud-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+    cursor:pointer;font-size:13px;font-weight:600;color:#f0f4ff;transition:all .2s;text-decoration:none}
+  .ud-item:hover{background:rgba(0,217,255,.12);color:#00d9ff}
+  .ud-item i{width:16px;text-align:center;color:#00d9ff}
+  .ud-item.logout{color:#ff6b9d}
+  .ud-item.logout:hover{background:rgba(255,22,84,.12);color:#ff1654}
+  .ud-item.logout i{color:#ff6b9d}
+
+
+
+   .bmi-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+
+  </style>
+</head>
+<body>
+<div class="bg-gradient">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<nav>
+  <a href="/" class="logo">🌿 VitalsAI</a>
+  <div class="nav-center" style="display:flex;gap:8px">
+    <a href="/"><i class="fa-solid fa-home"></i> Home</a>
+    <div class="nav-dropdown">
+        <button class="dropbtn"><i class="fa-solid fa-stethoscope"></i> Predictions <i
+            class="fa-solid fa-chevron-down"></i></button>
+        <div class="dropdown-menu">
+          <a href="/heart" onclick="showPage('heart'); return false;" class="nav-link" data-page="heart"><i
+              class="fa-solid fa-heart"></i> Heart Disease</a>
+          <a href="/brain" onclick="showPage('brain'); return false;" class="nav-link" data-page="brain"><i
+              class="fa-solid fa-brain"></i> Brain / Stroke</a>
+          <a href="/diabetes" onclick="showPage('diabetes'); return false;" class="nav-link" data-page="diabetes"><i
+              class="fa-solid fa-droplet"></i> Diabetes</a>
+          <a href="/kidney" onclick="showPage('kidney'); return false;" class="nav-link" data-page="kidney"><i
+              class="fa-solid fa-prescription-bottle-medical"></i> Kidney</a>
+          <a href="/eye" onclick="showPage('eye'); return false;" class="nav-link" data-page="eye"><i
+              class="fa-solid fa-eye"></i> Eye</a>
+          <a href="/lung" onclick="showPage('lung'); return false;" class="nav-link" data-page="lung"><i
+              class="fa-solid fa-lungs"></i> Lung</a>
+        </div>
+      </div>
+    <a href="/lifestyle" class="active"><i class="fa-solid fa-leaf"></i> Lifestyle</a>
+    <a href="/about-contact" onclick="showPage('about-contact'); return false;" class="nav-link"
+        data-page="about-contact"><i class="fa-solid fa-address-card"></i> About & Contact</a>
+
+  </div>
+  <div class="nav-right">
+    <div class="nav-right">
+      <a href="/bmi" class="bmi-btn "><i class="fa-solid fa-calculator"></i> Tracker</a>
+      <a href="/history" class="history-btn nav-link" onclick="showPage('history'); return false;" data-page="history">
+        <i class="fa-solid fa-clock-rotate-left"></i> History
+      </a>
+    <button class="dark-btn" onclick="toggleDark()" title="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+  
+    <!-- User Profile Widget (injected by VitalsAI auth system) -->
+    <div class="user-profile-wrap" id="userProfileWrap" style="display:none">
+      <span class="user-name-label" id="navUserName"></span>
+      <div class="user-avatar" id="navAvatar" onclick="toggleUserDropdown()">?</div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="ud-header">
+          <div class="ud-avatar-big" id="dropAvatar">?</div>
+          <div class="ud-name" id="dropName">Loading...</div>
+          <div class="ud-email" id="dropEmail"></div>
+        </div>
+        <a class="ud-item" href="/history"><i class="fa-solid fa-clock-rotate-left"></i> Prediction History</a>
+        <a class="ud-item" href="/bmi"><i class="fa-solid fa-calculator"></i> Health Tracker</a>
+        <div class="ud-divider"></div>
+        <div class="ud-item logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div style="position:relative;z-index:2">
+    <h1>🌿 Personalized Lifestyle Recommendations</h1>
+    <p>Enter your health data to get AI-powered diet, exercise, sleep and medical recommendations</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="section">
+    <div class="main">
+      <div class="card">
+        <h2>📋 Your Health Profile</h2>
+        <p class="sub">Share your health details for personalized recommendations</p>
+        <div class="form-grid">
+          <div class="fg"><label>Age</label><input required type="number" id="r-age" placeholder="35"></div>
+          <div class="fg"><label>BMI</label><input required type="number" id="r-bmi" placeholder="27" step="0.1"></div>
+          <div class="fg"><label>Blood Pressure</label><input required type="number" id="r-bp" placeholder="130"></div>
+          <div class="fg"><label>Cholesterol</label><input required type="number" id="r-chol" placeholder="200"></div>
+          <div class="fg"><label>Smoker?</label><select id="r-smoke"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="fg"><label>Physical Activity?</label><select id="r-activity"><option value="1">Yes, regularly</option><option value="0">No / Rarely</option></select></div>
+          <div class="fg"><label>Diabetes?</label><select id="r-diabetes"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="fg"><label>Sleep (hours)</label><input required type="number" id="r-sleep" placeholder="7" min="1" max="12"></div>
+          <div class="fg"><label>Stress Level</label><select id="r-stress"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+          <div class="fg"><label>Diet Type</label><select id="r-diet"><option value="mixed">Mixed</option><option value="veg">Vegetarian</option><option value="vegan">Vegan</option></select></div>
+        </div>
+        <button class="btn-rec" onclick="getRecommendations()"><i class="fa-solid fa-wand-magic-sparkles"></i> Get My Plan</button>
+      </div>
+
+      <div class="card" id="rec-output">
+        <h2>✅ Your Health Score</h2>
+        <div id="rec-content"></div>
+      </div>
+    </div>
+
+    <div class="tips-section">
+      <div class="tips-title">💡 Wellness Tips for Healthy Living</div>
+      <div class="tips-grid">
+        <div class="tip-item">
+          <div class="tip-icon">🍎</div>
+          <div class="tip-name">Nutrition</div>
+          <div class="tip-desc">Balanced diet with fruits, vegetables, whole grains, and lean proteins daily</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">🏃</div>
+          <div class="tip-name">Exercise</div>
+          <div class="tip-desc">150 min/week moderate cardio + 2x/week strength training for optimal health</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">😴</div>
+          <div class="tip-name">Sleep</div>
+          <div class="tip-desc">7-9 hours quality sleep nightly for better recovery and metabolism</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">💧</div>
+          <div class="tip-name">Hydration</div>
+          <div class="tip-desc">8-10 glasses water daily for optimal body function and metabolism</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">🧘</div>
+          <div class="tip-name">Stress</div>
+          <div class="tip-desc">Meditation, yoga, breathing exercises to manage stress and anxiety</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">🏥</div>
+          <div class="tip-name">Checkups</div>
+          <div class="tip-desc">Regular health checkups with your doctor for preventive care</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleDark(){
+  const html=document.documentElement;
+  const theme=html.getAttribute('data-theme')==='light'?'dark':'light';
+  html.setAttribute('data-theme',theme);
+  localStorage.setItem('theme',theme);
+}
+async function getRecommendations() {
+  const data = {
+    age: parseInt(document.getElementById('r-age').value) || 30,
+    bmi: parseFloat(document.getElementById('r-bmi').value) || 22,
+    bp: parseInt(document.getElementById('r-bp').value) || 120,
+    chol: parseInt(document.getElementById('r-chol').value) || 180,
+    smoker: parseInt(document.getElementById('r-smoke').value) || 0,
+    activity: parseInt(document.getElementById('r-activity').value) || 1,
+    diabetes: parseInt(document.getElementById('r-diabetes').value) || 0,
+    sleep: parseInt(document.getElementById('r-sleep').value) || 7,
+    stress: document.getElementById('r-stress').value || 'low',
+    diet: document.getElementById('r-diet').value || 'mixed'
+  };
+
+  // Validate required fields
+  if (!document.getElementById('r-age').value || !document.getElementById('r-bmi').value) {
+    alert('Please fill in Age and BMI at minimum.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('Server error: ' + res.status + ' — ' + txt.substring(0, 100));
+    }
+
+    const recs = await res.json();
+    
+    // ✅ અહિયાં આપણે ફંક્શનને કોલ કરીએ છીએ જેથી રિઝલ્ટ દેખાય
+    displayRecs(recs);
+
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function displayRecs(recs) {
+  const out = document.getElementById('rec-output');
+  const con = document.getElementById('rec-content');
+  out.style.display = 'block';
+
+  const scoreClass = recs.health_score >= 75 ? 'good' : recs.health_score >= 50 ? 'medium' : 'low';
+  
+  // Risk Label Logic
+  const riskLabel = recs.risk_level === 'low' ? 'LOW RISK' : recs.risk_level === 'medium' ? 'MEDIUM RISK' : 'HIGH RISK';
+  const badgeClass = recs.risk_level === 'low' ? 'badge-high' : recs.risk_level === 'medium' ? 'badge-medium' : 'badge-low';
+
+  // Email Notification Banner
+  let emailBanner = '';
+  if (recs.email_sent) {
+    emailBanner = `
+      <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); color: var(--green); 
+                  padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; 
+                  display: flex; align-items: center; gap: 10px; animation: fadeInUp 0.5s ease;">
+        <i class="fa-solid fa-envelope-open-text"></i> 
+        Detailed health guide & precautions have been sent to your email!
+      </div>`;
+  }
+
+  let html = emailBanner + `
+    <div class="score-wrap">
+      <div class="score-circle ${scoreClass}">
+        <div class="score-num">${recs.health_score}</div>
+        <div class="score-label">/ 100</div>
+      </div>
+      <div class="risk-badge ${badgeClass}">${riskLabel}</div>
+    </div>`;
+
+  const cats = [
+    { key: 'diet', icon: '🍎', label: 'Diet Recommendations', cls: 'diet' },
+    { key: 'exercise', icon: '🏃', label: 'Exercise Recommendations', cls: 'exercise' },
+    { key: 'sleep', icon: '😴', label: 'Sleep Recommendations', cls: 'sleep' },
+    { key: 'medical', icon: '🏥', label: 'Medical Advice', cls: 'medical' }
+  ];
+
+  cats.forEach(cat => {
+    if (recs[cat.key] && recs[cat.key].length > 0) {
+      html += `<div class="rec-category"><h4>${cat.icon} ${cat.label}</h4>`;
+      recs[cat.key].forEach(r => {
+        html += `<div class="rec-item ${cat.cls}"><span class="check">✓</span> ${r}</div>`;
+      });
+      html += '</div>';
+    }
+  });
+
+  con.innerHTML = html;
+  out.scrollIntoView({ behavior: 'smooth' });
+}
+
+
+</script>
+<script>
+// ── VitalsAI Auth System ───────────────────────────────────
+(async function initAuth() {
+  try {
+    const res  = await fetch('/api/me');
+    const data = await res.json();
+
+    if (!data.logged_in) {
+      // Not logged in — redirect to login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    const name  = data.name  || 'User';
+    const email = data.email || '';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // Show profile widget
+    const wrap = document.getElementById('userProfileWrap');
+    if (wrap) wrap.style.display = 'flex';
+
+    // Set initials + name
+    const navAvatar  = document.getElementById('navAvatar');
+    const dropAvatar = document.getElementById('dropAvatar');
+    const navName    = document.getElementById('navUserName');
+    const dropName   = document.getElementById('dropName');
+    const dropEmail  = document.getElementById('dropEmail');
+
+    if (navAvatar)  navAvatar.textContent  = initials;
+    if (dropAvatar) dropAvatar.textContent = initials;
+    if (navName)    navName.textContent    = name.split(' ')[0]; // first name only
+    if (dropName)   dropName.textContent   = name;
+    if (dropEmail)  dropEmail.textContent  = email;
+
+    // Color avatar based on name (consistent per user)
+    const colors = [
+      'linear-gradient(135deg,#00d9ff,#ff00ff)',
+      'linear-gradient(135deg,#ff1654,#ff6b35)',
+      'linear-gradient(135deg,#00ff88,#00d9ff)',
+      'linear-gradient(135deg,#c77dff,#ff00ff)',
+      'linear-gradient(135deg,#ffec19,#ff6b35)',
+    ];
+    const colorIdx = name.charCodeAt(0) % colors.length;
+    const gradient = colors[colorIdx];
+    if (navAvatar)  navAvatar.style.background  = gradient;
+    if (dropAvatar) dropAvatar.style.background = gradient;
+
+  } catch(e) {
+    console.error('Auth check failed:', e);
+  }
+})();
+
+function toggleUserDropdown() {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('userProfileWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.remove('open');
+  }
+});
+
+async function logoutUser() {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+  window.location.href = '/login';
+}
+</script>
+
+
+
+
+
+<!-- VitalsAI Emergency Widget -->
+<style id="vitalsai-emergency-widget-style">
+  .em-fab,.em-overlay{display:none!important}
+  .vai-emergency-fab{
+    position:fixed;left:22px;bottom:22px;z-index:9998;
+    font-family:'Poppins','DM Sans',system-ui,sans-serif;
+  }
+  .vai-emergency-fab button{
+    min-width:178px;height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.18);
+    background:linear-gradient(135deg,#be123c,#f97316);color:#fff;
+    box-shadow:0 16px 40px rgba(190,18,60,.36);cursor:pointer;
+    font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:9px;
+    transition:transform .2s,box-shadow .2s;letter-spacing:.1px;
+  }
+  .vai-emergency-fab button:hover{transform:translateY(-2px);box-shadow:0 20px 52px rgba(190,18,60,.48)}
+  .vai-emergency-overlay{
+    position:fixed;inset:0;z-index:10002;background:rgba(4,8,20,.72);
+    display:none;align-items:center;justify-content:center;padding:18px;
+    backdrop-filter:blur(12px);font-family:'Poppins','DM Sans',system-ui,sans-serif;
+  }
+  .vai-emergency-overlay.open{display:flex}
+  .vai-emergency-modal{
+    width:min(760px,100%);max-height:90vh;overflow:auto;border-radius:24px;
+    background:linear-gradient(180deg,#ffffff,#f7fbff);color:#111827;
+    box-shadow:0 28px 90px rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.7);
+  }
+  .vai-emergency-head{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:18px 20px;background:linear-gradient(135deg,#be123c,#f97316);color:#fff;
+  }
+  .vai-emergency-title{display:flex;align-items:center;gap:12px}
+  .vai-emergency-title .mark{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:22px}
+  .vai-emergency-title h2{font-size:20px;margin:0;font-weight:900;letter-spacing:0}
+  .vai-emergency-title p{font-size:12px;margin:2px 0 0;opacity:.92}
+  .vai-emergency-close{
+    width:38px;height:38px;border:0;border-radius:12px;background:rgba(255,255,255,.2);
+    color:#fff;font-size:22px;cursor:pointer;
+  }
+  .vai-emergency-body{padding:18px;display:grid;gap:14px}
+  .vai-emergency-consent{
+    display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;
+    background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;font-size:13px;line-height:1.45;
+  }
+  .vai-emergency-consent input{width:18px;height:18px;margin-top:1px;accent-color:#be123c;flex-shrink:0}
+  .vai-emergency-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .vai-emergency-action{
+    border:1px solid #e5e7eb;background:#fff;border-radius:16px;padding:13px;
+    display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;
+    color:#111827;text-decoration:none;font-weight:800;font-size:13px;
+    box-shadow:0 8px 22px rgba(15,23,42,.06);transition:transform .15s,border-color .15s;
+  }
+  .vai-emergency-action:hover{transform:translateY(-1px);border-color:#be123c}
+  .vai-emergency-action .ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#fee2e2;font-size:13px;font-weight:900;flex-shrink:0;color:#991b1b}
+  .vai-emergency-action small{display:block;color:#6b7280;font-size:11px;font-weight:600;margin-top:1px}
+  .vai-emergency-card{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#fff}
+  .vai-emergency-card h3{font-size:14px;margin:0 0 10px;color:#111827;display:flex;align-items:center;gap:8px}
+  .vai-emergency-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+  .vai-emergency-fields input{
+    min-width:0;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;
+    font:inherit;font-size:13px;outline:none;
+  }
+  .vai-emergency-fields input:focus{border-color:#be123c;box-shadow:0 0 0 3px rgba(190,18,60,.1)}
+  .vai-emergency-save{
+    border:0;border-radius:12px;background:#111827;color:#fff;font-weight:800;padding:0 14px;cursor:pointer;
+  }
+  .vai-emergency-firstaid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .vai-emergency-tip{border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb;padding:12px;font-size:12px;line-height:1.45;color:#374151}
+  .vai-emergency-tip b{display:block;color:#111827;margin-bottom:4px}
+  .vai-emergency-status{display:none;padding:10px 12px;border-radius:12px;background:#fef2f2;color:#991b1b;font-size:12px;font-weight:700;line-height:1.45}
+  .vai-emergency-status.show{display:block}
+  .vai-sym-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .vai-sym-btn{border:1px solid #e5e7eb;background:#f8fafc;border-radius:12px;padding:10px 8px;font-size:12px;font-weight:800;cursor:pointer;color:#374151}
+  .vai-sym-btn.active{background:#fee2e2;border-color:#fb7185;color:#9f1239}
+  .vai-tab-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .vai-aid-tab{border:1px solid #e5e7eb;background:#f8fafc;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;color:#374151}
+  .vai-aid-tab.active{background:#111827;color:#fff;border-color:#111827}
+  .vai-aid-panel{display:none;border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb;padding:12px;color:#374151;font-size:13px;line-height:1.55}
+  .vai-aid-panel.active{display:block}
+  .vai-aid-panel ol{margin:8px 0 0;padding-left:20px}
+  .vai-aid-panel li{margin:4px 0}
+  @media(max-width:640px){
+    .vai-emergency-fab{left:14px;bottom:14px}
+    .vai-emergency-fab button{min-width:150px;height:48px;font-size:13px}
+    .vai-emergency-grid,.vai-emergency-firstaid,.vai-emergency-fields,.vai-sym-grid{grid-template-columns:1fr}
+  }
+</style>
+
+<div class="vai-emergency-fab" id="vaiEmergencyFab">
+  <button type="button" onclick="vaiOpenEmergency()" title="Emergency assistance">
+    <span>Emergency Assist</span>
+  </button>
+</div>
+
+<div class="vai-emergency-overlay" id="vaiEmergencyOverlay" onclick="vaiEmergencyOverlayClick(event)">
+  <div class="vai-emergency-modal" role="dialog" aria-modal="true" aria-labelledby="vaiEmergencyTitle">
+    <div class="vai-emergency-head">
+      <div class="vai-emergency-title">
+        <div class="mark">+</div>
+        <div>
+          <h2 id="vaiEmergencyTitle">Emergency Assist</h2>
+          <p>Calls, SOS message, symptoms, first aid, voice command, and siren.</p>
+        </div>
+      </div>
+      <button class="vai-emergency-close" type="button" onclick="vaiCloseEmergency()" aria-label="Close">×</button>
+    </div>
+    <div class="vai-emergency-body">
+      <label class="vai-emergency-consent">
+        <input type="checkbox" id="vaiEmergencyConsent" onchange="vaiSaveEmergencyConsent()">
+        <span><b>I allow emergency phone/SMS actions.</b><br>VitalsAI will only open call or SMS after you tick this checkbox and press a call/message button. No automatic call or message is sent by the app.</span>
+      </label>
+      <div class="vai-emergency-status" id="vaiEmergencyStatus"></div>
+
+      <div class="vai-emergency-card">
+        <h3>Emergency Calls</h3>
+        <div class="vai-emergency-grid">
+          <button class="vai-emergency-action" type="button" onclick="vaiEmergencyAction('call','108')">
+            <span class="ico">108</span><span>Call Ambulance<small>Emergency medical service</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiEmergencyAction('call','112')">
+            <span class="ico">112</span><span>Call All Emergency<small>National emergency helpline</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiFindHospital()">
+            <span class="ico">MAP</span><span>Find Hospital<small>Open nearby hospitals in Maps</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiPlaySiren()">
+            <span class="ico">SIR</span><span>Play Loud Siren<small>Audible alert for nearby help</small></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>Family Emergency Contact</h3>
+        <div class="vai-emergency-fields">
+          <input id="vaiEmergencyName" type="text" placeholder="Name">
+          <input id="vaiEmergencyPhone" type="tel" placeholder="Phone number">
+          <button class="vai-emergency-save" type="button" onclick="vaiSaveEmergencyContact()">Save</button>
+        </div>
+        <div class="vai-emergency-grid" style="margin-top:10px">
+          <button class="vai-emergency-action" type="button" onclick="vaiCallFamily()">
+            <span class="ico">CALL</span><span>Call Family<small>Uses saved emergency contact</small></span>
+          </button>
+          <button class="vai-emergency-action" type="button" onclick="vaiSendEmergencySMS()">
+            <span class="ico">SMS</span><span>Send SOS SMS<small>Includes location when available</small></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>Voice Command</h3>
+        <button class="vai-emergency-action" type="button" onclick="vaiStartVoiceCommand()" style="width:100%">
+          <span class="ico">MIC</span><span>Start Voice Command<small>Say: heart attack, stroke, accident, burn, bleeding, choking</small></span>
+        </button>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>Symptom Check</h3>
+        <div class="vai-sym-grid">
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'chest')">Chest pain</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'breath')">Breathless</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'stroke')">Weakness</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'bleed')">Bleeding</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'faint')">Fainting</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'burn')">Burn</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'choke')">Choking</button>
+          <button class="vai-sym-btn" type="button" onclick="vaiToggleSymptom(this,'vomit')">Vomiting</button>
+        </div>
+      </div>
+
+      <div class="vai-emergency-card">
+        <h3>First Aid Guide</h3>
+        <div class="vai-tab-row">
+          <button class="vai-aid-tab active" type="button" onclick="vaiShowAid('heart',this)">Heart</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('stroke',this)">Stroke</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('bleed',this)">Bleeding</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('burn',this)">Burn</button>
+          <button class="vai-aid-tab" type="button" onclick="vaiShowAid('choke',this)">Choking</button>
+        </div>
+        <div class="vai-aid-panel active" id="vaiAid-heart"><b>Heart attack / chest pain</b><ol><li>Sit or lie down and stay calm.</li><li>Loosen tight clothing.</li><li>Do not eat or drink.</li><li>Call 108 immediately if pain is severe, sweating, or breathlessness occurs.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-stroke"><b>Stroke FAST check</b><ol><li>Face drooping?</li><li>Arm weakness?</li><li>Speech slurred?</li><li>If yes to any, call 108 immediately.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-bleed"><b>Severe bleeding</b><ol><li>Apply firm pressure with clean cloth.</li><li>Raise injured part if possible.</li><li>Do not remove deep objects.</li><li>Call 108 for heavy bleeding.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-burn"><b>Burn injury</b><ol><li>Cool under running water for 10-20 minutes.</li><li>Remove jewelry near burn.</li><li>Cover with clean cloth.</li><li>Do not use ice, butter, or toothpaste.</li></ol></div>
+        <div class="vai-aid-panel" id="vaiAid-choke"><b>Choking</b><ol><li>Encourage coughing if able.</li><li>Give 5 back blows.</li><li>Give 5 abdominal thrusts.</li><li>If unconscious, call 108 and start CPR if trained.</li></ol></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="vitalsai-emergency-widget-script">
+  var vaiSelectedSymptoms = new Set();
+  function vaiOpenEmergency(){
+    var overlay=document.getElementById('vaiEmergencyOverlay');
+    if(overlay) overlay.classList.add('open');
+    document.body.style.overflow='hidden';
+    vaiLoadEmergencyContact();
+    var consent=document.getElementById('vaiEmergencyConsent');
+    if(consent) consent.checked=localStorage.getItem('vitals_emergency_consent')==='yes';
+  }
+  function vaiCloseEmergency(){
+    var overlay=document.getElementById('vaiEmergencyOverlay');
+    if(overlay) overlay.classList.remove('open');
+    document.body.style.overflow='';
+  }
+  function vaiEmergencyOverlayClick(e){ if(e.target && e.target.id==='vaiEmergencyOverlay') vaiCloseEmergency(); }
+  function vaiSaveEmergencyConsent(){
+    var consent=document.getElementById('vaiEmergencyConsent');
+    localStorage.setItem('vitals_emergency_consent', consent && consent.checked ? 'yes' : 'no');
+    vaiSetEmergencyStatus(consent && consent.checked ? 'Emergency call/SMS actions are enabled for button clicks.' : 'Emergency call/SMS actions are disabled until you allow them.', false);
+  }
+  function vaiHasEmergencyConsent(){
+    var consent=document.getElementById('vaiEmergencyConsent');
+    return (consent && consent.checked) || localStorage.getItem('vitals_emergency_consent')==='yes';
+  }
+  function vaiSetEmergencyStatus(message, isError){
+    var box=document.getElementById('vaiEmergencyStatus');
+    if(!box) return;
+    box.innerHTML=message;
+    box.style.background=isError ? '#fef2f2' : '#ecfdf5';
+    box.style.color=isError ? '#991b1b' : '#065f46';
+    box.classList.add('show');
+  }
+  function vaiRequireEmergencyConsent(targetUrl){
+    if(!vaiHasEmergencyConsent()){
+      vaiOpenEmergency();
+      vaiSetEmergencyStatus('Please tick the consent checkbox before opening a call or SMS action.', true);
+      return false;
+    }
+    if(targetUrl){ window.location.href=targetUrl; return false; }
+    return true;
+  }
+  function vaiOpenEmergencyForRisk(diseaseName, result){
+    var status='', score='';
+    if(result){ status=result.risk||result.prediction||result.stage||result.status||''; score=result.probability||result.confidence||result.survival_probability||''; }
+    vaiOpenEmergency();
+    var scoreText=score!==''&&score!==undefined&&score!==null?' Score: '+score+'%.':'';
+    vaiSetEmergencyStatus('High-risk '+diseaseName+' result detected: '+String(status).replace(/_/g,' ')+'.'+scoreText+' No call or SMS has been sent automatically. Tick consent, then choose a call/SMS action only if emergency help is needed.', true);
+  }
+  function vaiEmergencyAction(type,value){ if(!vaiRequireEmergencyConsent()) return; if(type==='call') window.location.href='tel:'+value; }
+  function vaiSaveEmergencyContact(){
+    var name=(document.getElementById('vaiEmergencyName')||{}).value||'';
+    var phone=(document.getElementById('vaiEmergencyPhone')||{}).value||'';
+    name=name.trim(); phone=phone.trim();
+    if(!name||!phone){ vaiSetEmergencyStatus('Please enter both name and phone number.', true); return; }
+    localStorage.setItem('vitals_emergency_contact_name',name);
+    localStorage.setItem('vitals_emergency_contact_phone',phone);
+    localStorage.setItem('em_contact_name',name);
+    localStorage.setItem('em_contact_num',phone);
+    vaiSetEmergencyStatus('Emergency contact saved.', false);
+  }
+  function vaiLoadEmergencyContact(){
+    var name=localStorage.getItem('vitals_emergency_contact_name')||localStorage.getItem('em_contact_name')||'';
+    var phone=localStorage.getItem('vitals_emergency_contact_phone')||localStorage.getItem('em_contact_num')||'';
+    var nameEl=document.getElementById('vaiEmergencyName'), phoneEl=document.getElementById('vaiEmergencyPhone');
+    if(nameEl) nameEl.value=name; if(phoneEl) phoneEl.value=phone;
+  }
+  function vaiCallFamily(){
+    if(!vaiRequireEmergencyConsent()) return;
+    var phone=localStorage.getItem('vitals_emergency_contact_phone')||localStorage.getItem('em_contact_num')||'';
+    if(!phone){ vaiSetEmergencyStatus('Please save a family emergency contact first.', true); return; }
+    window.location.href='tel:'+phone;
+  }
+  function vaiFindHospital(){
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(pos){
+        window.open('https://www.google.com/maps/search/hospital/@'+pos.coords.latitude+','+pos.coords.longitude+',14z','_blank');
+      }, function(){ window.open('https://www.google.com/maps/search/hospital+near+me','_blank'); }, {timeout:7000, enableHighAccuracy:true});
+    } else window.open('https://www.google.com/maps/search/hospital+near+me','_blank');
+  }
+  function vaiSendEmergencySMS(){
+    if(!vaiRequireEmergencyConsent()) return;
+    var phone=localStorage.getItem('vitals_emergency_contact_phone')||localStorage.getItem('em_contact_num')||'';
+    if(!phone){ vaiSetEmergencyStatus('Please save a family emergency contact first.', true); return; }
+    var openSms=function(body){ window.location.href='sms:'+phone+'?body='+encodeURIComponent(body); };
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(pos){
+        openSms('EMERGENCY! I need help immediately. My location: https://maps.google.com/?q='+pos.coords.latitude+','+pos.coords.longitude+' - VitalsAI Emergency Assist');
+      }, function(){ openSms('EMERGENCY! I need help immediately. Please call 108 for me. - VitalsAI Emergency Assist'); }, {timeout:7000, enableHighAccuracy:true});
+    } else openSms('EMERGENCY! I need help immediately. Please call 108 for me. - VitalsAI Emergency Assist');
+  }
+  function vaiPlaySiren(){
+    try{
+      var audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      var oscillator=audioCtx.createOscillator();
+      var gain=audioCtx.createGain();
+      oscillator.type='square'; oscillator.frequency.setValueAtTime(520,audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(980,audioCtx.currentTime+.45);
+      gain.gain.setValueAtTime(.85,audioCtx.currentTime);
+      oscillator.connect(gain); gain.connect(audioCtx.destination); oscillator.start();
+      setTimeout(function(){ try{oscillator.stop();audioCtx.close();}catch(e){} },3200);
+      vaiSetEmergencyStatus('Loud siren played for nearby attention.', false);
+    }catch(e){ vaiSetEmergencyStatus('Siren is not supported in this browser.', true); }
+  }
+  function vaiStartVoiceCommand(){
+    if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){ vaiSetEmergencyStatus('Voice command is not supported. Please use Chrome.', true); return; }
+    var recog=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+    recog.lang='en-IN'; recog.continuous=false; recog.interimResults=false;
+    vaiSetEmergencyStatus('Listening... say heart attack, stroke, accident, burn, bleeding, or choking.', false);
+    recog.onresult=function(e){
+      var said=e.results[0][0].transcript.toLowerCase();
+      var msg='Heard: <b>'+said+'</b><br>';
+      if(said.includes('heart')){ vaiShowAid('heart'); msg+='Possible heart emergency. Call 108 if symptoms are severe.'; }
+      else if(said.includes('stroke')){ vaiShowAid('stroke'); msg+='Possible stroke. Call 108 immediately.'; }
+      else if(said.includes('bleed')||said.includes('accident')){ vaiShowAid('bleed'); msg+='Apply pressure for bleeding and call 108 if severe.'; }
+      else if(said.includes('burn')){ vaiShowAid('burn'); msg+='Cool the burn under running water.'; }
+      else if(said.includes('chok')){ vaiShowAid('choke'); msg+='Follow choking first aid and call 108 if needed.'; }
+      else msg+='Command not recognized. Try heart attack, stroke, burn, bleeding, choking.';
+      vaiSetEmergencyStatus(msg,true);
+    };
+    recog.onerror=function(){ vaiSetEmergencyStatus('Voice command stopped or permission was denied.', true); };
+    recog.start();
+  }
+  function vaiToggleSymptom(btn,sym){
+    if(vaiSelectedSymptoms.has(sym)){ vaiSelectedSymptoms.delete(sym); btn.classList.remove('active'); }
+    else{ vaiSelectedSymptoms.add(sym); btn.classList.add('active'); }
+    vaiCheckSymptoms();
+  }
+  function vaiCheckSymptoms(){
+    var s=vaiSelectedSymptoms;
+    if(s.size===0){ vaiSetEmergencyStatus('Select symptoms to see emergency guidance.', false); return; }
+    if(s.has('chest')&&s.has('breath')){ vaiShowAid('heart'); vaiSetEmergencyStatus('Chest pain with breathlessness can be serious. Call 108 immediately if severe or sudden.', true); return; }
+    if(s.has('stroke')){ vaiShowAid('stroke'); vaiSetEmergencyStatus('Stroke signs need urgent care. Call 108 immediately.', true); return; }
+    if(s.has('bleed')||s.has('faint')){ vaiShowAid('bleed'); vaiSetEmergencyStatus('Bleeding or fainting may need emergency care. Apply first aid and call 108 if severe.', true); return; }
+    if(s.has('burn')){ vaiShowAid('burn'); vaiSetEmergencyStatus('Cool burn under running water. Call 108 for large/deep burns.', true); return; }
+    if(s.has('choke')){ vaiShowAid('choke'); vaiSetEmergencyStatus('Choking can become critical. Use first aid and call 108 if breathing is blocked.', true); return; }
+    vaiSetEmergencyStatus('Symptoms noted. Monitor closely and seek medical care if worsening.', false);
+  }
+  function vaiShowAid(type,tabBtn){
+    document.querySelectorAll('.vai-aid-panel').forEach(function(el){el.classList.remove('active')});
+    document.querySelectorAll('.vai-aid-tab').forEach(function(el){el.classList.remove('active')});
+    var panel=document.getElementById('vaiAid-'+type); if(panel) panel.classList.add('active');
+    if(tabBtn) tabBtn.classList.add('active');
+    else{
+      document.querySelectorAll('.vai-aid-tab').forEach(function(el){ if(el.textContent.toLowerCase().includes(type)) el.classList.add('active'); });
+    }
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    vaiLoadEmergencyContact();
+    var consent=document.getElementById('vaiEmergencyConsent');
+    if(consent) consent.checked=localStorage.getItem('vitals_emergency_consent')==='yes';
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') vaiCloseEmergency(); });
+  });
+</script>
+
+
+</body>
+</html>

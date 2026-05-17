@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VitalsAI - About & Contact</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+  <style>
+    :root {
+      --bg: #0a0e27;
+      --surface: #1a1f3a;
+      --surface-light: #25304a;
+      --border: #2d3a5a;
+      --text: #f0f4ff;
+      --text-muted: #9ca3b5;
+      --red: #ff1654;
+      --pink: #ff6b9d;
+      --purple: #c77dff;
+      --blue: #00d9ff;
+      --cyan: #00f5ff;
+      --green: #00ff88;
+      --yellow: #ffec19;
+      --orange: #ff6b35;
+      --magenta: #ff00ff;
+      --teal: #00ffcc;
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --card-shadow-hover: 0 20px 64px rgba(0, 0, 0, 0.5);
+    }
+
+    [data-theme="light"] {
+      --bg: #f5f7ff;
+      --surface: #ffffff;
+      --surface-light: #f9f9ff;
+      --border: #e5e9f5;
+      --text: #0a0e27;
+      --text-muted: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: all 0.4s ease;
+      overflow-x: hidden;
+    }
+
+    
+    /* ──────── ANIMATED BACKGROUND ──────── */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .blob {
+      position: absolute;
+      filter: blur(80px);
+      opacity: 0.3;
+      border-radius: 50%;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .blob-1 {
+      width: 300px;
+      height: 300px;
+      background: var(--red);
+      top: -50px;
+      left: 10%;
+      animation-delay: 0s;
+    }
+
+    .blob-2 {
+      width: 400px;
+      height: 400px;
+      background: var(--purple);
+      bottom: 100px;
+      right: 5%;
+      animation-delay: 2s;
+    }
+
+    .blob-3 {
+      width: 350px;
+      height: 350px;
+      background: var(--cyan);
+      top: 50%;
+      right: 20%;
+      animation-delay: 4s;
+    }
+
+    .blob-4 {
+      width: 280px;
+      height: 280px;
+      background: var(--green);
+      bottom: 20%;
+      left: 15%;
+      animation-delay: 3s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(20px, -20px); }
+      50% { transform: translate(-10px, 20px); }
+      75% { transform: translate(10px, -10px); }
+    }
+
+    /* ──────── NAVIGATION ──────── */
+    nav {
+      background: rgba(26, 31, 58, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    [data-theme="light"] nav {
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      letter-spacing: -1px;
+      cursor: pointer;
+    }
+
+   .nav-center {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-center a:hover, .nav-center a.active {
+      color: var(--cyan);
+      background: rgba(0, 217, 255, 0.15);
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .dark-btn {
+      background: rgba(0, 217, 255, 0.2);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+     .nav-center {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-center a,
+    .nav-center button {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .nav-center a:hover,
+    .nav-center button:hover,
+    .nav-center a.active,
+    .nav-center button.active {
+      color: var(--cyan);
+      background: rgba(0, 217, 255, 0.15);
+      border: 1px solid var(--cyan);
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dark-btn {
+      background: rgba(0, 217, 255, 0.2);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .dark-btn:hover {
+      background: var(--cyan);
+      color: var(--bg);
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 12px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      min-width: 280px;
+      display: none;
+      z-index: 200;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .nav-dropdown {
+      position: relative;
+    }
+
+    .nav-dropdown:hover .dropdown-menu,
+    .nav-dropdown:focus-within .dropdown-menu {
+      display: grid;
+      gap: 6px;
+      animation: slideDown 0.3s ease;
+    }
+
+
+    .dark-btn:hover {
+      background: var(--cyan);
+      color: var(--bg);
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+    }
+
+    /* ──────── HERO ──────── */
+    .hero {
+      background: linear-gradient(135deg, #00ff88 0%, #00d9ff 50%, #c77dff 100%);
+      color: white;
+      padding: 80px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1), transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+    }
+
+    .hero h1 {
+      font-size: 54px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      opacity: 0.95;
+    }
+
+    /* ──────── CONTAINER ──────── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .section {
+      padding: 80px 0;
+    }
+
+    .section-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 48px;
+      color: var(--text);
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ──────── GRID & CARDS ──────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(0, 217, 255, 0.1));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: var(--cyan);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+
+    /* ──────── FOOTER ──────── */
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+      background: var(--surface);
+    }
+
+    footer p {
+      margin-bottom: 8px;
+    }
+
+    footer a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--magenta);
+    }
+
+    /* ──────── RESPONSIVE ──────── */
+    @media (max-width: 768px) {
+      nav {
+        padding: 12px 16px;
+      }
+
+      .hero {
+        padding: 60px 20px;
+        min-height: 240px;
+      }
+
+      .hero h1 {
+        font-size: 36px;
+      }
+
+      .section {
+        padding: 60px 0;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  
+    .lifestyle-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #276749
+    }
+
+    [data-theme="dark"] .lifestyle-card h3 {
+      color: #4ade80
+    }
+
+    .ls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px
+    }
+
+    .ls-item {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center
+    }
+
+    .ls-icon {
+      font-size: 28px;
+      margin-bottom: 6px
+    }
+
+    .ls-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .ls-tips {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.5;
+      text-align: left
+    }
+    /* ===== NAV RIGHT BUTTONS ===== */
+
+.bmi-btn,
+.history-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+/* ===== TRACKER (BMI) ===== */
+.bmi-btn {
+  background: rgba(0, 217, 255, 0.15);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+}
+
+.bmi-btn:hover {
+  background: var(--cyan);
+  color: var(--bg);
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
+}
+
+/* ===== HISTORY ===== */
+.history-btn {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  border: none;
+}
+
+.history-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* ===== DARK MODE TOGGLE ===== */
+.dark-btn {
+  background: rgba(0, 217, 255, 0.2);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dark-btn:hover {
+  background: var(--cyan);
+  color: var(--bg);
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+}
+  /* ── User Profile Widget ─────────────────────────────── */
+  .user-profile-wrap{position:relative;display:flex;align-items:center;gap:10px;margin-left:8px}
+  .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00d9ff,#ff00ff);
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;
+    color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:all .3s;
+    font-family:'Space Grotesk',sans-serif;flex-shrink:0;text-transform:uppercase}
+  .user-avatar:hover{transform:scale(1.08);box-shadow:0 0 16px rgba(0,217,255,.4)}
+  .user-name-label{font-size:13px;font-weight:600;color:var(--text,#f0f4ff);white-space:nowrap;
+    max-width:100px;overflow:hidden;text-overflow:ellipsis}
+  .user-dropdown{position:absolute;top:calc(100% + 10px);right:0;min-width:220px;
+    background:linear-gradient(135deg,rgba(26,31,58,.98),rgba(42,42,80,.98));
+    border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:8px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);backdrop-filter:blur(20px);
+    display:none;z-index:9999;animation:dropIn .2s ease}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .user-dropdown.open{display:block}
+  .ud-header{padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:6px}
+  .ud-avatar-big{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#00d9ff,#ff00ff);
+    display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;
+    color:#fff;margin:0 auto 10px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase}
+  .ud-name{font-size:15px;font-weight:700;color:#f0f4ff;text-align:center;font-family:'Space Grotesk',sans-serif}
+  .ud-email{font-size:11px;color:#9ca3b5;text-align:center;margin-top:2px;word-break:break-all}
+  .ud-divider{height:1px;background:rgba(255,255,255,.08);margin:6px 0}
+  .ud-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+    cursor:pointer;font-size:13px;font-weight:600;color:#f0f4ff;transition:all .2s;text-decoration:none}
+  .ud-item:hover{background:rgba(0,217,255,.12);color:#00d9ff}
+  .ud-item i{width:16px;text-align:center;color:#00d9ff}
+  .ud-item.logout{color:#ff6b9d}
+  .ud-item.logout:hover{background:rgba(255,22,84,.12);color:#ff1654}
+  .ud-item.logout i{color:#ff6b9d}
+
+  </style>
+</head>
+
+<body>
+<div class="bg-gradient">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<!-- Navigation -->
+<nav class="app-nav">
+    <a href="active" class="logo" onclick="showPage('home'); return false;">⚡ VitalsAI</a>
+    <div class="nav-center nav-links">
+      <a href="/" class="active"><i class="fa-solid fa-house"></i> Home</a>
+      <div class="nav-dropdown">
+        <button class="dropbtn"><i class="fa-solid fa-stethoscope"></i> Predictions <i
+            class="fa-solid fa-chevron-down"></i></button>
+        <div class="dropdown-menu">
+          <a href="/heart" onclick="showPage('heart'); return false;" class="nav-link" data-page="heart"><i
+              class="fa-solid fa-heart"></i> Heart Disease</a>
+          <a href="/brain" onclick="showPage('brain'); return false;" class="nav-link" data-page="brain"><i
+              class="fa-solid fa-brain"></i> Brain / Stroke</a>
+          <a href="/diabetes" onclick="showPage('diabetes'); return false;" class="nav-link" data-page="diabetes"><i
+              class="fa-solid fa-droplet"></i> Diabetes</a>
+          <a href="/kidney" onclick="showPage('kidney'); return false;" class="nav-link" data-page="kidney"><i
+              class="fa-solid fa-prescription-bottle-medical"></i> Kidney</a>
+          <a href="/eye" onclick="showPage('eye'); return false;" class="nav-link" data-page="eye"><i
+              class="fa-solid fa-eye"></i> Eye</a>
+          <a href="/lung" onclick="showPage('lung'); return false;" class="nav-link" data-page="lung"><i
+              class="fa-solid fa-lungs"></i> Lung</a>
+        </div>
+      </div>
+      <a href="/lifestyle" class=""><i class="fa-solid fa-seedling"></i> Health Tips</a>
+      <a href="/assistant" class=""><i class="fa-solid fa-robot"></i> Assistant</a>
+      <a href="/about-contact" onclick="showPage('about-contact'); return false;" class="nav-link"
+        data-page="about-contact"><i class="fa-solid fa-address-card"></i> About & Contact</a>
+
+    </div>
+    </div>
+<div class="nav-right">
+      <a href="/bmi" class="bmi-btn "><i class="fa-solid fa-calculator"></i> Tracker</a>
+      <a href="/history" class="history-btn nav-link" onclick="showPage('history'); return false;" data-page="history">
+        <i class="fa-solid fa-clock-rotate-left"></i> History
+      </a>
+      <button class="dark-btn" onclick="toggleDark && toggleDark()" id="darkBtn" title="Toggle dark mode"><i
+          class="fa-solid fa-moon"></i></button>
+    
+    <!-- User Profile Widget (injected by VitalsAI auth system) -->
+    <div class="user-profile-wrap" id="userProfileWrap" style="display:none">
+      <span class="user-name-label" id="navUserName"></span>
+      <div class="user-avatar" id="navAvatar" onclick="toggleUserDropdown()">?</div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="ud-header">
+          <div class="ud-avatar-big" id="dropAvatar">?</div>
+          <div class="ud-name" id="dropName">Loading...</div>
+          <div class="ud-email" id="dropEmail"></div>
+        </div>
+        <a class="ud-item" href="/history"><i class="fa-solid fa-clock-rotate-left"></i> Prediction History</a>
+        <a class="ud-item" href="/bmi"><i class="fa-solid fa-calculator"></i> Health Tracker</a>
+        <div class="ud-divider"></div>
+        <div class="ud-item logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+      </div>
+    </div>
+  </div>
+
+  </nav>
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>About VitalsAI</h1>
+    <p>Revolutionizing healthcare through AI-powered health intelligence and personalized wellness</p>
+  </div>
+</section>
+
+<!-- Main Content -->
+<div class="container">
+  <section class="section">
+    <h2 class="section-title">Our Mission</h2>
+    <p style="font-size: 16px; line-height: 1.8; color: var(--text-muted); margin-bottom: 32px;">
+      VitalsAI is dedicated to revolutionizing healthcare through artificial intelligence. We empower individuals to take control of their health by providing accurate disease predictions, personalized recommendations, and 24/7 AI-powered support. Our mission is to make advanced healthcare analytics accessible to everyone, democratizing preventive healthcare and enabling early intervention to save lives.
+    </p>
+
+    <h2 class="section-title">Advanced Technology</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h3>AI & Machine Learning</h3>
+        <p>Advanced algorithms trained on millions of health data points for highly accurate predictions with continuous learning</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h3>Security & Privacy</h3>
+        <p>HIPAA-compliant with end-to-end encryption ensuring your sensitive health data remains completely private</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Real-time Analytics</h3>
+        <p>Instant health metrics tracking and advanced trend analysis for better decision-making</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h3>Mobile First Design</h3>
+        <p>Responsive design that works seamlessly across all devices for on-the-go health monitoring</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h3>AI Assistant</h3>
+        <p>24/7 intelligent assistant available to answer your health questions anytime, anywhere</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">❤️</div>
+        <h3>Clinical Integration</h3>
+        <p>Seamlessly works with healthcare providers to give doctors relevant insights about your health</p>
+      </div>
+    </div>
+
+    <h2 class="section-title" style="margin-top: 80px;">Why Choose VitalsAI?</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>✅ Unmatched Accuracy</h3>
+        <p>Our models achieve 98% prediction accuracy through continuous learning from real-world data and advanced ML techniques.</p>
+      </div>
+
+      <div class="card">
+        <h3>🔐 Privacy Protected</h3>
+        <p>Your health data is encrypted and stored securely. We never share your personal information with third parties.</p>
+      </div>
+
+      <div class="card">
+        <h3>📚 Evidence-Based</h3>
+        <p>All recommendations are based on peer-reviewed medical research and latest clinical guidelines.</p>
+      </div>
+
+      <div class="card">
+        <h3>🌍 Universally Accessible</h3>
+        <p>Available 24/7 on any device, bringing advanced healthcare to your fingertips anytime, anywhere.</p>
+      </div>
+
+      <div class="card">
+        <h3>💡 Personalized Care</h3>
+        <p>Get tailored recommendations based on your unique health profile, lifestyle, and risk factors.</p>
+      </div>
+
+      <div class="card">
+        <h3>🤝 Expert Support</h3>
+        <p>Access to medical professionals and health coaches for additional guidance and comprehensive support.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title" style="margin-top: 80px;">Get In Touch</h2>
+    <div style="background: var(--surface); border-radius: 16px; padding: 48px; box-shadow: var(--card-shadow); text-align: center; border: 1px solid var(--border);">
+      <p style="font-size: 16px; margin-bottom: 20px;">Have questions or need support? We'd love to hear from you!</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px;">
+        <div>
+          <p style="margin-bottom: 8px;">
+            <i class="fa-solid fa-envelope" style="color: var(--cyan); font-size: 24px;"></i>
+          </p>
+          <p><strong>Email</strong></p>
+          <p style="color: var(--text-muted);">support@vitalsai.com</p>
+        </div>
+        <div>
+          <p style="margin-bottom: 8px;">
+            <i class="fa-solid fa-phone" style="color: var(--magenta); font-size: 24px;"></i>
+          </p>
+          <p><strong>Phone</strong></p>
+          <p style="color: var(--text-muted);">+1-800-VITALS-AI</p>
+        </div>
+        <div>
+          <p style="margin-bottom: 8px;">
+            <i class="fa-solid fa-globe" style="color: var(--green); font-size: 24px;"></i>
+          </p>
+          <p><strong>Website</strong></p>
+          <p style="color: var(--text-muted);">www.vitalsai.com</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Footer -->
+<footer>
+  <p><strong>⚡ VitalsAI</strong> — AI-Powered Health Intelligence Platform</p>
+  <p style="margin-bottom: 16px;">© 2024 VitalsAI Inc. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+  <p style="font-size: 12px;">Built with ❤️ to empower millions to take control of their health</p>
+</footer>
+
+<script>
+function toggleDark() {
+  const html = document.documentElement;
+
+  if (html.getAttribute("data-theme") === "dark") {
+    html.setAttribute("data-theme", "light");
+    localStorage.setItem("theme", "light");
+  } else {
+    html.setAttribute("data-theme", "dark");
+    localStorage.setItem("theme", "dark");
+  }
+}
+
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+</script>
+
+
+<script>
+// ── VitalsAI Auth System ───────────────────────────────────
+(async function initAuth() {
+  try {
+    const res  = await fetch('/api/me');
+    const data = await res.json();
+
+    if (!data.logged_in) {
+      // Not logged in — redirect to login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    const name  = data.name  || 'User';
+    const email = data.email || '';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // Show profile widget
+    const wrap = document.getElementById('userProfileWrap');
+    if (wrap) wrap.style.display = 'flex';
+
+    // Set initials + name
+    const navAvatar  = document.getElementById('navAvatar');
+    const dropAvatar = document.getElementById('dropAvatar');
+    const navName    = document.getElementById('navUserName');
+    const dropName   = document.getElementById('dropName');
+    const dropEmail  = document.getElementById('dropEmail');
+
+    if (navAvatar)  navAvatar.textContent  = initials;
+    if (dropAvatar) dropAvatar.textContent = initials;
+    if (navName)    navName.textContent    = name.split(' ')[0]; // first name only
+    if (dropName)   dropName.textContent   = name;
+    if (dropEmail)  dropEmail.textContent  = email;
+
+    // Color avatar based on name (consistent per user)
+    const colors = [
+      'linear-gradient(135deg,#00d9ff,#ff00ff)',
+      'linear-gradient(135deg,#ff1654,#ff6b35)',
+      'linear-gradient(135deg,#00ff88,#00d9ff)',
+      'linear-gradient(135deg,#c77dff,#ff00ff)',
+      'linear-gradient(135deg,#ffec19,#ff6b35)',
+    ];
+    const colorIdx = name.charCodeAt(0) % colors.length;
+    const gradient = colors[colorIdx];
+    if (navAvatar)  navAvatar.style.background  = gradient;
+    if (dropAvatar) dropAvatar.style.background = gradient;
+
+  } catch(e) {
+    console.error('Auth check failed:', e);
+  }
+})();
+
+function toggleUserDropdown() {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('userProfileWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.remove('open');
+  }
+});
+
+async function logoutUser() {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+  window.location.href = '/login';
+}
+</script>
+
+</body>
+</html>
