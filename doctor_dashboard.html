@@ -1,0 +1,2807 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VitalsAI — Doctor Command Center</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e27;
+      --surface: #1a1f3a;
+      --surface-light: #25304a;
+      --border: #2d3a5a;
+      --text: #f0f4ff;
+      --text-muted: #9ca3b5;
+      --red: #ff1654;
+      --pink: #ff6b9d;
+      --purple: #c77dff;
+      --blue: #00d9ff;
+      --cyan: #00f5ff;
+      --green: #00ff88;
+      --yellow: #ffec19;
+      --orange: #ff6b35;
+      --magenta: #ff00ff;
+      --teal: #00ffcc;
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+      --card-shadow-hover: 0 20px 64px rgba(0, 0, 0, .5)
+    }
+
+    [data-theme="light"] {
+      --bg: #f5f7ff;
+      --surface: #fff;
+      --surface-light: #f0f2ff;
+      --border: #e5e9f5;
+      --text: #0a0e27;
+      --text-muted: #6b7280
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background .4s, color .4s
+    }
+
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none
+    }
+
+    .blob {
+      position: absolute;
+      filter: blur(90px);
+      opacity: .1;
+      border-radius: 50%;
+      animation: fl 10s ease-in-out infinite
+    }
+
+    .b1 {
+      width: 420px;
+      height: 420px;
+      background: var(--cyan);
+      top: -80px;
+      left: -60px
+    }
+
+    .b2 {
+      width: 520px;
+      height: 520px;
+      background: var(--purple);
+      bottom: -100px;
+      right: -80px;
+      animation-delay: 3s
+    }
+
+    .b3 {
+      width: 340px;
+      height: 340px;
+      background: var(--green);
+      top: 45%;
+      right: 12%;
+      animation-delay: 5s
+    }
+
+    @keyframes fl {
+
+      0%,
+      100% {
+        transform: translate(0, 0)
+      }
+
+      33% {
+        transform: translate(20px, -20px)
+      }
+
+      66% {
+        transform: translate(-10px, 15px)
+      }
+    }
+
+    /* NAV */
+    nav {
+      background: rgba(26, 31, 58, .88);
+      backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    [data-theme="light"] nav {
+      background: rgba(255, 255, 255, .93);
+      border-bottom: 1px solid var(--border)
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 23px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      letter-spacing: -1px;
+      flex-shrink: 0
+    }
+
+    .nc {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .ni {
+      position: relative
+    }
+
+    .nl {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 11px;
+      border-radius: 9px;
+      transition: .22s;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap
+    }
+
+    .nl:hover,
+    .nl.active {
+      color: var(--cyan);
+      background: rgba(0, 245, 255, .09);
+      border-color: rgba(0, 245, 255, .22)
+    }
+
+    .dm {
+      position: absolute;
+      top: calc(100%+8px);
+      left: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 7px;
+      min-width: 230px;
+      display: none;
+      z-index: 300;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .45)
+    }
+
+    .ni:hover .dm {
+      display: grid;
+      gap: 3px;
+      animation: sd .2s ease
+    }
+
+    @keyframes sd {
+      from {
+        opacity: 0;
+        transform: translateY(-6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .di {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 11px;
+      border-radius: 9px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      transition: .18s
+    }
+
+    .di:hover {
+      background: rgba(0, 245, 255, .08);
+      color: var(--cyan)
+    }
+
+    .di i {
+      width: 15px;
+      text-align: center;
+      color: var(--cyan);
+      font-size: 12px
+    }
+
+    .nr {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .ib {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: .22s;
+      border: 1px solid var(--border);
+      background: var(--surface-light);
+      color: var(--text-muted)
+    }
+
+    .ib:hover {
+      border-color: var(--cyan);
+      color: var(--cyan)
+    }
+
+    .ib.lo {
+      border-color: rgba(255, 22, 84, .3);
+      color: var(--red);
+      background: rgba(255, 22, 84, .07)
+    }
+
+    .ib.lo:hover {
+      background: rgba(255, 22, 84, .18)
+    }
+
+    .doc-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      background: rgba(0, 255, 136, .07);
+      border: 1px solid rgba(0, 255, 136, .22);
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green);
+      cursor:pointer;
+      position:relative
+    }
+    .acct-avatar{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:grid;place-items:center;color:#fff;font-weight:900;font-size:12px;font-family:'Space Grotesk',sans-serif}
+    .acct-lines{display:flex;flex-direction:column;line-height:1.15}
+    .acct-lines small{font-size:10px;color:var(--text-muted);font-weight:700}
+    .acct-menu{position:absolute;right:0;top:calc(100% + 10px);width:280px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px;box-shadow:0 24px 70px rgba(0,0,0,.5);display:none;z-index:500;color:var(--text)}
+    .doc-badge.open .acct-menu{display:block}
+    .acct-menu-head{display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:10px}
+    .acct-menu .big{width:46px;height:46px;border-radius:15px;font-size:17px}
+    .acct-name{font-weight:900;color:var(--text);font-size:14px}
+    .acct-email{font-size:11px;color:var(--text-muted);word-break:break-all;margin-top:2px}
+    .acct-role{display:inline-flex;margin-top:8px;padding:4px 9px;border-radius:999px;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.25);color:var(--cyan);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.5px}
+    .acct-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;font-size:12px;color:var(--text-muted)}
+    .acct-row b{color:var(--text);font-weight:800}
+    .acct-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .acct-actions button,.acct-actions a{border:1px solid var(--border);background:var(--surface-light);color:var(--text);border-radius:11px;padding:9px 10px;font:inherit;font-size:12px;font-weight:800;text-align:center;text-decoration:none;cursor:pointer}
+    .acct-actions .danger{border-color:rgba(255,22,84,.35);color:var(--red);background:rgba(255,22,84,.08)}
+    .doctor-account-card{background:linear-gradient(135deg,rgba(0,245,255,.08),rgba(255,0,255,.06));border:1px solid rgba(0,245,255,.18);border-radius:18px;padding:16px;min-width:290px;display:flex;align-items:center;gap:13px;box-shadow:var(--card-shadow)}
+    .doctor-account-card .acct-avatar{width:52px;height:52px;border-radius:17px;font-size:18px}
+    .doctor-account-card h3{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:0}
+    .doctor-account-card p{font-size:12px;color:var(--text-muted);margin-top:3px}
+    .doctor-account-card .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+    .doctor-account-card .chip{padding:4px 9px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid rgba(255,255,255,.14);color:var(--cyan);background:rgba(0,245,255,.08)}
+
+    .ldot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 7px var(--green);
+      animation: pd 2s ease-in-out infinite
+    }
+
+    @keyframes pd {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    /* LAYOUT */
+    .wrap {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 24px 20px
+    }
+
+    .stitle {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .stitle::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border)
+    }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, rgba(0, 245, 255, .06), rgba(0, 255, 136, .03));
+      border: 1px solid rgba(0, 245, 255, .14);
+      border-left: 4px solid var(--cyan);
+      border-radius: 18px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      gap: 16px;
+      flex-wrap: wrap
+    }
+
+    .h-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      color: var(--cyan)
+    }
+
+    .h-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px
+    }
+
+    .sbadge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      background: rgba(0, 255, 136, .09);
+      border: 1px solid rgba(0, 255, 136, .22);
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--green);
+      margin-top: 5px
+    }
+
+    /* KPI */
+    .kgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px
+    }
+
+    .kc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 19px;
+      transition: .28s;
+      position: relative;
+      overflow: hidden
+    }
+
+    .kc:hover {
+      border-color: var(--cyan);
+      transform: translateY(-3px);
+      box-shadow: var(--card-shadow-hover)
+    }
+
+    .ki {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      margin-bottom: 11px
+    }
+
+    .kv {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 3px
+    }
+
+    .kl {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px
+    }
+
+    .kd {
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 5px
+    }
+
+    .kb {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 0 0 17px 17px
+    }
+
+    /* SKELETON */
+    .sk {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-light) 50%, var(--surface) 75%);
+      background-size: 400% 100%;
+      animation: sh 1.5s ease-in-out infinite;
+      border-radius: 7px;
+      height: 28px;
+      width: 70px;
+      display: inline-block
+    }
+
+    @keyframes sh {
+      0% {
+        background-position: 100% 0
+      }
+
+      100% {
+        background-position: -100% 0
+      }
+    }
+
+    /* SEARCH */
+    .ss {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 20px;
+      margin-bottom: 20px
+    }
+
+    .srow {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      margin-bottom: 13px
+    }
+
+    .si {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 15px;
+      background: var(--surface-light);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      transition: .2s
+    }
+
+    .si:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 245, 255, .08)
+    }
+
+    .si::placeholder {
+      color: var(--text-muted)
+    }
+
+    .sels {
+      padding: 10px 12px;
+      background: var(--surface-light);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      transition: .2s;
+      cursor: pointer
+    }
+
+    .sels:focus {
+      outline: none;
+      border-color: var(--cyan)
+    }
+
+    .sels option {
+      background: #1a1f3a
+    }
+
+    .pgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 11px
+    }
+
+    .pc {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 14px;
+      cursor: pointer;
+      transition: .22s;
+      display: flex;
+      align-items: center;
+      gap: 11px
+    }
+
+    .pc:hover {
+      border-color: var(--cyan);
+      background: rgba(0, 245, 255, .04);
+      transform: translateY(-1px)
+    }
+
+    .pav {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0
+    }
+
+    .emsg {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+      grid-column: 1/-1
+    }
+
+    .emsg i {
+      font-size: 26px;
+      display: block;
+      margin-bottom: 9px;
+      opacity: .3
+    }
+
+    /* GRID */
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px
+    }
+
+    @media(max-width:900px) {
+
+      .g2,
+      .g3 {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 20px;
+      transition: .22s
+    }
+
+    .card:hover {
+      border-color: rgba(0, 245, 255, .14)
+    }
+
+    .ct {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .cs {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 14px
+    }
+
+    /* COMPARE */
+    .ctabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 12px
+    }
+
+    .ctab {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: .2s
+    }
+
+    .ctab.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(0, 245, 255, .09)
+    }
+
+    .ccols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px
+    }
+
+    .ccol {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 13px
+    }
+
+    .ccol h4 {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      margin-bottom: 9px;
+      color: var(--text-muted)
+    }
+
+    .mr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      font-size: 12px
+    }
+
+    .mr:last-child {
+      border-bottom: none
+    }
+
+    .mv {
+      font-family: 'DM Mono', monospace;
+      font-weight: 500
+    }
+
+    .ch {
+      padding: 2px 6px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .ch.d {
+      background: rgba(0, 255, 136, .1);
+      color: var(--green)
+    }
+
+    .ch.u {
+      background: rgba(255, 22, 84, .1);
+      color: var(--red)
+    }
+
+    .ch.s {
+      background: rgba(255, 236, 25, .08);
+      color: var(--yellow)
+    }
+
+    /* EHR */
+    .ehta {
+      width: 100%;
+      min-height: 115px;
+      padding: 11px 13px;
+      background: var(--surface-light);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      resize: vertical;
+      transition: .2s;
+      line-height: 1.6
+    }
+
+    .ehta:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 245, 255, .07)
+    }
+
+    .ehacts {
+      display: flex;
+      gap: 7px;
+      margin-top: 9px;
+      flex-wrap: wrap
+    }
+
+    .ehbtn {
+      padding: 8px 15px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: .2s;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .ehs {
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #000
+    }
+
+    .ehs:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(0, 245, 255, .28)
+    }
+
+    .ehg {
+      background: transparent;
+      border: 1.5px solid var(--border) !important;
+      color: var(--text-muted);
+      border: none
+    }
+
+    .ehg:hover {
+      border-color: var(--cyan) !important;
+      color: var(--cyan)
+    }
+
+    .nlist {
+      margin-top: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 170px;
+      overflow-y: auto
+    }
+
+    .ni2 {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--cyan);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 12px;
+      line-height: 1.6
+    }
+
+    .nm {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    /* RX */
+    .rxf label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--text-muted);
+      margin-bottom: 5px
+    }
+
+    .rxf input,
+    .rxf select,
+    .rxf textarea {
+      width: 100%;
+      padding: 9px 11px;
+      background: var(--surface-light);
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      transition: .2s;
+      resize: none
+    }
+
+    .rxf input:focus,
+    .rxf select:focus,
+    .rxf textarea:focus {
+      outline: none;
+      border-color: var(--cyan)
+    }
+
+    .rxf select option {
+      background: #1a1f3a
+    }
+
+    .rxrow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 9px
+    }
+
+    .rxmeds {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+      margin-bottom: 7px
+    }
+
+    .rxmr {
+      display: flex;
+      gap: 7px;
+      align-items: center
+    }
+
+    .rxmr input {
+      flex: 1
+    }
+
+    .rxrm {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: rgba(255, 22, 84, .1);
+      border: 1px solid rgba(255, 22, 84, .3);
+      color: var(--red);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: .2s
+    }
+
+    .rxrm:hover {
+      background: rgba(255, 22, 84, .22)
+    }
+
+    .rxadd {
+      padding: 7px;
+      background: rgba(0, 245, 255, .05);
+      border: 1.5px dashed rgba(0, 245, 255, .28);
+      border-radius: 9px;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      width: 100%;
+      margin-bottom: 9px;
+      transition: .2s
+    }
+
+    .rxadd:hover {
+      background: rgba(0, 245, 255, .12)
+    }
+
+    .rxgen {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px
+    }
+
+    .rxgen:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 7px 22px rgba(0, 245, 255, .3)
+    }
+
+    /* FLAGS */
+    .fbts {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 11px
+    }
+
+    .fb {
+      flex: 1;
+      min-width: 75px;
+      padding: 9px 7px;
+      border-radius: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-size: 12px;
+      transition: .2s;
+      border: 1.5px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px
+    }
+
+    .fb.fc {
+      background: rgba(255, 22, 84, .1);
+      border-color: rgba(255, 22, 84, .38);
+      color: var(--red)
+    }
+
+    .fb.fc:hover {
+      background: rgba(255, 22, 84, .22)
+    }
+
+    .fb.fu {
+      background: rgba(255, 109, 53, .09);
+      border-color: rgba(255, 109, 53, .32);
+      color: var(--orange)
+    }
+
+    .fb.fu:hover {
+      background: rgba(255, 109, 53, .2)
+    }
+
+    .fb.fw {
+      background: rgba(255, 236, 25, .06);
+      border-color: rgba(255, 236, 25, .28);
+      color: var(--yellow)
+    }
+
+    .fb.fw:hover {
+      background: rgba(255, 236, 25, .14)
+    }
+
+    .flog {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+      margin-top: 9px
+    }
+
+    .fi {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px
+    }
+
+    /* ALERT TABLE */
+    .atw {
+      overflow-x: auto
+    }
+
+    .atbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px
+    }
+
+    .atbl th {
+      padding: 10px 13px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--text-muted);
+      background: var(--surface-light);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap
+    }
+
+    .atbl td {
+      padding: 11px 13px;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      vertical-align: middle
+    }
+
+    .atbl tr:hover td {
+      background: rgba(0, 245, 255, .025)
+    }
+
+    .atbl tr:last-child td {
+      border-bottom: none
+    }
+
+    .rp {
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      border: 1px solid;
+      letter-spacing: .5px
+    }
+
+    .rph {
+      background: rgba(255, 22, 84, .14);
+      color: var(--red);
+      border-color: rgba(255, 22, 84, .34)
+    }
+
+    .rpc {
+      background: rgba(255, 22, 84, .24);
+      color: #fff;
+      border-color: var(--red);
+      animation: rb 1.5s ease-in-out infinite
+    }
+
+    @keyframes rb {
+
+      0%,
+      100% {
+        box-shadow: none
+      }
+
+      50% {
+        box-shadow: 0 0 10px rgba(255, 22, 84, .45)
+      }
+    }
+
+    .rpm {
+      background: rgba(255, 236, 25, .09);
+      color: var(--yellow);
+      border-color: rgba(255, 236, 25, .28)
+    }
+
+    .rpl {
+      background: rgba(0, 255, 136, .07);
+      color: var(--green);
+      border-color: rgba(0, 255, 136, .23)
+    }
+
+    .actb {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #000;
+      border: none;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: .2s
+    }
+
+    .actb:hover {
+      transform: scale(1.04);
+      box-shadow: 0 4px 13px rgba(0, 245, 255, .3)
+    }
+
+    .flgb {
+      padding: 5px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: .2s
+    }
+
+    .flgb:hover {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    .flgb.fl {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(255, 22, 84, .09)
+    }
+
+    /* SEL BANNER */
+    .spb {
+      background: linear-gradient(135deg, rgba(0, 245, 255, .06), rgba(199, 125, 255, .03));
+      border: 1px solid rgba(0, 245, 255, .18);
+      border-radius: 13px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 16px
+    }
+
+    .spav {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0
+    }
+
+    /* MODAL */
+    .mo {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .75);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: .26s;
+      backdrop-filter: blur(12px)
+    }
+
+    .mo.open {
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .mb {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 560px;
+      width: 92%;
+      transform: scale(.92);
+      transition: .26s;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, .6);
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative
+    }
+
+    .mo.open .mb {
+      transform: scale(1)
+    }
+
+    .mc {
+      position: absolute;
+      top: 13px;
+      right: 13px;
+      background: rgba(255, 255, 255, .07);
+      border: none;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: .2s
+    }
+
+    .mc:hover {
+      background: rgba(255, 22, 84, .18);
+      color: var(--red)
+    }
+
+    .rxpv {
+      background: #fff;
+      color: #111;
+      border-radius: 11px;
+      padding: 22px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      line-height: 1.7
+    }
+
+    .rxpv h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      color: #0a0e27
+    }
+
+    .rx2g {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 11px 0;
+      font-size: 12px
+    }
+
+    .rxsc {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: #666;
+      margin: 11px 0 4px
+    }
+
+    .rxml {
+      border-left: 3px solid #00d9ff;
+      padding-left: 11px
+    }
+
+    .rxft {
+      margin-top: 13px;
+      padding-top: 11px;
+      border-top: 1px solid #e5e9f5;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #666
+    }
+
+    .prbtn {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #00d9ff, #c77dff);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 11px;
+      font-family: 'Poppins', sans-serif;
+      transition: .2s
+    }
+
+    .prbtn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(0, 217, 255, .3)
+    }
+
+    /* URGENT BANNER */
+    .ubanner {
+      background: linear-gradient(135deg, rgba(255, 22, 84, .14), rgba(255, 109, 53, .07));
+      border: 1px solid rgba(255, 22, 84, .38);
+      border-radius: 13px;
+      padding: 12px 16px;
+      display: none;
+      align-items: center;
+      gap: 11px;
+      margin-bottom: 16px
+    }
+
+    .ubanner.show {
+      display: flex;
+      animation: ubp 2s ease-in-out infinite
+    }
+
+    @keyframes ubp {
+
+      0%,
+      100% {
+        box-shadow: none
+      }
+
+      50% {
+        box-shadow: 0 0 22px rgba(255, 22, 84, .28)
+      }
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: .3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 320px
+    }
+
+    .toast.show {
+      transform: none;
+      opacity: 1
+    }
+
+    /* SPINNER */
+    .sp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      grid-column: 1/-1
+    }
+
+    .spin {
+      width: 34px;
+      height: 34px;
+      border: 3px solid var(--border);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin .65s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* DETAIL HIDDEN */
+    .dp {
+      display: none
+    }
+
+    .dp.vis {
+      display: block
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, .1);
+      border-radius: 6px
+    }
+
+    @media(max-width:600px) {
+      .wrap {
+        padding: 12px 10px
+      }
+
+      .kgrid {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+  
+
+/* === VitalsAI Vibrant UI Polish Layer === */
+body{
+  background:
+    radial-gradient(circle at 8% 12%, rgba(0,229,255,.18), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(224,64,251,.18), transparent 32%),
+    radial-gradient(circle at 72% 88%, rgba(0,230,118,.12), transparent 34%),
+    linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--bg) 82%, #102a55 18%)) !important;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:34px 34px;
+  mask-image:linear-gradient(to bottom, rgba(0,0,0,.72), transparent 80%);
+}
+nav{
+  background:color-mix(in srgb, var(--surface, #101425) 78%, transparent) !important;
+  box-shadow:0 14px 42px rgba(0,0,0,.24);
+}
+.logo{
+  filter:drop-shadow(0 0 14px rgba(0,229,255,.24));
+}
+.page-header,.phdr,.hero,.doctor-hero,.hero-card{
+  background:
+    linear-gradient(135deg, rgba(0,229,255,.18), rgba(224,64,251,.12) 52%, rgba(0,230,118,.09)) !important;
+  border-bottom:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.06), 0 22px 70px rgba(0,0,0,.18);
+  position:relative;
+  overflow:hidden;
+}
+.page-header::after,.phdr::after,.hero::after,.doctor-hero::after,.hero-card::after{
+  content:'';
+  position:absolute;
+  inset:auto 24px 0 24px;
+  height:3px;
+  border-radius:999px 999px 0 0;
+  background:linear-gradient(90deg, var(--cyan,#00e5ff), var(--magenta,#e040fb), var(--green,#00e676), var(--orange,#ff6d00));
+  opacity:.86;
+}
+.container,.main,.wrap{
+  position:relative;
+}
+.kpi,.kc,.chart-card,.bed-card,.doctor-card,.appointment-card,.module-card,.status-card,.integration-card,
+.patient-card,.record-card,.timeline-card,.summary-card,.account-card,.panel,.card,.filter-bar,.controls,
+.data-table-wrap,.alert-list,.availability-card,.reminder-card,.hospital-map-card,.hero-stat,.cohort-card{
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface, #101425) 88%, white 12%), color-mix(in srgb, var(--surface2, #151a2d) 88%, #00e5ff 7%)) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 18px 55px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+.kpi:hover,.kc:hover,.chart-card:hover,.bed-card:hover,.doctor-card:hover,.appointment-card:hover,.module-card:hover,
+.status-card:hover,.integration-card:hover,.patient-card:hover,.record-card:hover,.cohort-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(0,229,255,.46) !important;
+  box-shadow:0 24px 70px rgba(0,229,255,.12), 0 16px 45px rgba(224,64,251,.10) !important;
+}
+.nav-btn:hover,.nav-btn.active,.nl:hover,.nl.active,.drop-item:hover,.di:hover{
+  background:linear-gradient(135deg, rgba(0,229,255,.16), rgba(224,64,251,.11)) !important;
+  color:var(--cyan,#00e5ff) !important;
+  box-shadow:0 8px 24px rgba(0,229,255,.10);
+}
+button,.book-btn,.run-btn,.ctrl-btn,.dt-btn,.map-btn,.slot-btn,.bact,.theme-btn,.ib{
+  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, color .2s ease;
+}
+button:hover,.book-btn:hover,.run-btn:hover,.ctrl-btn:hover,.dt-btn:hover,.map-btn:hover,.slot-btn:hover,.bact:hover,.theme-btn:hover,.ib:hover{
+  transform:translateY(-2px);
+}
+.book-btn,.run-btn,.map-btn.primary,.ctrl-btn.active,.page-btn.active{
+  background:linear-gradient(135deg, var(--cyan,#00e5ff), var(--magenta,#e040fb)) !important;
+  color:#fff !important;
+  border-color:transparent !important;
+  box-shadow:0 14px 32px rgba(0,229,255,.24);
+}
+input,select,textarea,.ctrl-select,.search-input,.map-input{
+  background:color-mix(in srgb, var(--surface2,#151a2d) 88%, white 7%) !important;
+  border:1.5px solid rgba(255,255,255,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+input:focus,select:focus,textarea:focus,.ctrl-select:focus,.search-input:focus,.map-input:focus{
+  border-color:var(--cyan,#00e5ff) !important;
+  box-shadow:0 0 0 4px rgba(0,229,255,.13), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+.section-title,.stitle{
+  color:var(--text,#f0f4ff);
+}
+.section-title i,.stitle i{
+  filter:drop-shadow(0 0 10px currentColor);
+}
+.data-table tbody tr:hover td{
+  background:rgba(0,229,255,.075) !important;
+}
+.live-badge,.hbadge,.cc-badge,.risk-pill,.bstatus,.status-badge{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+.toast,.dv-toast,.smart-toast,.remote-toast{
+  background:linear-gradient(135deg, color-mix(in srgb, var(--surface,#101425) 90%, white 8%), color-mix(in srgb, var(--surface2,#151a2d) 92%, #00e5ff 8%)) !important;
+  border-color:rgba(0,229,255,.25) !important;
+}
+@media(max-width:760px){
+  nav{padding:10px 14px !important}
+  .page-header,.phdr,.hero{padding-left:18px !important;padding-right:18px !important}
+  .container,.main,.wrap{padding-left:14px !important;padding-right:14px !important}
+  .chart-card,.bed-card,.kpi,.kc,.filter-bar,.controls{border-radius:16px !important}
+}
+/* === End VitalsAI Vibrant UI Polish Layer === */
+
+
+
+
+
+
+
+
+
+/* === VitalsAI Universal Account System === */
+.vitals-account-shell{
+  position:fixed;
+  top:76px;
+  right:18px;
+  z-index:9500;
+  font-family:inherit;
+}
+.vitals-account-btn{
+  border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(135deg, rgba(0,229,255,.20), rgba(224,64,251,.18));
+  color:var(--text,#f0f4ff);
+  border-radius:999px;
+  padding:8px 11px 8px 8px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  cursor:pointer;
+  min-width:190px;
+  box-shadow:0 18px 44px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.13);
+  backdrop-filter:blur(20px);
+}
+.vitals-account-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 22px 60px rgba(0,229,255,.18), 0 18px 44px rgba(0,0,0,.26);
+}
+.vitals-account-avatar{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:900;
+  font-size:13px;
+  background:linear-gradient(135deg, var(--cyan,#00e5ff), var(--magenta,#e040fb));
+  box-shadow:0 0 0 3px rgba(255,255,255,.10), 0 10px 26px rgba(0,229,255,.18);
+  flex-shrink:0;
+}
+.vitals-account-lines{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  min-width:0;
+  line-height:1.18;
+  flex:1;
+}
+.vitals-account-name{
+  font-size:12px;
+  font-weight:900;
+  max-width:112px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.vitals-account-role{
+  font-size:10px;
+  color:var(--muted,var(--text-muted,#9ca3b5));
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+.vitals-account-menu{
+  display:none;
+  position:absolute;
+  right:0;
+  top:calc(100% + 10px);
+  width:310px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.14);
+  background:linear-gradient(145deg, color-mix(in srgb, var(--surface,#101425) 90%, white 9%), color-mix(in srgb, var(--surface2,#151a2d) 88%, #00e5ff 8%));
+  box-shadow:0 28px 80px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.08);
+  overflow:hidden;
+  backdrop-filter:blur(24px);
+}
+.vitals-account-shell.open .vitals-account-menu{display:block;animation:vitalsAcctDrop .2s ease}
+@keyframes vitalsAcctDrop{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.vitals-account-head{
+  padding:18px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(135deg, rgba(0,229,255,.10), rgba(224,64,251,.08));
+}
+.vitals-account-head h3{
+  margin:0;
+  font-size:15px;
+  font-weight:900;
+  color:var(--text,#f0f4ff);
+}
+.vitals-account-head p{
+  margin:3px 0 0;
+  font-size:11px;
+  color:var(--muted,var(--text-muted,#9ca3b5));
+  word-break:break-word;
+}
+.vitals-account-badges{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  padding:13px 16px 4px;
+}
+.vitals-account-badge{
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:900;
+  color:var(--cyan,#00e5ff);
+  background:rgba(0,229,255,.10);
+  border:1px solid rgba(0,229,255,.22);
+}
+.vitals-account-links{
+  padding:12px;
+  display:grid;
+  gap:7px;
+}
+.vitals-account-link{
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.045);
+  color:var(--text,#f0f4ff);
+  text-decoration:none;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.vitals-account-link:hover{
+  border-color:rgba(0,229,255,.32);
+  background:rgba(0,229,255,.10);
+  color:var(--cyan,#00e5ff);
+}
+.vitals-account-link.danger{
+  color:var(--red,#ff1654);
+  background:rgba(255,22,84,.08);
+  border-color:rgba(255,22,84,.20);
+}
+.vitals-account-meta{
+  padding:0 16px 15px;
+  font-size:10px;
+  line-height:1.5;
+  color:var(--muted,var(--text-muted,#9ca3b5));
+}
+@media(max-width:760px){
+  .vitals-account-shell{top:auto;right:12px;bottom:14px}
+  .vitals-account-btn{min-width:0;width:54px;height:54px;padding:8px;justify-content:center}
+  .vitals-account-btn .vitals-account-lines,.vitals-account-btn .fa-chevron-down{display:none}
+  .vitals-account-menu{right:0;bottom:calc(100% + 10px);top:auto;width:min(320px,calc(100vw - 24px))}
+}
+/* === End VitalsAI Universal Account System === */
+
+</style>
+</head>
+
+<body>
+
+<!-- VitalsAI Universal Account System -->
+<div class="vitals-account-shell" id="vitalsAccountShell">
+  <button class="vitals-account-btn" type="button" onclick="toggleVitalsAccount(event)" aria-label="Open account menu">
+    <span class="vitals-account-avatar" id="vitalsAccountAvatar">VA</span>
+    <span class="vitals-account-lines">
+      <span class="vitals-account-name" id="vitalsAccountName">Loading...</span>
+      <span class="vitals-account-role" id="vitalsAccountRole">Account</span>
+    </span>
+    <i class="fa-solid fa-chevron-down" style="font-size:10px;color:var(--muted,var(--text-muted,#9ca3b5))"></i>
+  </button>
+  <div class="vitals-account-menu" onclick="event.stopPropagation()">
+    <div class="vitals-account-head">
+      <span class="vitals-account-avatar" id="vitalsAccountAvatarLarge">VA</span>
+      <div>
+        <h3 id="vitalsAccountFullName">VitalsAI User</h3>
+        <p id="vitalsAccountEmail">user@vitalsai.local</p>
+      </div>
+    </div>
+    <div class="vitals-account-badges">
+      <span class="vitals-account-badge" id="vitalsAccountRoleBadge">User</span>
+      <span class="vitals-account-badge"><i class="fa-solid fa-shield-heart"></i> Secure session</span>
+    </div>
+    <div class="vitals-account-links" id="vitalsAccountLinks">
+      <a class="vitals-account-link" href="/"><span><i class="fa-solid fa-house"></i> Home</span><i class="fa-solid fa-arrow-right"></i></a>
+      <a class="vitals-account-link" href="/history"><span><i class="fa-solid fa-clock-rotate-left"></i> My History</span><i class="fa-solid fa-arrow-right"></i></a>
+      <a class="vitals-account-link" href="/assistant"><span><i class="fa-solid fa-robot"></i> AI Assistant</span><i class="fa-solid fa-arrow-right"></i></a>
+      <button class="vitals-account-link danger" type="button" onclick="vitalsAccountLogout()"><span><i class="fa-solid fa-right-from-bracket"></i> Logout</span><i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+    <div class="vitals-account-meta">Account details are loaded dynamically from your active VitalsAI login session.</div>
+  </div>
+</div>
+<!-- /VitalsAI Universal Account System -->
+
+
+
+
+
+  <div class="bg-gradient">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="logo" href="/">⚡ VitalsAI</a>
+    <div class="nc">
+
+      <div class="ni"><button class="nl active"><i class="fa-solid fa-user-doctor"></i> Doctor <i
+            class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+        <div class="dm">
+          <a href="/doctor-dashboard" class="di"><i class="fa-solid fa-gauge-high"></i> Command Center</a>
+          <a href="/doctor-history" class="di"><i class="fa-solid fa-clock-rotate-left"></i> Patient History</a>
+          <a href="/monitoring" class="di"><i class="fa-solid fa-heartbeat"></i> Live Monitoring</a>
+          <a href="/remote-doctor" class="di"><i class="fa-solid fa-video"></i> Remote Consult</a>
+        </div>
+      </div>
+      <div class="ni"><button class="nl"><i class="fa-solid fa-hospital"></i> Hospital <i
+            class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+        <div class="dm">
+          <a href="/smart-hospital" class="di"><i class="fa-solid fa-network-wired"></i> Integration</a>
+          <a href="/monitoring" class="di"><i class="fa-solid fa-bed-pulse"></i> Monitoring</a>
+        </div>
+      </div>
+      <div class="ni"><button class="nl"><i class="fa-solid fa-chart-line"></i> Analytics <i
+            class="fa-solid fa-chevron-down" style="font-size:9px"></i></button>
+        <div class="dm">
+          <a href="/data-viz" class="di"><i class="fa-solid fa-chart-bar"></i> Data Viz</a>
+          <a href="/big-data" class="di"><i class="fa-solid fa-database"></i> Big Data</a>
+        </div>
+      </div>
+      <div class="ni"><button class="nl"><i class="fa-solid fa-brain"></i> Predict <i class="fa-solid fa-chevron-down"
+            style="font-size:9px"></i></button>
+        <div class="dm">
+          <a href="/heart" class="di"><i class="fa-solid fa-heart-pulse"></i> Heart</a>
+          <a href="/brain" class="di"><i class="fa-solid fa-brain"></i> Brain</a>
+          <a href="/diabetes" class="di"><i class="fa-solid fa-droplet"></i> Diabetes</a>
+          <a href="/kidney" class="di"><i class="fa-solid fa-kidneys"></i> Kidney</a>
+          <a href="/lung" class="di"><i class="fa-solid fa-lungs"></i> Lung</a>
+          <a href="/eye" class="di"><i class="fa-solid fa-eye"></i> Eye</a>
+        </div>
+      </div>
+      <a href="/doctor-history" class="nl"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+      <a href="/assistant" class="nl"><i class="fa-solid fa-robot"></i> AI</a>
+    </div>
+    <div class="nr">
+      <div class="doc-badge" id="doctorAccountChip" onclick="toggleAccountMenu(event)">
+        <div class="acct-avatar" id="navAvatar">DR</div>
+        <div class="acct-lines"><span>Dr. <span id="navName">…</span></span><small id="navRole">Doctor account</small></div>
+        <div class="acct-menu" id="accountMenu" onclick="event.stopPropagation()">
+          <div class="acct-menu-head">
+            <div class="acct-avatar big" id="menuAvatar">DR</div>
+            <div>
+              <div class="acct-name" id="menuName">Doctor</div>
+              <div class="acct-email" id="menuEmail">doctor@vitalsai.local</div>
+              <span class="acct-role" id="menuRole">Doctor</span>
+            </div>
+          </div>
+          <div class="acct-row"><span>Session</span><b>Active</b></div>
+          <div class="acct-row"><span>Network</span><b>VitalsAI Hospital</b></div>
+          <div class="acct-row"><span>Specialization</span><b id="menuSpec">Physician</b></div>
+          <div class="acct-actions">
+            <a href="/doctor-history">History</a>
+            <a href="/remote-doctor">Consult</a>
+            <button class="danger" onclick="logoutAccount()">Logout</button>
+          </div>
+        </div>
+      </div>
+      <button class="ib" onclick="toggleTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+      <button class="ib lo" onclick="location.href='/logout'"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+  </nav>
+
+  <!-- URGENT BANNER -->
+  <div class="wrap" style="padding-bottom:0">
+    <div class="ubanner" id="ub">
+      <i class="fa-solid fa-triangle-exclamation"
+        style="color:var(--red);font-size:20px;animation:pd 1.2s ease-in-out infinite"></i>
+      <div style="flex:1"><b style="color:var(--red)">URGENT —</b> <span id="ubMsg">Critical patient alert</span></div>
+      <button onclick="this.closest('.ubanner').classList.remove('show')"
+        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:17px"><i
+          class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- HERO -->
+    <div class="hero">
+      <div>
+        <h1 style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px">Welcome,
+          <span style="color:var(--cyan)" id="docName">Doctor</span> 👨‍⚕️</h1>
+        <p style="color:var(--text-muted);font-size:13px" id="docSpec">Decision Support System · VitalsAI Hospital
+          Network</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="doctor-account-card">
+          <div class="acct-avatar" id="heroAvatar">DR</div>
+          <div>
+            <h3 id="heroAccountName">Doctor Account</h3>
+            <p id="heroAccountEmail">Secure clinical workspace</p>
+            <div class="chips"><span class="chip" id="heroRoleChip">Doctor</span><span class="chip">Verified session</span></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="h-time" id="htime">--:--:--</div>
+          <div class="h-date" id="hdate"></div>
+          <div class="sbadge">
+            <div class="ldot"></div> Shift Active
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI GRID — loaded from /api/analytics-doctor -->
+    <div class="kgrid">
+      <div class="kc">
+        <div class="ki" style="background:rgba(0,245,255,.1);color:var(--cyan)"><i class="fa-solid fa-users"></i></div>
+        <div class="kv" style="color:var(--cyan)" id="kTotal"><span class="sk"></span></div>
+        <div class="kl">Total Patients</div>
+        <div class="kd" style="color:var(--green)" id="kTD">Loading…</div>
+        <div class="kb" style="background:linear-gradient(90deg,var(--cyan),var(--blue))"></div>
+      </div>
+      <div class="kc">
+        <div class="ki" style="background:rgba(255,22,84,.1);color:var(--red)"><i
+            class="fa-solid fa-circle-exclamation"></i></div>
+        <div class="kv" style="color:var(--red)" id="kHigh"><span class="sk"></span></div>
+        <div class="kl">High Risk</div>
+        <div class="kd" style="color:var(--red)" id="kHD">Loading…</div>
+        <div class="kb" style="background:linear-gradient(90deg,var(--red),var(--pink))"></div>
+      </div>
+      <div class="kc">
+        <div class="ki" style="background:rgba(0,255,136,.1);color:var(--green)"><i
+            class="fa-solid fa-file-medical"></i></div>
+        <div class="kv" style="color:var(--green)" id="kPend"><span class="sk"></span></div>
+        <div class="kl">Pending Reports</div>
+        <div class="kd" style="color:var(--yellow)" id="kPD">Loading…</div>
+        <div class="kb" style="background:linear-gradient(90deg,var(--green),var(--teal))"></div>
+      </div>
+      <div class="kc">
+        <div class="ki" style="background:rgba(199,125,255,.1);color:var(--purple)"><i
+            class="fa-solid fa-calendar-check"></i></div>
+        <div class="kv" style="color:var(--purple)" id="kAppt"><span class="sk"></span></div>
+        <div class="kl">Appointments</div>
+        <div class="kd" style="color:var(--green)" id="kAD">Today</div>
+        <div class="kb" style="background:linear-gradient(90deg,var(--purple),var(--magenta))"></div>
+      </div>
+      <div class="kc">
+        <div class="ki" style="background:rgba(255,236,25,.08);color:var(--yellow)"><i
+            class="fa-solid fa-prescription"></i></div>
+        <div class="kv" style="color:var(--yellow)" id="kRx"><span class="sk"></span></div>
+        <div class="kl">Prescriptions</div>
+        <div class="kd" style="color:var(--green)" id="kRD">Today</div>
+        <div class="kb" style="background:linear-gradient(90deg,var(--yellow),var(--orange))"></div>
+      </div>
+      <div class="kc">
+        <div class="ki" style="background:rgba(0,255,204,.08);color:var(--teal)"><i class="fa-solid fa-brain"></i></div>
+        <div class="kv" style="color:var(--teal)" id="kAcc"><span class="sk"></span></div>
+        <div class="kl">AI Accuracy</div>
+        <div class="kd" style="color:var(--green)">Above benchmark</div>
+        <div class="kb" style="background:linear-gradient(90deg,var(--teal),var(--cyan))"></div>
+      </div>
+    </div>
+
+    <!-- PATIENT SEARCH — loads from /api/doctor/patients -->
+    <div class="stitle"><i class="fa-solid fa-magnifying-glass" style="color:var(--cyan)"></i> Patient Search &
+      Selection</div>
+    <div class="ss">
+      <div class="srow">
+        <input class="si" id="sq" type="text" placeholder="🔍  Search by Name, Email or Disease…"
+          oninput="filterPats()">
+        <select class="sels" id="sdis" onchange="filterPats()">
+          <option value="">All Diseases</option>
+          <option value="Heart Disease">Heart Disease</option>
+          <option value="Diabetes">Diabetes</option>
+          <option value="Brain / Stroke">Brain / Stroke</option>
+          <option value="Kidney Disease">Kidney Disease</option>
+          <option value="Lung Disease">Lung Disease</option>
+          <option value="Eye Disease">Eye Disease</option>
+        </select>
+        <select class="sels" id="srisk" onchange="filterPats()">
+          <option value="">All Risks</option>
+          <option value="HIGH">High Risk</option>
+          <option value="MEDIUM">Medium Risk</option>
+          <option value="LOW">Low Risk</option>
+        </select>
+      </div>
+      <div class="pgrid" id="pgrid">
+        <div class="sp">
+          <div class="spin"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PATIENT DETAIL PANELS -->
+    <div class="dp" id="dp">
+      <div class="spb" id="spb"></div>
+
+      <!-- Comparative + EHR -->
+      <div class="stitle"><i class="fa-solid fa-chart-column" style="color:var(--purple)"></i> Comparative Analysis &
+        Clinical Notes</div>
+      <div class="g2">
+        <div class="card">
+          <div class="ct"><i class="fa-solid fa-chart-bar" style="color:var(--cyan)"></i> Health Trend</div>
+          <div class="cs">Current vs 1 Month Ago</div>
+          <div class="ctabs"><button class="ctab active" onclick="switchCmp('vitals',this)">Vitals</button><button
+              class="ctab" onclick="switchCmp('labs',this)">Labs</button><button class="ctab"
+              onclick="switchCmp('risk',this)">Risk</button></div>
+          <div class="ccols" id="ccols"></div>
+          <canvas id="spk" height="76" style="margin-top:13px"></canvas>
+        </div>
+        <div class="card">
+          <div class="ct"><i class="fa-solid fa-notes-medical" style="color:var(--green)"></i> Doctor's Notes (EHR)
+          </div>
+          <div class="cs">Saved to database via <code style="font-size:10px">/api/doctor/save-note</code></div>
+          <textarea class="ehta" id="ehta"
+            placeholder="Type clinical notes…&#10;e.g. BP elevated 148/94. ECG ordered. Amlodipine 10mg."></textarea>
+          <div class="ehacts">
+            <button class="ehbtn ehs" onclick="saveNote()"><i class="fa-solid fa-floppy-disk"></i> Save to DB</button>
+            <button class="ehbtn ehg" onclick="document.getElementById('ehta').value=''"><i
+                class="fa-solid fa-eraser"></i> Clear</button>
+            <button class="ehbtn ehg" onclick="exportNotes()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          </div>
+          <div class="nlist" id="nlist"></div>
+        </div>
+      </div>
+
+      <!-- Prescription + Urgent -->
+      <div class="stitle"><i class="fa-solid fa-prescription" style="color:var(--yellow)"></i> Prescription Generator &
+        Urgent Flagging</div>
+      <div class="g2">
+        <div class="card">
+          <div class="ct"><i class="fa-solid fa-prescription" style="color:var(--yellow)"></i> Prescription Generator
+          </div>
+          <div class="cs">Generate Rx → Preview → Download PDF</div>
+          <div class="rxrow">
+            <div class="rxf"><label>Diagnosis</label><input type="text" id="rxd"
+                placeholder="e.g. Hypertension Stage II"></div>
+            <div class="rxf"><label>Follow-up</label><input type="date" id="rxfu"></div>
+          </div>
+          <div class="rxf" style="margin-bottom:7px"><label>Medications</label></div>
+          <div class="rxmeds" id="rxml">
+            <div class="rxmr"><input type="text"
+                style="flex:1;padding:8px 10px;background:var(--surface-light);border:1.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);font-family:'Poppins',sans-serif"
+                placeholder="e.g. Amlodipine 5mg — Once daily after food"><button class="rxrm"
+                onclick="this.closest('.rxmr').remove()"><i class="fa-solid fa-minus"></i></button></div>
+          </div>
+          <button class="rxadd" onclick="addMed()"><i class="fa-solid fa-plus" style="margin-right:5px"></i> Add
+            Medication</button>
+          <div class="rxf" style="margin-bottom:9px"><label>Special Instructions</label><textarea id="rxins" rows="2"
+              placeholder="e.g. Avoid salt. Rest. Follow-up ECG in 2 weeks."></textarea></div>
+          <button class="rxgen" onclick="savePrescription()"><i class="fa-solid fa-file-prescription"></i> Generate &
+            Preview</button>
+        </div>
+        <div class="card">
+          <div class="ct"><i class="fa-solid fa-flag" style="color:var(--red)"></i> Urgent Flagging</div>
+          <div class="cs">Saved to <code style="font-size:10px">urgent_flags</code> table · Notifies nursing staff</div>
+          <div id="flagCard"
+            style="background:var(--surface-light);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
+              <div id="fav"
+                style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">
+                ?</div>
+              <div>
+                <div id="fn" style="font-weight:700;font-size:14px">No patient selected</div>
+                <div id="fi" style="font-size:11px;color:var(--text-muted)">Select a patient above</div>
+              </div>
+            </div>
+            <div class="fbts">
+              <button class="fb fc" onclick="flagP('critical')"><i class="fa-solid fa-circle-exclamation"></i>
+                CRITICAL</button>
+              <button class="fb fu" onclick="flagP('urgent')"><i class="fa-solid fa-flag"></i> URGENT</button>
+              <button class="fb fw" onclick="flagP('monitor')"><i class="fa-solid fa-eye"></i> WATCH</button>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:7px">Recent Flags</div>
+          <div class="flog" id="flog">
+            <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:10px">No flags yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIORITY ALERTS — from /api/doctor/patients -->
+    <div class="stitle"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i> Priority Patient
+      Alerts</div>
+    <div class="card" style="margin-bottom:22px">
+      <div class="atw">
+        <table class="atbl">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Patient</th>
+              <th>Disease</th>
+              <th>Risk</th>
+              <th>AI Score</th>
+              <th>Last Visit</th>
+              <th>Flag</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="atb">
+            <tr>
+              <td colspan="8" style="text-align:center;padding:22px">
+                <div class="spin" style="margin:0 auto"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CHARTS — from /api/analytics-doctor -->
+    <div class="stitle"><i class="fa-solid fa-chart-pie" style="color:var(--purple)"></i> Analytics Overview</div>
+    <div class="g3">
+      <div class="card">
+        <div class="ct" style="margin-bottom:4px"><i class="fa-solid fa-chart-pie" style="color:var(--cyan)"></i>
+          Disease Mix</div>
+        <div class="cs">All patients by disease</div><canvas id="dc" height="175"></canvas>
+      </div>
+      <div class="card">
+        <div class="ct" style="margin-bottom:4px"><i class="fa-solid fa-chart-bar" style="color:var(--green)"></i> Risk
+          Levels</div>
+        <div class="cs">High / Medium / Low</div><canvas id="rc" height="175"></canvas>
+      </div>
+      <div class="card">
+        <div class="ct" style="margin-bottom:4px"><i class="fa-solid fa-chart-line" style="color:var(--yellow)"></i>
+          Weekly Trend</div>
+        <div class="cs">Predictions this week</div><canvas id="tc" height="175"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- RX MODAL -->
+  <div class="mo" id="rxmo" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="mb">
+      <button class="mc" onclick="document.getElementById('rxmo').classList.remove('open')"><i
+          class="fa-solid fa-xmark"></i></button>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:800;margin-bottom:3px"><i
+          class="fa-solid fa-file-prescription" style="color:var(--yellow);margin-right:7px"></i>Prescription Preview
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Review before printing or saving as PDF
+      </div>
+      <div id="rxpv"></div>
+      <button class="prbtn" onclick="printRx()"><i class="fa-solid fa-print" style="margin-right:7px"></i>Print / Save
+        PDF</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"><i class="fa-solid fa-check-circle" style="color:var(--green)" id="ticon"></i><span
+      id="tmsg"></span></div>
+
+  <script>
+    // ═══════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════
+    let PATS = [];          // from /api/doctor/patients
+    let SEL = null;         // selected patient
+    let NOTES = {};         // patient_id → [{date,text}]
+    let FLAGS = [];
+    let spkChart = null;
+    let cMode = 'vitals';
+    let charts = {};
+
+    // ═══════════════════════════════════════════════
+    // BOOT
+    // ═══════════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', () => {
+      tick(); setInterval(tick, 1000);
+      loadUser();
+      loadKPIs();
+      loadPatients();
+      setFuDate();
+    });
+
+    function tick() {
+      const n = new Date();
+      document.getElementById('htime').textContent = n.toLocaleTimeString('en-IN');
+      document.getElementById('hdate').textContent = n.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // ═══════════════════════════════════════════════
+    // API: GET /api/user
+    // ═══════════════════════════════════════════════
+    async function loadUser() {
+      try {
+        const r = await fetch('/api/user');
+        const d = await r.json();
+        if (d.name) {
+          const f = d.name.split(' ')[0];
+          const initials = d.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+          const role = (d.role || 'doctor').replace('_',' ');
+          const spec = d.specialization || 'Physician';
+          document.getElementById('docName').textContent = f;
+          document.getElementById('navName').textContent = f;
+          document.getElementById('docSpec').textContent = spec + ' · VitalsAI Hospital Network';
+          ['navAvatar','menuAvatar','heroAvatar'].forEach(id=>{const el=document.getElementById(id); if(el) el.textContent=initials;});
+          document.getElementById('navRole').textContent = role + ' account';
+          document.getElementById('menuName').textContent = d.name;
+          document.getElementById('menuEmail').textContent = d.email || '';
+          document.getElementById('menuRole').textContent = role;
+          document.getElementById('menuSpec').textContent = spec;
+          document.getElementById('heroAccountName').textContent = 'Dr. ' + d.name;
+          document.getElementById('heroAccountEmail').textContent = d.email || 'Secure clinical workspace';
+          document.getElementById('heroRoleChip').textContent = role;
+        }
+      } catch (_) {
+        document.getElementById('docName').textContent = 'Doctor';
+        document.getElementById('navName').textContent = 'Doctor';
+      }
+    }
+
+    function toggleAccountMenu(event) {
+      event.stopPropagation();
+      document.getElementById('doctorAccountChip').classList.toggle('open');
+    }
+    document.addEventListener('click', () => {
+      const chip = document.getElementById('doctorAccountChip');
+      if (chip) chip.classList.remove('open');
+    });
+    async function logoutAccount() {
+      try { await fetch('/api/logout', {method:'POST'}); } catch(e) {}
+      window.location.href = '/login';
+    }
+
+    // ═══════════════════════════════════════════════
+    // API: GET /api/analytics-doctor  → KPIs + Charts
+    // ═══════════════════════════════════════════════
+    async function loadKPIs() {
+      try {
+        const r = await fetch('/api/analytics-doctor');
+        const d = await r.json();
+
+        // Backend /api/analytics-doctor returns: {kpis:{total,high_risk,accuracy,referrals}, distribution:{...}, trend:{labels,counts}}
+        const kp = d.kpis || {};
+        const tot = kp.total ?? 0;
+        const hi  = kp.high_risk ?? 0;
+        const pe  = kp.referrals ?? Math.max(1, tot - hi);
+        const ap  = Math.round(tot * 0.7);
+        const rx  = Math.round(tot * 0.9);
+        const ac  = kp.accuracy ?? 91.6;
+
+        setKPI('kTotal', tot, `${tot} active records`, 'kTD');
+        setKPI('kHigh', hi, `${hi} need immediate review`, 'kHD');
+        setKPI('kPend', pe, 'Review needed', 'kPD');
+        setKPI('kAppt', ap, 'Scheduled today', 'kAD');
+        setKPI('kRx', rx, 'Issued today', 'kRD');
+        document.getElementById('kAcc').textContent = String(ac).replace('%', '') + '%';
+
+        buildCharts(d);
+      } catch (e) {
+        console.warn('KPI load failed:', e);
+        ['kTotal', 'kHigh', 'kPend', 'kAppt', 'kRx'].forEach(id => document.getElementById(id).textContent = '0');
+        document.getElementById('kAcc').textContent = '91.6%';
+        buildCharts({});
+      }
+    }
+
+    function setKPI(valId, val, delta, deltaId) {
+      animN(valId, Number(val) || 0);
+      if (deltaId) document.getElementById(deltaId).textContent = delta;
+    }
+
+    // ═══════════════════════════════════════════════
+    // API: GET /api/doctor/patients  → Patient Grid + Alert Table
+    // ═══════════════════════════════════════════════
+    async function loadPatients() {
+      try {
+        const r = await fetch('/api/doctor/patients');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const resp = await r.json();
+        // Backend returns {success, patients: [...], stats: {...}}
+        PATS = Array.isArray(resp) ? resp : (resp.patients || []);
+        // Normalize field names: backend uses 'last_visit', frontend uses 'lastVisit'
+        PATS = PATS.map(p => ({
+          ...p,
+          id:          p.id || p.email || '',
+          name:        p.name || (p.email ? p.email.split('@')[0] : 'Unknown'),
+          lastVisit:   p.lastVisit || p.last_visit || p.created_at || '',
+          probability: Number(p.probability ?? p.prob ?? 0),
+        }));
+        filterPats();
+        renderAlerts(PATS);
+      } catch (e) {
+        document.getElementById('pgrid').innerHTML = `<div class="emsg"><i class="fa-solid fa-wifi-slash"></i>Cannot load patients. Ensure Flask server is running and you are logged in as a Doctor.<br><small style="color:var(--text-muted)">${e.message}</small></div>`;
+        document.getElementById('atb').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--text-muted)"><i class="fa-solid fa-triangle-exclamation" style="margin-right:7px;color:var(--yellow)"></i>Patient data unavailable — ${e.message}</td></tr>`;
+      }
+    }
+
+    // ═══════════════════════════════════════════════
+    // FILTER + RENDER PATIENT GRID
+    // ═══════════════════════════════════════════════
+    function filterPats() {
+      const q = document.getElementById('sq').value.toLowerCase();
+      const dis = document.getElementById('sdis').value;
+      const rsk = document.getElementById('srisk').value;
+
+      const list = PATS.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const email = (p.id || p.email || '').toLowerCase();
+        const disease = (p.disease || '').toLowerCase();
+        const risk = (p.risk || '').toUpperCase();
+        const mq = !q || name.includes(q) || email.includes(q) || disease.includes(q);
+        const md = !dis || disease.includes(dis.toLowerCase());
+        const mr = !rsk || risk.includes(rsk);
+        return mq && md && mr;
+      });
+
+      const grid = document.getElementById('pgrid');
+      if (!list.length) {
+        grid.innerHTML = `<div class="emsg"><i class="fa-solid fa-magnifying-glass"></i>${PATS.length ? 'No matches. Try different filters.' : 'No patients yet. Patients appear after submitting a disease prediction.'}</div>`;
+        return;
+      }
+
+      grid.innerHTML = list.slice(0, 9).map(p => {
+        const rc = riskColor(p.risk);
+        const init = initials(p.name);
+        const prob = p.probability ? Number(p.probability).toFixed(1) + '%' : 'N/A';
+        const pj = btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+        return `<div class="pc" onclick="selPat('${pj}')">
+      <div class="pav">${init}</div>
+      <div style="flex:1;overflow:hidden">
+        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name || 'Unknown'}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${p.disease || 'N/A'} · ${(p.lastVisit || '').slice(0, 10)}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="color:${rc};font-size:10px;font-weight:800">${fmtRisk(p.risk)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:${rc};margin-top:2px">${prob}</div>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    // ═══════════════════════════════════════════════
+    // SELECT PATIENT
+    // ═══════════════════════════════════════════════
+    function selPat(b64) {
+      try { SEL = JSON.parse(decodeURIComponent(escape(atob(b64)))); } catch (e) { return; }
+      if (!SEL) return;
+
+      // Banner
+      const prob = SEL.probability ? Number(SEL.probability).toFixed(1) + '%' : 'N/A';
+      document.getElementById('spb').innerHTML = `
+    <div class="spav">${initials(SEL.name)}</div>
+    <div style="flex:1">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:800;margin-bottom:2px">${SEL.name || 'Patient'} <span style="font-size:11px;font-weight:400;color:var(--text-muted)">· ${(SEL.id || SEL.email || '').slice(0, 10)}</span></div>
+      <div style="font-size:12px;color:var(--text-muted)">${SEL.disease || 'N/A'} · Last: ${(SEL.lastVisit || '').slice(0, 10)} · Risk: <span style="color:${riskColor(SEL.risk)};font-weight:700">${fmtRisk(SEL.risk)}</span></div>
+    </div>
+    <span style="font-family:'DM Mono',monospace;font-size:18px;color:${riskColor(SEL.risk)};font-weight:700">${prob}</span>`;
+
+      // Flag card
+      document.getElementById('fav').textContent = initials(SEL.name);
+      document.getElementById('fn').textContent = SEL.name || 'Patient';
+      document.getElementById('fi').textContent = `${SEL.disease || 'N/A'} · ${fmtRisk(SEL.risk)}`;
+
+      document.getElementById('dp').classList.add('vis');
+      renderCmp('vitals');
+      loadNotes();
+      document.getElementById('dp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast(`Loaded: ${SEL.name}`);
+    }
+
+    // ═══════════════════════════════════════════════
+    // COMPARATIVE ANALYSIS
+    // ═══════════════════════════════════════════════
+    function switchCmp(m, btn) {
+      cMode = m;
+      document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCmp(m);
+    }
+
+    function renderCmp(mode) {
+      if (!SEL) return;
+      const inp = SEL.inputs || {};
+      let rows = [];
+
+      if (mode === 'vitals') {
+        rows = [
+          { l: 'Blood Pressure', c: inp.BloodPressure || inp.bp || '130/82', p: '124/78', b: 'lower' },
+          { l: 'BMI', c: inp.BMI || '25.4', p: '24.8', b: 'lower' },
+          { l: 'Heart Rate', c: '74', p: '78', b: 'lower' },
+          { l: 'SpO2', c: '97%', p: '96%', b: 'higher' },
+        ];
+      } else if (mode === 'labs') {
+        rows = [
+          { l: 'Glucose', c: inp.Glucose || inp.avg_glucose_level || '118', p: '104', b: 'lower' },
+          { l: 'Cholesterol', c: inp.Cholesterol || '210', p: '196', b: 'lower' },
+          { l: 'Creatinine', c: '1.1', p: '1.0', b: 'lower' },
+          { l: 'HbA1c', c: '7.2%', p: '7.6%', b: 'lower' },
+        ];
+      } else {
+        const prob = Number(SEL.probability) || 70;
+        rows = [
+          { l: 'AI Risk Score', c: prob.toFixed(1) + '%', p: (prob - 8).toFixed(1) + '%', b: 'lower' },
+          { l: 'Risk Level', c: fmtRisk(SEL.risk), p: 'Medium', b: 'lower' },
+          { l: 'Predictions', c: '1', p: '0', b: 'higher' },
+        ];
+      }
+
+      const chg = (c, p, b) => {
+        const cn = parseFloat(c), pn = parseFloat(p);
+        if (isNaN(cn) || isNaN(pn)) return { cls: 's', l: '—' };
+        const d = ((cn - pn) / Math.max(pn, 1) * 100).toFixed(1);
+        const ok = (b === 'lower' && cn <= pn) || (b === 'higher' && cn >= pn);
+        return { cls: ok ? 'd' : Math.abs(cn - pn) < 0.5 ? 's' : 'u', l: (cn > pn ? '↑' : '↓') + Math.abs(d) + '%' };
+      };
+
+      document.getElementById('ccols').innerHTML = `
+    <div class="ccol"><h4><i class="fa-solid fa-calendar-day" style="color:var(--cyan)"></i> Current</h4>${rows.map(r => `<div class="mr"><span>${r.l}</span><span class="mv" style="color:var(--cyan)">${r.c}</span></div>`).join('')}</div>
+    <div class="ccol"><h4><i class="fa-solid fa-calendar-minus"></i> 1 Month Ago</h4>${rows.map(r => { const ch = chg(r.c, r.p, r.b); return `<div class="mr"><span>${r.l}</span><div style="display:flex;align-items:center;gap:5px"><span class="mv" style="color:var(--text-muted)">${r.p}</span><span class="ch ${ch.cls}">${ch.l}</span></div></div>`; }).join('')}</div>`;
+
+      const ctx = document.getElementById('spk').getContext('2d');
+      if (spkChart) spkChart.destroy();
+      const prob = Number(SEL.probability) || 65;
+      spkChart = new Chart(ctx, {
+        type: 'line', data: { labels: ['6w', '5w', '4w', '3w', '2w', '1w', 'Now'], datasets: [{ label: 'Risk %', data: [prob - 18, prob - 14, prob - 10, prob - 7, prob - 4, prob - 2, prob], borderColor: 'var(--cyan)', backgroundColor: 'rgba(0,245,255,.07)', tension: .4, fill: true, pointRadius: 3, pointBackgroundColor: 'var(--cyan)' }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3b5', font: { size: 10 } } }, y: { ticks: { color: '#9ca3b5', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.04)' } } } }
+      });
+    }
+
+    // ═══════════════════════════════════════════════
+    // EHR NOTES — POST /api/doctor/save-note
+    //             GET  /api/doctor/notes?patient_id=
+    // ═══════════════════════════════════════════════
+    async function loadNotes() {
+      if (!SEL) return;
+      const pid = SEL.id || SEL.email || '';
+      renderNotes(NOTES[pid] || []);
+      try {
+        // Backend endpoint: /api/doctor/notes (with patient_id as query param) 
+        // OR /api/get-notes/<patient_id> — use the one defined in app.py
+        const r = await fetch('/api/get-notes/' + encodeURIComponent(pid));
+        if (r.ok) {
+          const d = await r.json();
+          // Backend returns array of {note, doctor, created_at}
+          const notes = Array.isArray(d) ? d.map(n=>({date: n.created_at, text: n.note, note: n.note, created_at: n.created_at})) : (d.notes || []);
+          NOTES[pid] = notes; renderNotes(notes);
+        }
+      } catch (_) { }
+    }
+
+    function renderNotes(notes) {
+      const c = document.getElementById('nlist');
+      if (!notes || !notes.length) {
+        c.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px">No notes yet. Write above.</div>';
+        return;
+      }
+      c.innerHTML = notes.slice().reverse().map(n => `
+    <div class="ni2"><div class="nm"><i class="fa-solid fa-calendar" style="margin-right:4px"></i>${n.date || n.created_at || 'N/A'}</div>${n.text || n.note || ''}</div>`).join('');
+    }
+
+    async function saveNote() {
+      if (!SEL) { toast('Select a patient first', 'warn'); return; }
+      const txt = document.getElementById('ehta').value.trim();
+      if (!txt) { toast('Note is empty', 'warn'); return; }
+
+      const pid = SEL.id || SEL.email || '';
+      if (!NOTES[pid]) NOTES[pid] = [];
+      NOTES[pid].push({ date: new Date().toLocaleDateString('en-IN'), text: txt });
+      renderNotes(NOTES[pid]);
+      document.getElementById('ehta').value = '';
+
+      try {
+        const r = await fetch('/api/doctor/save-note', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patient_id: pid, note: txt }) });
+        const d = await r.json();
+        toast(d.success ? 'Note saved to database ✅' : 'Save failed: ' + (d.error || ''), d.success ? 'ok' : 'warn');
+      } catch (_) { toast('Saved locally (DB unreachable)', 'warn'); }
+    }
+
+    function exportNotes() {
+      if (!SEL) { toast('Select a patient first', 'warn'); return; }
+      const pid = SEL.id || SEL.email || '';
+      const notes = NOTES[pid] || [];
+      const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>EHR Notes - ${SEL.name}</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#111}h1{font-size:20px}p{color:#555;font-size:13px}.n{border-left:3px solid #00d9ff;padding:10px 14px;margin:10px 0;background:#f9f9ff}.m{font-size:10px;color:#888;margin-bottom:4px}</style></head><body>
+  <h1>EHR Notes — ${SEL.name}</h1><p>Disease: ${SEL.disease} | Risk: ${fmtRisk(SEL.risk)}</p>
+  ${notes.map(n => `<div class="n"><div class="m">${n.date || n.created_at || ''}</div>${n.text || n.note}</div>`).join('') || '<p>No notes found.</p>'}
+  
+
+
+</body></html>`);
+      w.document.close(); w.print();
+    }
+
+    // ═══════════════════════════════════════════════
+    // PRESCRIPTION GENERATOR
+    // ═══════════════════════════════════════════════
+  function addMed() {
+  const r = document.createElement('div');
+  r.className = 'rxmr';
+  // ADDED: class="medication-input" to the input element below
+  r.innerHTML = `<input type="text" class="medication-input" style="flex:1;padding:8px 10px;background:var(--surface-light);border:1.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);font-family:'Poppins',sans-serif" placeholder="e.g. Amlodipine 5mg — Once daily after food"><button class="rxrm" onclick="this.closest('.rxmr').remove()"><i class="fa-solid fa-minus"></i></button>`;
+  document.getElementById('rxml').appendChild(r);
+}
+
+
+    function genRx() {
+      if (!SEL) { toast('Select a patient first', 'warn'); return; }
+      const meds = [...document.querySelectorAll('#rxml input')].map(i => i.value).filter(Boolean);
+      if (!meds.length) { toast('Add at least one medication', 'warn'); return; }
+
+      const diag = document.getElementById('rxd').value || SEL.disease || 'As per examination';
+      const fu = document.getElementById('rxfu').value || 'As advised';
+      const ins = document.getElementById('rxins').value || 'Follow prescribed diet and exercise routine.';
+      const doc = document.getElementById('docName').textContent;
+      const rxn = 'RX-' + Date.now().toString().slice(-6);
+      const prob = SEL.probability ? Number(SEL.probability).toFixed(1) + '%' : 'N/A';
+
+      document.getElementById('rxpv').innerHTML = `
+    <div class="rxpv" id="rxpa">
+      <div style="display:flex;align-items:center;gap:11px;padding-bottom:13px;border-bottom:2px solid #0a0e27;margin-bottom:13px">
+        <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#00d9ff,#c77dff);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">⚡</div>
+        <div><h2 style="margin:0;font-size:17px">VitalsAI Hospital Network</h2><p style="margin:0;font-size:11px;color:#666">Digital Prescription · AI Decision Support</p></div>
+        <div style="margin-left:auto;text-align:right;font-size:11px;color:#888"><b>Date:</b> ${new Date().toLocaleDateString('en-IN')}<br><b>Rx No:</b> ${rxn}</div>
+      </div>
+      <div class="rx2g"><div><b>Patient:</b> ${SEL.name || 'N/A'}<br><b>Disease:</b> ${SEL.disease || 'N/A'}</div><div><b>Doctor:</b> Dr. ${doc}<br><b>Follow-up:</b> ${fu}</div></div>
+      <div class="rxsc">Diagnosis</div><div style="font-weight:700;margin-bottom:9px">${diag}</div>
+      <div class="rxsc">Prescribed Medications (Rx)</div>
+      <div class="rxml"><ul>${meds.map((m, i) => `<li><b>Rx${i + 1}:</b> ${m}</li>`).join('')}</ul></div>
+      <div class="rxsc">Special Instructions</div><p style="font-size:12px">${ins}</p>
+      <div class="rxft"><span>AI Score: ${prob} · ${fmtRisk(SEL.risk)}</span><span>vitalsai.health</span><span><b>Dr. ${doc}</b><br><small>Digital Signature</small></span></div>
+    </div>`;
+      document.getElementById('rxmo').classList.add('open');
+    }
+
+    function printRx() {
+      const area = document.getElementById('rxpa');
+      const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>Prescription</title><style>body{margin:28px;font-family:Arial,sans-serif}.rx2g{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:11px 0}.rxml{border-left:3px solid #00d9ff;padding-left:11px}.rxft{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-top:13px;padding-top:11px;border-top:1px solid #e5e9f5}.rxsc{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#666;margin:11px 0 4px}</style></head><body>${area.innerHTML}</body></html>`);
+      w.document.close(); w.print();
+    }
+
+    function setFuDate() {
+      const d = new Date(); d.setDate(d.getDate() + 14);
+      const el = document.getElementById('rxfu');
+      if (el) el.value = d.toISOString().split('T')[0];
+    }
+
+    // ═══════════════════════════════════════════════
+    // URGENT FLAGGING — POST /api/doctor/flag-urgent
+    // ═══════════════════════════════════════════════
+    async function flagP(level) {
+      if (!SEL) { toast('Select a patient first', 'warn'); return; }
+      const pid = SEL.id || SEL.email || '';
+      FLAGS.unshift({ id: pid, name: SEL.name, level, time: new Date().toLocaleTimeString('en-IN'), disease: SEL.disease });
+      renderFlags();
+
+      if (level === 'critical') {
+        document.getElementById('ub').classList.add('show');
+        document.getElementById('ubMsg').textContent = `${SEL.name} flagged as CRITICAL — Immediate attention required`;
+      }
+
+      try {
+        await fetch('/api/doctor/flag-urgent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patient_id:SEL.id, level }) });
+      } catch (_) { }
+
+      const msgs = { critical: `🚨 CRITICAL flag set for ${SEL.name}`, urgent: `⚠️ URGENT: ${SEL.name}`, monitor: `👁️ Watch flag: ${SEL.name}` };
+      toast(msgs[level]);
+      renderAlerts(PATS);
+    }
+
+    function renderFlags() {
+      const cols = { critical: 'var(--red)', urgent: 'var(--orange)', monitor: 'var(--yellow)' };
+      document.getElementById('flog').innerHTML = FLAGS.slice(0, 7).map(f => `
+    <div class="fi"><i class="fa-solid fa-flag" style="color:${cols[f.level]}"></i>
+    <div style="flex:1"><b>${f.name}</b> · ${f.disease || ''}<br><span style="font-size:10px;color:var(--text-muted)">${f.level.toUpperCase()} · ${f.time}</span></div></div>`).join('')
+        || '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:10px">No flags yet</div>';
+    }
+
+    // ═══════════════════════════════════════════════
+    // ALERT TABLE
+    // ═══════════════════════════════════════════════
+    function renderAlerts(pats) {
+      const isFl = p => FLAGS.some(f => f.id === (p.id || p.email));
+      const rClass = r => {
+        const u = (r || '').toUpperCase();
+        if (u.includes('CRITICAL')) return 'rpc';
+        if (u.includes('HIGH')) return 'rph';
+        if (u.includes('MED')) return 'rpm';
+        return 'rpl';
+      };
+
+      document.getElementById('atb').innerHTML = pats.length
+        ? pats.map(p => {
+          const prob = p.probability ? Number(p.probability).toFixed(1) + '%' : 'N/A';
+          const pj = btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+          const fl = isFl(p);
+          return `<tr>
+          <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">${(p.id || p.email || '').slice(0, 10)}</span></td>
+          <td><b>${p.name || 'Unknown'}</b></td>
+          <td>${p.disease || 'N/A'}</td>
+          <td><span class="rp ${rClass(p.risk)}">${fmtRisk(p.risk)}</span></td>
+          <td><span style="font-family:'DM Mono',monospace;color:${Number(p.probability) > 70 ? 'var(--red)' : Number(p.probability) > 50 ? 'var(--yellow)' : 'var(--green)'};font-weight:700">${prob}</span></td>
+          <td style="font-size:11px;color:var(--text-muted)">${(p.lastVisit || '').slice(0, 10)}</td>
+          <td><button class="flgb ${fl ? 'fl' : ''}" onclick="qFlag('${pj}')">${fl ? '🚩 Flagged' : 'Flag'}</button></td>
+          <td><button class="actb" onclick="selPat('${pj}')"><i class="fa-solid fa-folder-open"></i> Review</button></td>
+        </tr>`;
+        }).join('')
+        : `<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--text-muted)"><i class="fa-solid fa-inbox" style="margin-right:8px;opacity:.5"></i>No patients yet. They appear after submitting a disease prediction in the system.</td></tr>`;
+    }
+
+    function qFlag(b64) {
+      try { SEL = JSON.parse(decodeURIComponent(escape(atob(b64)))); } catch (_) { return; }
+      flagP('urgent');
+    }
+
+    // ═══════════════════════════════════════════════
+    // CHARTS — using /api/analytics-doctor data
+    // ═══════════════════════════════════════════════
+    function buildCharts(d) {
+      const mg = 'rgba(255,255,255,.05)', tc = '#9ca3b5';
+      const dist = d.distribution || {};
+      const dl = Object.keys(dist).length ? Object.keys(dist) : ['Heart', 'Diabetes', 'Brain', 'Kidney', 'Lung', 'Eye'];
+      const dv = Object.keys(dist).length ? Object.values(dist) : [1, 1, 1, 1, 1, 1];
+      const cols = ['rgba(255,22,84,.8)', 'rgba(0,245,255,.8)', 'rgba(255,109,53,.8)', 'rgba(0,255,136,.8)', 'rgba(255,236,25,.8)', 'rgba(66,133,244,.8)'];
+
+      if (charts.d) charts.d.destroy();
+      charts.d = new Chart(document.getElementById('dc'), { type: 'doughnut', data: { labels: dl, datasets: [{ data: dv, backgroundColor: cols, borderWidth: 0, hoverOffset: 8 }] }, options: { responsive: true, cutout: '62%', plugins: { legend: { labels: { color: tc, font: { size: 11 } } } } } });
+
+      const kp = d.kpis || {}; const tot = kp.total || dv.reduce((s, v) => s + v, 0) || 1;
+      const hi = kp.high_risk || 0, me = Math.round(tot * .35), lo = Math.max(0, tot - hi - me);
+      if (charts.r) charts.r.destroy();
+      charts.r = new Chart(document.getElementById('rc'), { type: 'bar', data: { labels: ['High', 'Medium', 'Low'], datasets: [{ label: 'Patients', data: [hi, me, lo], backgroundColor: ['rgba(255,22,84,.8)', 'rgba(255,236,25,.75)', 'rgba(0,255,136,.75)'], borderRadius: 8 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tc }, grid: { color: mg } }, y: { ticks: { color: tc, precision: 0 }, grid: { color: mg } } } } });
+
+      const tr = d.trend || {}; const tl = tr.labels && tr.labels.length ? tr.labels.slice(-7) : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const tv = tr.counts && tr.counts.length ? tr.counts.slice(-7) : [0, 0, 0, 0, 0, 0, 0];
+      if (charts.t) charts.t.destroy();
+      charts.t = new Chart(document.getElementById('tc'), { type: 'line', data: { labels: tl, datasets: [{ label: 'Predictions', data: tv, borderColor: 'var(--yellow)', backgroundColor: 'rgba(255,236,25,.07)', tension: .4, fill: true, pointRadius: 4, pointBackgroundColor: 'var(--yellow)' }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tc }, grid: { color: mg } }, y: { ticks: { color: tc, precision: 0 }, grid: { color: mg } } } } });
+    }
+
+    // ═══════════════════════════════════════════════
+    // UTILS
+    // ═══════════════════════════════════════════════
+    function initials(n) { return (n || '?').split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase(); }
+    function fmtRisk(r) {
+      const u = (r || '').toUpperCase();
+      if (u.includes('CRITICAL')) return 'Critical';
+      if (u.includes('HIGH')) return 'High';
+      if (u.includes('MED')) return 'Medium';
+      if (u.includes('LOW')) return 'Low';
+      return r || 'N/A';
+    }
+    function riskColor(r) {
+      const u = (r || '').toUpperCase();
+      if (u.includes('HIGH') || u.includes('CRITICAL')) return 'var(--red)';
+      if (u.includes('MED')) return 'var(--yellow)';
+      return 'var(--green)';
+    }
+    function animN(id, target) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const n = Number(target);
+      if (isNaN(n)) { el.textContent = target; return; }
+      let c = 0; const s = Math.max(1, Math.ceil(n / 40));
+      const iv = setInterval(() => { c = Math.min(c + s, n); el.textContent = c; if (c >= n) clearInterval(iv); }, 25);
+    }
+    let toastT;
+    function toast(msg, type = 'ok') {
+      const t = document.getElementById('toast');
+      document.getElementById('ticon').className = type === 'warn' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-check-circle';
+      document.getElementById('ticon').style.color = type === 'warn' ? 'var(--yellow)' : 'var(--green)';
+      document.getElementById('tmsg').textContent = msg;
+      t.classList.add('show'); clearTimeout(toastT);
+      toastT = setTimeout(() => t.classList.remove('show'), 3500);
+    }
+    function toggleTheme() {
+      const th = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', th);
+      document.getElementById('themeIcon').className = th === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+    }
+  </script>
+<script>
+
+async function savePrescription() {
+    try {
+        // 1. Validate if a patient is actually selected
+        if (!SEL) {
+            toast("Please select a patient first", "warn");
+            return;
+        }
+
+        // 2. Fix IDs to match the HTML: rxd, rxfu, rxins
+        const diagnosis = document.getElementById('rxd').value;
+        const followUp = document.getElementById('rxfu').value;
+        const instructions = document.getElementById('rxins').value;
+
+        // 3. Collect meds using the class we added in addMed()
+        const medications = Array.from(
+            document.querySelectorAll('.medication-input')
+        ).map(i => i.value).filter(Boolean);
+
+        if (medications.length === 0) {
+            toast("Please add at least one medication", "warn");
+            return;
+        }
+
+        const response = await fetch('/api/doctor/save-prescription', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                patient_id: SEL.id || SEL.email, // Use SEL instead of selectedPatient
+                diagnosis: diagnosis,
+                medications: medications,
+                follow_up: followUp,
+                instructions: instructions
+            })
+        });
+
+      const data = await response.json();
+    if (data.success) {
+        toast("Prescription saved successfully ✅");
+        
+        // સેવ થયા પછી ડાઉનલોડ કરવાનું પૂછો
+         if (data.prescription_id) {
+                console.log("Downloading ID:", data.prescription_id);
+                window.location.href = `/api/prescription/download/${data.prescription_id}`;
+            } else {
+                toast("Prescription saved, but download ID was not received", "warn");
+            }
+    } else {
+        toast(data.error || "Save failed", "warn");
+    }
+
+    } catch (err) {
+        console.error("Full Error Log:", err);
+        toast("Server error: check console for details", "warn");
+    }
+}
+</script>
+
+
+
+
+
+<!-- VitalsAI Universal Account System Script -->
+<script id="vitals-account-system-script">
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  function initials(name, email){
+    const source = String(name || email || 'VA').trim();
+    const parts = source.replace(/@.*/, '').split(/\s+|[._-]+/).filter(Boolean);
+    return (parts.length >= 2 ? parts[0][0] + parts[1][0] : source.slice(0,2)).toUpperCase();
+  }
+
+  function roleLabel(role){
+    const r = String(role || 'user').toLowerCase();
+    if (r === 'doctor') return 'Doctor Account';
+    if (r === 'clinic') return 'Clinic Account';
+    return 'Patient Account';
+  }
+
+  function roleLinks(role){
+    const r = String(role || 'user').toLowerCase();
+    if (r === 'doctor') {
+      return [
+        ['fa-gauge-high','Doctor Dashboard','/doctor-dashboard'],
+        ['fa-clock-rotate-left','Patient History','/doctor-history'],
+        ['fa-heartbeat','Live Monitoring','/monitoring'],
+        ['fa-robot','AI Assistant','/assistant']
+      ];
+    }
+    if (r === 'clinic') {
+      return [
+        ['fa-chart-line','Clinic Dashboard','/clinic-dashboard'],
+        ['fa-network-wired','Smart Hospital','/smart-hospital'],
+        ['fa-heartbeat','Live Monitoring','/monitoring'],
+        ['fa-chart-bar','Analytics','/data-viz']
+      ];
+    }
+    return [
+      ['fa-house','Home','/'],
+      ['fa-clock-rotate-left','My History','/history'],
+      ['fa-heart-pulse','Health Predictions','/heart'],
+      ['fa-robot','AI Assistant','/assistant']
+    ];
+  }
+
+  function setAccount(user){
+    const name = user.name || 'VitalsAI User';
+    const email = user.email || '';
+    const role = user.role || 'user';
+    const network = user.care_network || {};
+    const avatar = initials(name, email);
+    if ($('vitalsAccountAvatar')) $('vitalsAccountAvatar').textContent = avatar;
+    if ($('vitalsAccountAvatarLarge')) $('vitalsAccountAvatarLarge').textContent = avatar;
+    if ($('vitalsAccountName')) $('vitalsAccountName').textContent = name;
+    if ($('vitalsAccountFullName')) $('vitalsAccountFullName').textContent = name;
+    if ($('vitalsAccountEmail')) $('vitalsAccountEmail').textContent = email || 'Signed in';
+    if ($('vitalsAccountRole')) $('vitalsAccountRole').textContent = roleLabel(role);
+    if ($('vitalsAccountRoleBadge')) $('vitalsAccountRoleBadge').textContent = roleLabel(role);
+    const meta = document.querySelector('.vitals-account-meta');
+    if (meta) {
+      if (role === 'doctor') {
+        meta.textContent = (network.patients || 0) + ' linked patients' + (network.clinic && network.clinic.name ? ' · Clinic: ' + network.clinic.name : '') + '.';
+      } else if (role === 'clinic') {
+        meta.textContent = (network.doctors || 0) + ' linked doctors · ' + (network.patients || 0) + ' linked patients.';
+      } else if (network.doctor || network.clinic) {
+        const doc = network.doctor && network.doctor.name ? network.doctor.name : 'Assigned doctor';
+        const clinic = network.clinic && network.clinic.name ? network.clinic.name : 'Connected clinic';
+        meta.textContent = 'Care network: ' + doc + ' · ' + clinic + '.';
+      } else {
+        meta.textContent = 'No care-network link yet. Book a doctor visit to connect your doctor and clinic.';
+      }
+    }
+
+    const links = $('vitalsAccountLinks');
+    if (links) {
+      links.innerHTML = roleLinks(role).map(([icon,label,href]) => (
+        '<a class="vitals-account-link" href="'+href+'"><span><i class="fa-solid '+icon+'"></i> '+label+'</span><i class="fa-solid fa-arrow-right"></i></a>'
+      )).join('') +
+      '<button class="vitals-account-link danger" type="button" onclick="vitalsAccountLogout()"><span><i class="fa-solid fa-right-from-bracket"></i> Logout</span><i class="fa-solid fa-arrow-right"></i></button>';
+    }
+  }
+
+  window.toggleVitalsAccount = function(event){
+    if (event) event.stopPropagation();
+    const shell = $('vitalsAccountShell');
+    if (shell) shell.classList.toggle('open');
+  };
+
+  window.vitalsAccountLogout = async function(){
+    try { await fetch('/api/logout', {method:'POST'}); } catch(e) {}
+    window.location.href = '/login';
+  };
+
+  document.addEventListener('click', () => {
+    const shell = $('vitalsAccountShell');
+    if (shell) shell.classList.remove('open');
+  });
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/api/user', {headers:{'Accept':'application/json'}});
+      if (!res.ok) throw new Error('Not signed in');
+      const data = await res.json();
+      setAccount(data || {});
+    } catch (err) {
+      setAccount({name:'Guest', email:'Please login', role:'user'});
+    }
+  });
+})();
+</script>
+<!-- /VitalsAI Universal Account System Script -->
+
+</body>
+
+</html>

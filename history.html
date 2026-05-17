@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitalsAI — Prediction History</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+<style>
+
+:root{
+  --bg:#080f1a;--surface:#0e1825;--surface-light:#152030;
+  --border:#1e3045;--border-2:#243a55;
+  --text:#e8f4ff;--text2:#7a9bb8;--text3:#3d5570;
+  --g1:#f59e0b;--g2:#10b981;--g3:#06b6d4;--g4:#8b5cf6;
+  --gold:#fbbf24;--emerald:#34d399;--teal:#2dd4bf;
+  --red:#f87171;--orange:#fb923c;--green:#4ade80;
+  --card-shadow:0 8px 32px rgba(0,0,0,0.4);
+  --card-shadow-hover:0 20px 60px rgba(0,0,0,0.6);
+}
+[data-theme="light"]{
+  --bg:#f8f9fa;--surface:#ffffff;--surface-light:#f0fafa;
+  --border:#d0e8e0;--text:#0f2027;--text2:#4a7070;
+  --input-bg:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Poppins','DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;transition:background .3s,color .3s}
+
+/* ── Animated Background ── */
+.bg-gradient{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.blob{position:absolute;filter:blur(80px);opacity:0.2;border-radius:50%;animation:float 8s ease-in-out infinite}
+.blob-1{width:380px;height:380px;background:var(--g1);top:-60px;left:5%;animation-delay:0s}
+.blob-2{width:440px;height:440px;background:var(--g2);bottom:60px;right:3%;animation-delay:2s}
+.blob-3{width:320px;height:320px;background:var(--g3);top:45%;right:20%;animation-delay:4s}
+.blob-4{width:300px;height:300px;background:var(--g4);bottom:20%;left:10%;animation-delay:3s}
+@keyframes float{0%,100%{transform:translate(0,0)}25%{transform:translate(18px,-18px)}50%{transform:translate(-10px,16px)}75%{transform:translate(10px,-10px)}}
+
+/* ── Navigation ── */
+nav,.app-nav{
+  background:rgba(14,24,37,0.88);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(245,158,11,0.2);
+  padding:14px 28px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px;
+}
+[data-theme="light"] nav,[data-theme="light"] .app-nav{
+  background:rgba(255,255,255,0.92);border-bottom:1px solid var(--border);
+}
+.logo{
+  font-size:22px;font-weight:800;text-decoration:none;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--gold),var(--emerald),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.logo span{background:none;-webkit-text-fill-color:var(--gold)}
+.nav-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;   /* 🔥 center align */
+  gap:4px;
+  flex:1;                   /* 🔥 MOST IMPORTANT */
+}
+.nav-links{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.nav-center a,.nav-links a,.dropbtn{
+  text-decoration:none;color:var(--text2);font-size:13px;font-weight:600;
+  padding:7px 13px;border-radius:20px;border:0;background:transparent;
+  font-family:inherit;cursor:pointer;transition:all .2s ease;
+}
+.nav-center a:hover,.nav-center a.active,.nav-links a:hover,.nav-links a.active,.dropbtn:hover,.dropbtn.active{
+  background:linear-gradient(135deg,rgba(245,158,11,0.8),rgba(16,185,129,0.8));color:#fff;
+}
+.nav-right{position: absolute;
+  right: 28px;display:flex;gap:8px;align-items:center;margin-left:auto}
+.history-btn{
+  background:linear-gradient(135deg,var(--g1),var(--g2));color:#0a0e1a;
+  border:none;padding:7px 15px;border-radius:20px;font-size:12px;font-weight:700;
+  cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all .2s;
+}
+.history-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,0.5)}
+.bmi-btn{
+  background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);color:var(--gold);
+  padding:7px 15px;border-radius:20px;font-size:12px;font-weight:700;
+  cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all .2s;
+}
+.bmi-btn:hover{background:var(--g1);color:#0a0e1a}
+.dark-btn{
+  background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);color:var(--gold);
+  width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.dark-btn:hover{background:var(--g1);color:#0a0e1a;box-shadow:0 0 16px rgba(245,158,11,0.4)}
+
+/* ── Dropdown ── */
+.nav-dropdown{position:relative}
+.dropdown-menu{
+  position:absolute;top:calc(100% + 8px);left:0;
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:0 12px 40px rgba(0,0,0,0.4);border-radius:14px;
+  padding:8px;min-width:220px;display:none;z-index:200;
+}
+.nav-dropdown:hover .dropdown-menu,.nav-dropdown:focus-within .dropdown-menu{display:grid;gap:4px}
+.dropdown-menu a{
+  display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;
+  color:var(--text);text-decoration:none;font-size:13px;font-weight:600;transition:all .2s;
+}
+.dropdown-menu a:hover,.dropdown-menu a.active{background:rgba(245,158,11,0.12);color:var(--gold)}
+
+/* ── Header ── */
+header{
+  background:linear-gradient(135deg,#0a0f1a 0%,#1a2f15 35%,#1a2f20 60%,#0a1525 100%);
+  color:#fff;padding:44px 32px;position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 15% 50%,rgba(245,158,11,0.25) 0%,transparent 45%),
+    radial-gradient(circle at 85% 40%,rgba(16,185,129,0.2) 0%,transparent 45%),
+    radial-gradient(circle at 50% 80%,rgba(6,182,212,0.15) 0%,transparent 40%);
+  pointer-events:none;
+}
+header h1{
+  font-size:30px;font-weight:800;position:relative;z-index:1;
+  margin-bottom:8px;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,var(--gold),var(--emerald),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+header p{font-size:14px;opacity:0.85;position:relative;z-index:1;color:rgba(255,255,255,0.85)}
+
+/* ── Container ── */
+.container{max-width:900px;margin:32px auto;padding:0 20px;position:relative;z-index:2}
+
+/* ── Stats Bar ── */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:28px}
+.stat{
+  background:var(--surface);border-radius:16px;padding:20px;text-align:center;
+  box-shadow:var(--card-shadow);border:1px solid var(--border);transition:all .3s ease;
+  position:relative;overflow:hidden;
+}
+.stat::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent,rgba(245,158,11,0.07));
+  opacity:0;transition:.3s;pointer-events:none;
+}
+.stat:hover{transform:translateY(-4px);box-shadow:var(--card-shadow-hover);border-color:rgba(245,158,11,0.35)}
+.stat:hover::before{opacity:1}
+.stat-num{
+  font-size:32px;font-weight:800;margin-bottom:4px;
+  background:linear-gradient(135deg,var(--gold),var(--emerald));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.stat-lbl{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Filter Bar ── */
+.filter-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.filter-btn{
+  padding:8px 18px;border-radius:20px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);color:var(--text2);font-size:13px;
+  cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s;
+}
+.filter-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(245,158,11,0.1)}
+.filter-btn.active{
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  color:#0a0e1a;border-color:transparent;font-weight:700;
+  box-shadow:0 4px 16px rgba(245,158,11,0.35);
+}
+
+
+.trend-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:22px;box-shadow:var(--card-shadow)}
+.trend-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.trend-head h3{font-size:16px;font-weight:900;color:var(--gold)}
+.trend-chart{height:180px;display:flex;align-items:end;gap:8px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);overflow:hidden}
+.trend-bar{flex:1;min-width:18px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--g1),var(--g2));position:relative}
+.trend-bar.high{background:linear-gradient(180deg,#f87171,#ef4444)}
+.trend-bar.medium{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+.trend-bar.low{background:linear-gradient(180deg,#34d399,#10b981)}
+.trend-bar span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text2);white-space:nowrap;margin-bottom:4px}
+.trend-empty{color:var(--text2);font-size:13px;padding:18px;text-align:center}
+/* ── Records ── */
+.record{
+  background:var(--surface);border-radius:16px;padding:20px;margin-bottom:14px;
+  box-shadow:var(--card-shadow);display:flex;align-items:center;gap:16px;
+  border-left:4px solid;border:1px solid var(--border);border-left:4px solid;
+  transition:all .3s ease;position:relative;overflow:hidden;
+}
+.record::before{
+  content:'';position:absolute;inset:0;opacity:0;
+  background:linear-gradient(135deg,transparent,rgba(245,158,11,0.06));
+  transition:.3s;pointer-events:none;
+}
+.record:hover{transform:translateX(6px);box-shadow:var(--card-shadow-hover)}
+.record:hover::before{opacity:1}
+
+/* Disease-specific left border colors */
+.record.heart{border-left-color:#f87171 !important}
+.record.brain{border-left-color:#818cf8 !important}
+.record.diabetes{border-left-color:var(--gold) !important}
+.record.kidney{border-left-color:var(--teal) !important}
+.record.eye{border-left-color:var(--emerald) !important}
+.record.lung{border-left-color:#60a5fa !important}
+
+.rec-icon{font-size:32px;flex-shrink:0}
+.rec-info{flex:1}
+.rec-title{
+  font-size:15px;font-weight:800;text-transform:capitalize;
+  background:linear-gradient(135deg,var(--gold),var(--emerald));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.rec-time{font-size:12px;color:var(--text2);margin-top:4px;font-weight:500}
+.rec-result{font-size:13px;margin-top:6px;color:var(--text2)}
+.rec-risk{font-weight:800;font-size:13px}
+.risk-high{color:var(--red)}
+.risk-medium{color:var(--orange)}
+.risk-low{color:var(--emerald)}
+.rec-del{
+  background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);
+  color:var(--text2);cursor:pointer;font-size:16px;
+  padding:8px 10px;border-radius:10px;flex-shrink:0;transition:all .2s;
+}
+.rec-del:hover{background:rgba(248,113,113,0.25);color:var(--red);border-color:var(--red)}
+
+/* ── Empty ── */
+.empty{
+  text-align:center;padding:80px 20px;color:var(--text2);
+  background:var(--surface);border-radius:20px;border:1px solid var(--border);
+}
+.empty .icon{font-size:56px;margin-bottom:16px;opacity:0.6}
+.empty p{font-size:16px;font-weight:500}
+
+/* ── Clear Button ── */
+.clear-btn{
+  background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);
+  color:var(--red);padding:7px 16px;border-radius:20px;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.clear-btn:hover{background:var(--red);color:#fff}
+
+/* ── Chatbot ── */
+#chatBubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+#chatToggle{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g1),var(--g2),var(--g3));
+  border:none;cursor:pointer;font-size:24px;
+  box-shadow:0 4px 20px rgba(245,158,11,0.5);transition:all .3s;
+}
+#chatToggle:hover{transform:scale(1.1)}
+#chatBox{
+  position:absolute;bottom:70px;right:0;width:340px;max-height:480px;
+  background:var(--surface);border-radius:20px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.4);
+  border:1px solid var(--border);display:none;flex-direction:column;overflow:hidden;
+}
+#chatBox.open{display:flex}
+#chatHeader{
+  background:linear-gradient(135deg,var(--g1),var(--g2),var(--g3));
+  padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+#chatHeader .avatar{width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:18px}
+#chatHeader .info strong{display:block;font-size:14px;color:#0a0e1a;font-weight:800}
+#chatHeader .info span{font-size:11px;color:rgba(0,0,0,0.7)}
+#chatClose{margin-left:auto;background:rgba(0,0,0,0.15);border:none;color:#0a0e1a;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;font-weight:700}
+#chatMessages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;max-height:280px}
+.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
+.msg.bot{background:rgba(245,158,11,0.1);color:var(--text);border:1px solid rgba(245,158,11,0.2);align-self:flex-start}
+.msg.user{background:linear-gradient(135deg,var(--g1),var(--g2));color:#0a0e1a;align-self:flex-end;font-weight:600}
+.msg.typing{opacity:.6;font-style:italic}
+.quick-chips{padding:8px 14px;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--border)}
+.chip{
+  background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);
+  color:var(--text);padding:5px 11px;border-radius:20px;font-size:11px;
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.chip:hover{background:var(--g1);color:#0a0e1a;border-color:var(--g1)}
+#chatInputWrap{display:flex;border-top:1px solid var(--border);flex-shrink:0}
+#chatInput{
+  flex:1;padding:12px 14px;border:none;background:transparent;
+  color:var(--text);font-size:13px;font-family:inherit;outline:none;
+}
+#chatSend{
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  border:none;color:#0a0e1a;padding:12px 16px;cursor:pointer;font-size:15px;font-weight:800;
+}
+
+/* ── User Profile ── */
+.user-profile-wrap{position:relative;display:flex;align-items:center;gap:10px;margin-left:8px}
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#0a0e1a;cursor:pointer;
+  border:2px solid rgba(245,158,11,0.3);transition:all .3s;
+  font-family:'Space Grotesk',sans-serif;flex-shrink:0;text-transform:uppercase;
+}
+.user-avatar:hover{transform:scale(1.08);box-shadow:0 0 16px rgba(245,158,11,0.4)}
+.user-name-label{font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap}
+.user-dropdown{
+  position:absolute;top:calc(100% + 10px);right:0;min-width:220px;
+  background:linear-gradient(135deg,rgba(14,24,37,.98),rgba(20,35,25,.98));
+  border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:8px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);backdrop-filter:blur(20px);
+  display:none;z-index:9999;animation:dropIn .2s ease;
+}
+@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.user-dropdown.open{display:block}
+.ud-header{padding:12px 14px 10px;border-bottom:1px solid rgba(245,158,11,0.15);margin-bottom:6px}
+.ud-avatar-big{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:#0a0e1a;margin:0 auto 10px;
+  font-family:'Space Grotesk',sans-serif;text-transform:uppercase;
+}
+.ud-name{font-size:15px;font-weight:700;color:var(--text);text-align:center;font-family:'Space Grotesk',sans-serif}
+.ud-email{font-size:11px;color:var(--text2);text-align:center;margin-top:2px;word-break:break-all}
+.ud-divider{height:1px;background:rgba(255,255,255,.06);margin:6px 0}
+.ud-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--text);transition:all .2s;text-decoration:none;
+}
+.ud-item:hover{background:rgba(245,158,11,0.12);color:var(--gold)}
+.ud-item i{width:16px;text-align:center;color:var(--gold)}
+.ud-item.logout{color:#f87171}
+.ud-item.logout:hover{background:rgba(248,113,113,.12);color:#ef4444}
+.ud-item.logout i{color:#f87171}
+
+/* ── Lifestyle card ── */
+.lifestyle-card{
+  background:var(--surface);border-radius:16px;padding:22px;margin-top:18px;
+  border:2px solid rgba(16,185,129,0.35);display:none;box-shadow:var(--card-shadow);
+  background:linear-gradient(135deg,rgba(245,158,11,0.05),rgba(16,185,129,0.05));
+}
+.lifestyle-card h3{
+  font-size:15px;font-weight:800;margin-bottom:14px;
+  background:linear-gradient(135deg,var(--gold),var(--emerald));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ls-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ls-item{background:rgba(245,158,11,0.06);border-radius:12px;padding:14px;text-align:center;border:1px solid rgba(245,158,11,0.15);transition:.2s}
+.ls-item:hover{border-color:var(--gold);background:rgba(245,158,11,0.12)}
+.ls-icon{font-size:28px;margin-bottom:6px}
+.ls-title{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.ls-tips{font-size:11px;color:var(--text2);line-height:1.5;text-align:left}
+
+/* ── Doctor Box ── */
+.doctor-box{
+  background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(16,185,129,0.1));
+  border-radius:12px;padding:16px;margin-top:16px;
+  display:flex;align-items:center;gap:12px;border:1px solid rgba(245,158,11,0.2);
+}
+.doctor-icon{font-size:32px}
+.doctor-info strong{display:block;font-size:14px;font-weight:700;color:var(--text)}
+.doctor-info span{font-size:12px;color:var(--text2)}
+
+@media(max-width:760px){
+  nav,.app-nav{padding:12px 16px;align-items:flex-start}
+  .nav-center,.nav-links{width:100%;order:3}
+  .nav-right{margin-left:auto}
+  .dropdown-menu{position:static;box-shadow:none;margin-top:6px}
+  .stats-bar{grid-template-columns:1fr 1fr 1fr}
+  .filter-bar{gap:6px}
+  .filter-btn{padding:6px 12px;font-size:12px}
+  .ls-grid{grid-template-columns:1fr}
+  #chatBox{position:fixed;bottom:80px;right:12px;width:calc(100vw - 24px)}
+  .blob{filter:blur(60px)}
+  .blob-1,.blob-3{width:200px;height:200px}
+  .blob-2,.blob-4{width:250px;height:250px}
+}
+
+</style>
+</head>
+<body>
+<div class="bg-gradient">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<nav class="app-nav">
+  <a href="/" class="logo">Vitals<span>AI</span></a>
+  <div class="nav-center nav-links">
+    <a href="/" class=""><i class="fa-solid fa-house"></i> Home</a>
+    <div class="nav-dropdown">
+      <button class="dropbtn"><i class="fa-solid fa-stethoscope"></i> Predictions <i class="fa-solid fa-chevron-down"></i></button>
+      <div class="dropdown-menu">
+        <a href="/heart" class=""><i class="fa-solid fa-heart-pulse"></i> Heart Disease</a>
+        <a href="/brain" class=""><i class="fa-solid fa-brain"></i> Brain / Stroke</a>
+        <a href="/diabetes" class=""><i class="fa-solid fa-droplet"></i> Diabetes</a>
+        <a href="/kidney" class=""><i class="fa-solid fa-prescription-bottle-medical"></i> Kidney</a>
+        <a href="/eye" class=""><i class="fa-solid fa-eye"></i> Eye</a>
+        <a href="/lung" class=""><i class="fa-solid fa-lungs"></i> Lung</a>
+      </div>
+    </div>
+    <a href="/lifestyle" class=""><i class="fa-solid fa-seedling"></i> Health Tips</a>
+    <a href="/assistant" class=""><i class="fa-solid fa-robot"></i> Assistant</a>
+    <a href="/#about-contact"><i class="fa-solid fa-address-card"></i> About & Contact</a>
+  </div>
+  <div class="nav-right">
+    <a href="/bmi" class="bmi-btn "><i class="fa-solid fa-calculator"></i> Tracker</a>
+    <a href="/history" class="history-btn active"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+    <button class="dark-btn" onclick="toggleDark && toggleDark()" id="darkBtn" title="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+  
+    <!-- User Profile Widget (injected by VitalsAI auth system) -->
+    <div class="user-profile-wrap" id="userProfileWrap" style="display:none">
+      <span class="user-name-label" id="navUserName"></span>
+      <div class="user-avatar" id="navAvatar" onclick="toggleUserDropdown()">?</div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="ud-header">
+          <div class="ud-avatar-big" id="dropAvatar">?</div>
+          <div class="ud-name" id="dropName">Loading...</div>
+          <div class="ud-email" id="dropEmail"></div>
+        </div>
+        <a class="ud-item" href="/history"><i class="fa-solid fa-clock-rotate-left"></i> Prediction History</a>
+        <a class="ud-item" href="/bmi"><i class="fa-solid fa-calculator"></i> Health Tracker</a>
+        <div class="ud-divider"></div>
+        <div class="ud-item logout" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+      </div>
+    </div>
+  </div>
+</nav>
+<header>
+  <h1>📋 Prediction History</h1>
+  <p>Track all your past health predictions</p>
+</header>
+<div class="container">
+  <div id="statsBar" class="stats-bar"></div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filter('all',this)">All</button>
+    <button class="filter-btn" onclick="filter('heart',this)">❤️ Heart</button>
+    <button class="filter-btn" onclick="filter('brain',this)">🧠 Brain</button>
+    <button class="filter-btn" onclick="filter('diabetes',this)">💉 Diabetes</button>
+    <button class="filter-btn" onclick="filter('kidney',this)">🦀 Kidney</button>
+    <button class="filter-btn" onclick="filter('eye',this)">👁️ Eye</button>
+    <button class="filter-btn" onclick="filter('lung',this)">🫁 Lung</button>
+  </div>
+  <div id="trendCard" class="trend-card"></div>
+  <div id="list"></div>
+</div>
+<script>
+const ICONS={heart:'❤️',brain:'🧠',diabetes:'💉',kidney:'🦀',eye:'👁️'};
+let allRecords=[], currentFilter='all';
+async function load(){
+  const res=await fetch('/api/history');
+  allRecords=await res.json();
+  renderStats(); renderTrend(); render();
+}
+function renderStats(){
+  const total=allRecords.length;
+  const high=allRecords.filter(r=>(r.result.risk||'').includes('HIGH')||(r.result.prediction||'').includes('High')||(r.result.prediction||'').includes('Severe')).length;
+  const diseases=[...new Set(allRecords.map(r=>r.disease))].length;
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-lbl">Total Predictions</div></div>
+    <div class="stat"><div class="stat-num" style="color:#e53e3e">${high}</div><div class="stat-lbl">High Risk Found</div></div>
+    <div class="stat"><div class="stat-num">${diseases}</div><div class="stat-lbl">Diseases Checked</div></div>
+  `;
+}
+function filter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderTrend(); render();
+}
+function riskScoreFromRecord(r){
+  const result = r.result || {};
+  const rawRisk = String(result.risk || result.prediction || '').toLowerCase();
+  const score = parseFloat(result.probability || result.confidence || result.survival_probability || 0);
+  if(score) return Math.min(100, Math.max(5, score));
+  if(rawRisk.includes('severe') || rawRisk.includes('high')) return 90;
+  if(rawRisk.includes('moderate') || rawRisk.includes('medium')) return 55;
+  if(rawRisk.includes('low')) return 25;
+  return 10;
+}
+function renderTrend(){
+  const el=document.getElementById('trendCard');
+  if(!el) return;
+  const records=(currentFilter==='all'?allRecords:allRecords.filter(r=>r.disease===currentFilter)).slice(-12);
+  if(!records.length){el.innerHTML='<div class="trend-empty">No timeline data yet.</div>';return;}
+  const bars=records.map(r=>{
+    const score=riskScoreFromRecord(r);
+    const risk=String(r.result.risk||r.result.prediction||'').toLowerCase();
+    const cls=risk.includes('high')||risk.includes('severe')?'high':risk.includes('medium')||risk.includes('moderate')?'medium':'low';
+    return '<div class="trend-bar '+cls+'" style="height:'+Math.max(8,score)+'%"><span>'+Math.round(score)+'%</span></div>';
+  }).join('');
+  el.innerHTML='<div class="trend-head"><h3>Health Risk Timeline</h3><span class="stat-lbl">Last '+records.length+' predictions</span></div><div class="trend-chart">'+bars+'</div>';
+}
+function render(){
+  const records=currentFilter==='all'?allRecords:allRecords.filter(r=>r.disease===currentFilter);
+  const el=document.getElementById('list');
+  if(!records.length){el.innerHTML=`<div class="empty"><div class="icon">📭</div><p>No predictions yet. Go make a prediction!</p></div>`;return;}
+  el.innerHTML=[...records].reverse().map(r=>{
+    const risk=r.result.risk||r.result.prediction||'N/A';
+    const prob=r.result.probability||r.result.confidence||'';
+    const riskClass=risk.includes('HIGH')||risk.includes('Severe')||risk.includes('High')?'risk-high':risk.includes('MEDIUM')||risk.includes('Moderate')?'risk-medium':'risk-low';
+    return `<div class="record ${r.disease}" id="rec-${r.id}">
+      <div class="rec-icon">${ICONS[r.disease]||'🏥'}</div>
+      <div class="rec-info">
+        <div class="rec-title">${r.disease} Disease</div>
+        <div class="rec-time">🕐 ${r.timestamp}</div>
+        <div class="rec-result">Result: <span class="rec-risk ${riskClass}">${risk}</span>${prob?' · '+prob+'%':''}</div>
+      </div>
+      <button class="rec-del" onclick="del('${r.id}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+async function del(id){
+  await fetch(`/api/history/delete/${id}`,{method:'DELETE'});
+  allRecords=allRecords.filter(r=>r.id!==id);
+  renderStats(); renderTrend(); render();
+}
+async function clearAll(){
+  if(!confirm('Clear all history?'))return;
+  await fetch('/api/history/clear',{method:'POST'});
+  allRecords=[]; renderStats(); renderTrend(); render();
+}
+function toggleDark(){const t=document.documentElement;const d=t.getAttribute('data-theme')==='dark';t.setAttribute('data-theme',d?'light':'dark');document.getElementById('darkBtn').textContent=d?'🌙':'☀️';localStorage.setItem('theme',d?'light':'dark');}
+const saved=localStorage.getItem('theme');if(saved==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('darkBtn').textContent='☀️';}
+load();
+</script>
+
+<!-- ══ DARK MODE CSS ══════════════════════════════════════ -->
+
+
+<!-- ══ LIFESTYLE CARD (injected after result by JS) ════════ -->
+<div class="lifestyle-card" id="lifestyleCard">
+  <h3>🌱 Personalized Lifestyle Recommendations</h3>
+  <div class="ls-grid" id="lsGrid"></div>
+</div>
+
+<!-- ══ AI CHATBOT ══════════════════════════════════════════ -->
+<div id="chatBubble">
+  <div id="chatBox">
+    <div id="chatHeader">
+      <div class="avatar">🤖</div>
+      <div class="info"><strong>VitalsAI Assistant</strong><span>Health advisor · Always online</span></div>
+      <button id="chatClose" onclick="toggleChat()">✕</button>
+    </div>
+    <div id="chatMessages">
+      <div class="msg bot">નમસ્તે! 👋 હું VitalsAI Health Assistant છું.<br>Health વિશે કોઈ પણ સવાલ પૂછો — ગુજરાતી, Hindi, અથવા English માં!</div>
+    </div>
+    <div class="quick-chips">
+      <button class="chip" onclick="askQuick('BP high hoy to shu karvu?')">❤️ High BP</button>
+      <button class="chip" onclick="askQuick('Diabetes control kevi rite karvu?')">💉 Diabetes</button>
+      <button class="chip" onclick="askQuick('Stroke ni nishaniyo shun che?')">🧠 Stroke signs</button>
+      <button class="chip" onclick="askQuick('Kidney health mate su karvu?')">🦀 Kidney</button>
+      <button class="chip" onclick="askQuick('Aankh ni kaळji kevi rite rakhvi?')">👁️ Eye care</button>
+    </div>
+    <div id="chatInputWrap">
+      <input id="chatInput" placeholder="Type your health question..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button id="chatSend" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+  <button id="chatToggle" onclick="toggleChat()">🤖</button>
+</div>
+
+<!-- ══ SHARED JS ════════════════════════════════════════════ -->
+<script>
+// ── Dark Mode ─────────────────────────────────────────────
+function toggleDark(){
+  const t=document.documentElement;
+  const d=t.getAttribute('data-theme')==='dark';
+  t.setAttribute('data-theme',d?'light':'dark');
+  const b=document.getElementById('darkBtn');
+  if(b)b.textContent=d?'🌙':'☀️';
+  localStorage.setItem('vitals_theme',d?'light':'dark');
+}
+(function(){
+  const s=localStorage.getItem('vitals_theme');
+  if(s==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    const b=document.getElementById('darkBtn');
+    if(b)b.textContent='☀️';
+  }
+})();
+
+// ── Language ──────────────────────────────────────────────
+function setLang(l){
+  localStorage.setItem('vitals_lang',l);
+  const m={en:'Language set to English',gu:'ભાષા ગુજરાતી સેટ થઈ',hi:'भाषा हिंदी सेट हो गई'};
+  addMsg('bot', m[l]||'');
+}
+(function(){
+  const l=localStorage.getItem('vitals_lang');
+  const s=document.getElementById('langSel');
+  if(l&&s)s.value=l;
+})();
+
+// ── Chatbot ───────────────────────────────────────────────
+let chatOpen=false;
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chatBox').classList.toggle('open',chatOpen);
+}
+function addMsg(role,text){
+  const el=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className='msg '+role;
+  div.innerHTML=text;
+  el.appendChild(div);
+  el.scrollTop=el.scrollHeight;
+  return div;
+}
+function askQuick(q){
+  document.getElementById('chatInput').value=q;
+  sendChat();
+}
+
+// ── Rule-based health knowledge base ─────────────────────
+const KB={
+  bp:['bp','blood pressure','હાઈ bp','ઉચ્ચ રક્તચાપ','हाई बीपी','hypertension'],
+  diabetes:['diabetes','sugar','ડાયાબિટીસ','ગ્લુકોઝ','मधुमेह','glucose'],
+  stroke:['stroke','brain','મગજ','સ્ટ્રોક','ब्रेन','nishani','signs','symptoms'],
+  kidney:['kidney','renal','કિડની','creatinine','egfr','gfr'],
+  eye:['eye','aanakh','આંખ','glaucoma','cataract','vision','drishti'],
+  heart:['heart','hridaya','હૃદય','cardiac','chest pain','cardiovascular'],
+  bmi:['bmi','weight','vajan','વજન','obese','obesity','fat'],
+  diet:['diet','food','khaanu','ખાવું','nutrition','khana'],
+  exercise:['exercise','vyayam','yoga','walk','walking','fitnes'],
+  sleep:['sleep','undo','ઊંઘ','insomnia','neend'],
+};
+const ANSWERS={
+  bp:`<b>🫀 High BP માટે:</b><br>
+• DASH diet follow કરો (ઓછું મીઠું)<br>
+• રોજ 30 min walking<br>
+• Stress management — meditation<br>
+• Alcohol/smoking avoid<br>
+• BP monitor daily<br>
+• <b>⚠️ 140/90 થી વધારે હોય તો Doctor ને મળો</b>`,
+
+  diabetes:`<b>💉 Diabetes Control:</b><br>
+• Refined sugar/carbs ઓછા<br>
+• Glycemic index ઓછો food<br>
+• રોજ 45 min moderate exercise<br>
+• Glucose monitoring daily<br>
+• HbA1c દર 3 months check<br>
+• <b>⚠️ Fasting glucose >126 mg/dL — Doctor</b>`,
+
+  stroke:`<b>🧠 Stroke ની નિશાની (FAST):</b><br>
+• <b>F</b>ace drooping (ચહેરો ટેઢો)<br>
+• <b>A</b>rm weakness (હાથ નબળો)<br>
+• <b>S</b>peech difficulty (બોલવામાં તકલીફ)<br>
+• <b>T</b>ime to call emergency!<br>
+Risk factors: BP, diabetes, smoking, stress<br>
+<b>⚠️ Emergency: 108 call કરો!</b>`,
+
+  kidney:`<b>🦀 Kidney Health:</b><br>
+• પૂરતું પાણી પીઓ (2-3L/day)<br>
+• Salt/protein ઓછું<br>
+• BP & sugar control<br>
+• NSAIDs (ibuprofen) avoid<br>
+• Annual creatinine/eGFR test<br>
+• <b>eGFR < 60 — Nephrologist</b>`,
+
+  eye:`<b>👁️ Eye Care:</b><br>
+• Screen time ઓછો (20-20-20 rule)<br>
+• UV sunglasses<br>
+• Green vegetables, carrots, fish<br>
+• Annual eye checkup<br>
+• Diabetes patients — every 6 months<br>
+• <b>⚠️ Vision loss/pain — Ophthalmologist</b>`,
+
+  heart:`<b>❤️ Heart Health:</b><br>
+• Mediterranean diet<br>
+• Saturated fat ઓછું<br>
+• 150 min/week aerobic exercise<br>
+• Cholesterol & BP monitor<br>
+• Smoking quit<br>
+• <b>⚠️ Chest pain — Emergency!</b>`,
+
+  bmi:`<b>🧮 Healthy Weight:</b><br>
+• BMI 18.5-24.9 = Normal<br>
+• Calorie deficit for weight loss<br>
+• Protein intake વધારો<br>
+• Strength training + cardio<br>
+• Crash diets avoid<br>
+• <b>BMI calculator: <a href="/bmi" style="color:#2b6cb0">/bmi</a></b>`,
+
+  diet:`<b>🍎 Healthy Diet Tips:</b><br>
+• Half plate vegetables/fruits<br>
+• Whole grains prefer<br>
+• Processed food avoid<br>
+• 8 glasses water daily<br>
+• Breakfast skip ન કરો<br>
+• Portion control practice`,
+
+  exercise:`<b>🏃 Exercise Guide:</b><br>
+• 150 min/week moderate cardio<br>
+• 2x/week strength training<br>
+• Daily 10,000 steps goal<br>
+• Yoga/meditation for stress<br>
+• Sedentary work — hourly break<br>
+• Start slow, build gradually`,
+
+  sleep:`<b>😴 Better Sleep:</b><br>
+• 7-9 hours daily<br>
+• Fixed sleep schedule<br>
+• Screen off 1hr before bed<br>
+• Dark, cool room<br>
+• Caffeine after 2pm avoid<br>
+• Stress journaling before sleep`,
+
+  default:`<b>🤖 VitalsAI Assistant:</b><br>
+હું આ topics પર help કરી શકું:<br>
+❤️ Heart · 🧠 Brain/Stroke · 💉 Diabetes<br>
+🦀 Kidney · 👁️ Eye · 🧮 BMI<br>
+🍎 Diet · 🏃 Exercise · 😴 Sleep<br><br>
+Quick buttons ક્લિક કરો અથવા સવાલ type કરો!`
+};
+
+async function sendChat(){
+  const inp=document.getElementById('chatInput');
+  const q=inp.value.trim();
+  if(!q)return;
+  inp.value='';
+  addMsg('user',q);
+  const typing=addMsg('bot','<span class="typing">Thinking...</span>');
+  setTimeout(()=>{
+    const ql=q.toLowerCase();
+    let ans=ANSWERS.default;
+    for(const [k,kws] of Object.entries(KB)){
+      if(kws.some(kw=>ql.includes(kw))){ans=ANSWERS[k];break;}
+    }
+    typing.innerHTML=ans;
+    document.getElementById('chatMessages').scrollTop=99999;
+  },800);
+}
+
+// ── Lifestyle Recommendations ─────────────────────────────
+const LS_DATA={
+  heart:{
+    LOW:{diet:'Mediterranean diet, omega-3 fish, nuts, olive oil',exercise:'30 min brisk walk daily + yoga',sleep:'7-8 hours, fixed schedule'},
+    MEDIUM:{diet:'Low sodium (<1500mg), avoid fried food, more fiber',exercise:'45 min cardio 5x/week + strength 2x',sleep:'8 hours, stress management'},
+    HIGH:{diet:'Strict DASH diet, no alcohol, no processed meat',exercise:'Light walk only — Doctor clearance first',sleep:'8-9 hours, no caffeine after noon'}
+  },
+  brain:{
+    LOW:{diet:'Mediterranean diet, leafy greens, berries, fish',exercise:'Aerobic exercise 30 min daily + brain games',sleep:'7-9 hours, consistent wake time'},
+    MEDIUM:{diet:'Low sodium, no alcohol, omega-3 rich food',exercise:'Moderate cardio, yoga for BP control',sleep:'8 hours, stress journaling'},
+    HIGH:{diet:'Strict low-sodium, blood thinner foods (garlic, turmeric)',exercise:'Light walks only — medical clearance needed',sleep:'9 hours, no screen before bed'}
+  },
+  diabetes:{
+    LOW:{diet:'Low glycemic foods, vegetables, whole grains',exercise:'45 min walk daily, yoga',sleep:'7-8 hours, consistent timing'},
+    MEDIUM:{diet:'No sugar/refined carbs, high protein, fiber-rich',exercise:'60 min moderate exercise daily',sleep:'8 hours — poor sleep raises glucose'},
+    HIGH:{diet:'Diabetic diet strictly, small frequent meals',exercise:'30 min light walk — monitor glucose before/after',sleep:'8-9 hours, manage stress'}
+  },
+  kidney:{
+    No_Disease:{diet:'Adequate water (2L+), balanced protein, low salt',exercise:'30 min walk daily',sleep:'7-8 hours'},
+    Low_Risk:{diet:'Low protein (0.8g/kg), low potassium foods',exercise:'Light aerobic exercise, no heavy lifting',sleep:'8 hours, avoid NSAIDs'},
+    Moderate_Risk:{diet:'Renal diet — restrict phosphorus/potassium/sodium',exercise:'Gentle walking, aqua therapy',sleep:'8-9 hours, dialysis schedule if needed'},
+    High_Risk:{diet:'Strict renal diet — Dietitian consultation required',exercise:'Light movement only — Nephrologist guidance',sleep:'9 hours, fluid restriction'},
+    Severe_Disease:{diet:'Dialysis-specific diet — No self-medication',exercise:'Rest + gentle physiotherapy only',sleep:'9+ hours, complete medical supervision'}
+  },
+  eye:{
+    default:{diet:'Lutein/zeaxanthin rich: spinach, kale, eggs, fish',exercise:'Eye exercises, 20-20-20 rule (every 20min look 20ft away 20sec)',sleep:'7-8 hours, eye rest essential'}
+  }
+};
+
+function showLifestyle(disease, riskOrPrediction){
+  const card=document.getElementById('lifestyleCard');
+  const grid=document.getElementById('lsGrid');
+  if(!card||!grid)return;
+  
+  let ls=null;
+  const risk=riskOrPrediction||'';
+  
+  if(disease==='kidney'||disease==='eye'){
+    ls=LS_DATA[disease]?.[risk]||LS_DATA[disease]?.default||LS_DATA.heart.LOW;
+  } else {
+    const lvl=risk.includes('HIGH')?'HIGH':risk.includes('MEDIUM')?'MEDIUM':'LOW';
+    ls=LS_DATA[disease]?.[lvl]||LS_DATA.heart.LOW;
+  }
+  
+  grid.innerHTML=`
+    <div class="ls-item">
+      <div class="ls-icon">🍎</div>
+      <div class="ls-title">Diet</div>
+      <div class="ls-tips">${ls.diet}</div>
+    </div>
+    <div class="ls-item">
+      <div class="ls-icon">🏃</div>
+      <div class="ls-title">Exercise</div>
+      <div class="ls-tips">${ls.exercise}</div>
+    </div>
+    <div class="ls-item">
+      <div class="ls-icon">😴</div>
+      <div class="ls-title">Sleep</div>
+      <div class="ls-tips">${ls.sleep}</div>
+    </div>
+  `;
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── PDF Download ──────────────────────────────────────────
+async function downloadPDF(disease, result, inputs){
+  const name=prompt('Patient name:','Patient')||'Patient';
+  const age=prompt('Patient age:','')||'N/A';
+  const res=await fetch('/api/report',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({disease,result,inputs,patient_name:name,patient_age:age})
+  });
+  if(res.ok){
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`VitalsAI_${disease}_report.pdf`;a.click();
+  } else {
+    const e=await res.json();
+    alert('PDF Error: '+e.error);
+  }
+}
+</script>
+
+<script src="/static/js/vitals_dynamic_chatbot.js"></script>
+
+<script>
+// ── VitalsAI Auth System ───────────────────────────────────
+(async function initAuth() {
+  try {
+    const res  = await fetch('/api/me');
+    const data = await res.json();
+
+    if (!data.logged_in) {
+      // Not logged in — redirect to login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    const name  = data.name  || 'User';
+    const email = data.email || '';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // Show profile widget
+    const wrap = document.getElementById('userProfileWrap');
+    if (wrap) wrap.style.display = 'flex';
+
+    // Set initials + name
+    const navAvatar  = document.getElementById('navAvatar');
+    const dropAvatar = document.getElementById('dropAvatar');
+    const navName    = document.getElementById('navUserName');
+    const dropName   = document.getElementById('dropName');
+    const dropEmail  = document.getElementById('dropEmail');
+
+    if (navAvatar)  navAvatar.textContent  = initials;
+    if (dropAvatar) dropAvatar.textContent = initials;
+    if (navName)    navName.textContent    = name.split(' ')[0]; // first name only
+    if (dropName)   dropName.textContent   = name;
+    if (dropEmail)  dropEmail.textContent  = email;
+
+    // Color avatar based on name (consistent per user)
+    const colors = [
+      'linear-gradient(135deg,#00d9ff,#ff00ff)',
+      'linear-gradient(135deg,#ff1654,#ff6b35)',
+      'linear-gradient(135deg,#00ff88,#00d9ff)',
+      'linear-gradient(135deg,#c77dff,#ff00ff)',
+      'linear-gradient(135deg,#ffec19,#ff6b35)',
+    ];
+    const colorIdx = name.charCodeAt(0) % colors.length;
+    const gradient = colors[colorIdx];
+    if (navAvatar)  navAvatar.style.background  = gradient;
+    if (dropAvatar) dropAvatar.style.background = gradient;
+
+  } catch(e) {
+    console.error('Auth check failed:', e);
+  }
+})();
+
+function toggleUserDropdown() {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('userProfileWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.remove('open');
+  }
+});
+
+async function logoutUser() {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+  window.location.href = '/login';
+}
+</script>
+
+</body>
+</html>

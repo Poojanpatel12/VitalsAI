@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VitalsAI — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04050f;--surface:rgba(14,16,36,.97);--border:rgba(255,255,255,.08);
+  --cyan:#00e5ff;--magenta:#e040fb;--green:#00e676;--orange:#ff6d00;--gold:#ffd600;
+  --text:#f0f4ff;--muted:#8892a4;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+
+/* Animated BG */
+.bg{position:fixed;inset:0;z-index:0}
+.orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.18;animation:drift 12s ease-in-out infinite}
+.o1{width:500px;height:500px;background:var(--cyan);top:-100px;left:-100px;animation-delay:0s}
+.o2{width:600px;height:600px;background:var(--magenta);bottom:-150px;right:-100px;animation-delay:3s}
+.o3{width:400px;height:400px;background:var(--green);top:40%;left:40%;animation-delay:6s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.05)}66%{transform:translate(-20px,30px) scale(.95)}}
+
+/* Grid overlay */
+.grid-overlay{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+
+.wrap{position:relative;z-index:10;width:100%;max-width:480px;padding:20px}
+
+/* Header badge */
+.brand{text-align:center;margin-bottom:36px}
+.brand-logo{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-2px;line-height:1}
+.brand-sub{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.brand-pulse{display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;margin-right:8px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.5)}50%{box-shadow:0 0 0 8px rgba(0,230,118,0)}}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:28px;padding:40px 36px;backdrop-filter:blur(30px);box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04) inset;animation:rise .7s cubic-bezier(.16,1,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(32px) scale(.97)}to{opacity:1;transform:none}}
+
+/* User type selector */
+.type-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.type-label::before{content:'';flex:1;height:1px;background:var(--border)}
+.type-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px}
+.type-btn{
+  padding:14px 8px;border:1.5px solid var(--border);border-radius:16px;
+  background:rgba(255,255,255,.03);cursor:pointer;text-align:center;
+  transition:all .25s ease;color:var(--muted);font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:8px
+}
+.type-btn i{font-size:22px;transition:all .25s}
+.type-btn span{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.type-btn:hover{border-color:rgba(0,229,255,.4);color:var(--text);background:rgba(0,229,255,.06)}
+.type-btn.active.doctor{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.1);box-shadow:0 0 24px rgba(0,229,255,.15)}
+.type-btn.active.clinic{border-color:var(--magenta);color:var(--magenta);background:rgba(224,64,251,.1);box-shadow:0 0 24px rgba(224,64,251,.15)}
+.type-btn.active.user{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.1);box-shadow:0 0 24px rgba(0,230,118,.15)}
+
+/* Tabs */
+.tabs{display:flex;background:rgba(0,0,0,.3);border-radius:14px;padding:5px;margin-bottom:24px;gap:4px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);background:transparent;border:none;transition:all .25s;font-family:inherit;letter-spacing:.3px}
+.tab.active{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#fff;box-shadow:0 6px 20px rgba(0,229,255,.25)}
+
+/* Form */
+.fg{margin-bottom:18px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}
+.fg label i{margin-right:6px;opacity:.7}
+.fg input,.fg select{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;background:rgba(0,0,0,.35);color:var(--text);transition:all .25s;font-family:inherit;appearance:none}
+.fg input::placeholder{color:#4a5568}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--cyan);background:rgba(0,229,255,.06);box-shadow:0 0 0 3px rgba(0,229,255,.12)}
+.fg select option{background:#1a1f3a}
+
+/* Role-specific input accents */
+.role-doctor .fg input:focus,.role-doctor .fg select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.12)}
+.role-clinic .fg input:focus,.role-clinic .fg select:focus{border-color:var(--magenta);box-shadow:0 0 0 3px rgba(224,64,251,.12)}
+.role-user .fg input:focus,.role-user .fg select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,230,118,.12)}
+
+/* Role badge */
+.role-badge{padding:10px 16px;border-radius:12px;font-size:12px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;letter-spacing:.3px}
+.role-badge.doctor{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--cyan)}
+.role-badge.clinic{background:rgba(224,64,251,.1);border:1px solid rgba(224,64,251,.2);color:var(--magenta)}
+.role-badge.user{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--green)}
+
+/* OTP */
+.otp-row{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.otp-input{width:48px;height:52px;text-align:center;font-size:20px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:rgba(0,0,0,.4);color:var(--text);font-family:'Syne',sans-serif;transition:all .25s;caret-color:var(--cyan)}
+.otp-input:focus{outline:none;border-color:var(--cyan);background:rgba(0,229,255,.08);box-shadow:0 0 16px rgba(0,229,255,.2);transform:scale(1.06)}
+.otp-input.filled{border-color:var(--cyan);color:var(--cyan)}
+.otp-timer{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
+.otp-timer span{color:var(--cyan);font-weight:700}
+.resend-btn{background:none;border:none;color:var(--magenta);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline;display:none}
+
+/* Steps */
+.steps{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px}
+.step{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid var(--border);color:var(--muted);transition:all .3s;font-family:'Syne',sans-serif}
+.step.active{background:linear-gradient(135deg,var(--cyan),var(--magenta));border:none;color:#fff;box-shadow:0 4px 16px rgba(0,229,255,.35)}
+.step.done{background:var(--green);border-color:var(--green);color:#000}
+.step-line{flex:1;height:2px;background:var(--border);border-radius:2px;max-width:60px}
+.step-line.done{background:linear-gradient(90deg,var(--cyan),var(--magenta))}
+
+/* Buttons */
+.btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;letter-spacing:.3px}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#fff;box-shadow:0 8px 24px rgba(0,229,255,.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,229,255,.35)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted);font-size:13px;padding:11px;margin-top:8px}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-google{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:12px;background:rgba(255,255,255,.03);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text);transition:all .25s;font-family:inherit}
+.btn-google:hover{border-color:rgba(66,133,244,.5);background:rgba(66,133,244,.08)}
+.g-logo{width:18px;height:18px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'/%3E%3Cpath fill='%2334A853' d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'/%3E%3Cpath fill='%23FBBC05' d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'/%3E%3Cpath fill='%23EA4335' d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'/%3E%3C/svg%3E") center/contain no-repeat}
+
+.divider{text-align:center;color:#3a4556;font-size:12px;margin:18px 0;position:relative;font-weight:600;letter-spacing:1px}
+.divider::before,.divider::after{content:'';position:absolute;top:50%;width:36%;height:1px;background:var(--border)}
+.divider::before{left:0}.divider::after{right:0}
+
+/* Message */
+.msg{padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:16px;display:none;border:1px solid;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.msg.error{background:rgba(255,22,84,.15);color:#ff6b9d;border-color:rgba(255,22,84,.4)}
+.msg.success{background:rgba(0,230,118,.12);color:var(--green);border-color:rgba(0,230,118,.3)}
+.msg.info{background:rgba(0,229,255,.1);color:var(--cyan);border-color:rgba(0,229,255,.3)}
+.msg.warning{background:rgba(255,214,0,.08);color:var(--gold);border-color:rgba(255,214,0,.25)}
+
+.form-panel{display:none}.form-panel.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.forgot{text-align:right;font-size:12px;color:var(--cyan);cursor:pointer;margin-top:-10px;margin-bottom:14px;font-weight:600}
+.forgot:hover{color:var(--magenta)}
+
+/* Doctor-specific fields */
+.doctor-fields,.clinic-fields{display:none}
+
+/* Session modal */
+.session-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(16px)}
+.session-overlay.show{opacity:1;pointer-events:all}
+.session-box{background:linear-gradient(135deg,#0e1024,#1a1040);border:1px solid rgba(255,165,0,.3);border-radius:24px;padding:40px 32px;max-width:360px;width:90%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);transform:scale(.9);transition:.3s}
+.session-overlay.show .session-box{transform:scale(1)}
+.session-countdown{font-family:'Syne',sans-serif;font-size:56px;font-weight:800;color:#ff1654;margin:8px 0 16px}
+.session-stay{width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.card{padding:28px 20px}.otp-input{width:40px;height:46px;font-size:17px}.type-grid{gap:7px}}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+</div>
+<div class="grid-overlay"></div>
+
+<!-- Session Modal -->
+<div class="session-overlay" id="sessionOverlay">
+  <div class="session-box">
+    <div style="font-size:48px;margin-bottom:10px">⏱️</div>
+    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#ffa500;margin-bottom:8px">Session Expiring</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px">No activity for 59 minutes. Logging out in:</div>
+    <div class="session-countdown" id="sessionCountdown">60</div>
+    <button class="session-stay" onclick="stayLoggedIn()"><i class="fa-solid fa-rotate-right"></i> Keep Me Logged In</button>
+    <div style="width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:4px;margin-top:16px;overflow:hidden">
+      <div id="sessionBar" style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--magenta));transition:width 1s linear"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-logo">VitalsAI</div>
+    <div class="brand-sub"><span class="brand-pulse"></span>Smart Hospital System</div>
+  </div>
+
+  <div class="card" id="mainCard">
+
+    <!-- USER TYPE SELECTOR -->
+    <div class="type-label">Login as</div>
+    <div class="type-grid">
+      <button class="type-btn doctor active" onclick="setType('doctor')" id="btn-doctor">
+        <i class="fa-solid fa-user-doctor"></i>
+        <span>Doctor</span>
+      </button>
+      <button class="type-btn clinic" onclick="setType('clinic')" id="btn-clinic">
+        <i class="fa-solid fa-hospital"></i>
+        <span>Clinic</span>
+      </button>
+      <button class="type-btn user" onclick="setType('user')" id="btn-user">
+        <i class="fa-solid fa-person"></i>
+        <span>Patient</span>
+      </button>
+    </div>
+
+    <!-- Role badge -->
+    <div id="roleBadge" class="role-badge doctor">
+      <i class="fa-solid fa-user-doctor"></i>
+      <span id="roleBadgeText">Doctor Account — Medical Professional Portal</span>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Login</button>
+      <button class="tab" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <div id="msg" class="msg"></div>
+
+    <!-- ══ LOGIN PANEL ══ -->
+    <div id="login-panel" class="form-panel active">
+
+      <div class="fg">
+        <label><i class="fa-solid fa-envelope"></i>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" oninput="clearMsg()">
+      </div>
+      <div class="fg">
+        <label><i class="fa-solid fa-lock"></i>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••" oninput="clearMsg()">
+      </div>
+
+      <!-- Doctor extra -->
+      <div id="doctorLoginFields" class="fg doctor-fields">
+        <label><i class="fa-solid fa-id-card"></i>Medical License No.</label>
+        <input type="text" id="login-license" placeholder="MCI-XXXXXX (optional for verification)">
+      </div>
+
+      <!-- Clinic extra -->
+      <div id="clinicLoginFields" class="fg clinic-fields">
+        <label><i class="fa-solid fa-building"></i>Clinic Registration ID</label>
+        <input type="text" id="login-clinic-id" placeholder="CLINIC-XXXXXX">
+      </div>
+
+      <div class="forgot" onclick="showForgot()">Forgot password?</div>
+
+      <div class="recaptcha-wrap" style="display:flex;justify-content:center;margin:12px 0">
+        <div class="g-recaptcha" data-sitekey="6LdoPNMsAAAAAHHbia4KIKPwPcrvhxqIQ5OGhonH" 
+        data-theme="dark"
+          data-callback="onCaptchaSolved"
+          data-expired-callback="onCaptchaExpired"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="login()" id="loginBtn">
+        <i class="fa-solid fa-right-to-bracket"></i> Login
+      </button>
+      <div class="divider">OR CONTINUE WITH</div>
+      <button class="btn-google" onclick="googleLogin()">
+        <div class="g-logo"></div> Continue with Google
+      </button>
+    </div>
+
+    <!-- ══ SIGNUP PANEL ══ -->
+    <div id="signup-panel" class="form-panel">
+
+      <!-- Step 1 -->
+      <div id="signup-step1">
+        <div class="steps">
+          <div class="step active" id="s1">1</div>
+          <div class="step-line" id="sl1"></div>
+          <div class="step" id="s2">2</div>
+          <div class="step-line" id="sl2"></div>
+          <div class="step" id="s3">3</div>
+        </div>
+
+        <div class="fg">
+          <label><i class="fa-solid fa-user"></i>Full Name</label>
+          <input type="text" id="signup-name" placeholder="Dr. Firstname Lastname / Clinic Name">
+        </div>
+        <div class="fg">
+          <label><i class="fa-solid fa-envelope"></i>Email</label>
+          <input type="email" id="signup-email" placeholder="you@example.com">
+        </div>
+        <div class="fg">
+          <label><i class="fa-solid fa-lock"></i>Password</label>
+          <input type="password" id="signup-pass" placeholder="Min 8 characters">
+        </div>
+
+        <!-- Doctor signup fields -->
+        <div id="doctorSignupFields" class="doctor-fields">
+          <div class="fg">
+            <label><i class="fa-solid fa-id-card"></i>Medical License No.</label>
+            <input type="text" id="signup-license" placeholder="MCI/State Registration Number">
+          </div>
+          <div class="fg">
+            <label><i class="fa-solid fa-stethoscope"></i>Specialization</label>
+            <select id="signup-specialization">
+              <option value="">Select specialization...</option>
+              <option>Cardiologist</option><option>Neurologist</option><option>Diabetologist</option>
+              <option>Pulmonologist</option><option>Nephrologist</option><option>Ophthalmologist</option>
+              <option>General Physician</option><option>Oncologist</option><option>Radiologist</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label><i class="fa-solid fa-hospital"></i>Hospital / Institution</label>
+            <input type="text" id="signup-hospital" placeholder="Hospital or Clinic name">
+          </div>
+        </div>
+
+        <!-- Clinic signup fields -->
+        <div id="clinicSignupFields" class="clinic-fields">
+          <div class="fg">
+            <label><i class="fa-solid fa-building-circle-check"></i>Clinic Type</label>
+            <select id="signup-clinic-type">
+              <option value="">Select type...</option>
+              <option>Multi-Specialty Hospital</option><option>Diagnostic Center</option>
+              <option>Polyclinic</option><option>Nursing Home</option><option>Ayurvedic Clinic</option>
+              <option>Dental Clinic</option><option>Eye Hospital</option><option>Other</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label><i class="fa-solid fa-location-dot"></i>City / Location</label>
+            <input type="text" id="signup-location" placeholder="City, State">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="sendSignupOTP()" id="sendOtpBtn">
+          <i class="fa-solid fa-paper-plane"></i> Send OTP & Continue
+        </button>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div id="signup-step2" style="display:none">
+        <div class="steps">
+          <div class="step done" id="s1b">✓</div>
+          <div class="step-line done" id="sl1b"></div>
+          <div class="step active" id="s2b">2</div>
+          <div class="step-line" id="sl2b"></div>
+          <div class="step" id="s3b">3</div>
+        </div>
+        <p style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:20px">Enter the 6-digit OTP sent to your email</p>
+        <div class="otp-row">
+          <input class="otp-input" id="otp0" maxlength="1" oninput="otpMove(0)" onkeydown="otpBack(event,0)">
+          <input class="otp-input" id="otp1" maxlength="1" oninput="otpMove(1)" onkeydown="otpBack(event,1)">
+          <input class="otp-input" id="otp2" maxlength="1" oninput="otpMove(2)" onkeydown="otpBack(event,2)">
+          <input class="otp-input" id="otp3" maxlength="1" oninput="otpMove(3)" onkeydown="otpBack(event,3)">
+          <input class="otp-input" id="otp4" maxlength="1" oninput="otpMove(4)" onkeydown="otpBack(event,4)">
+          <input class="otp-input" id="otp5" maxlength="1" oninput="otpMove(5)" onkeydown="otpBack(event,5)">
+        </div>
+        <div class="otp-timer">Expires in <span id="timerDisplay">02:00</span> &nbsp; <button class="resend-btn" id="resendBtn" onclick="resendOTP()">Resend OTP</button></div>
+        <button class="btn btn-primary" onclick="verifyAndSignup()" id="verifyBtn" style="margin-top:20px">
+          <i class="fa-solid fa-user-check"></i> Verify & Create Account
+        </button>
+        <button class="btn btn-ghost" onclick="resetSignup()">← Go Back</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+let currentType = 'doctor';
+const typeConfig = {
+  doctor: { icon:'fa-user-doctor', label:'Doctor Account — Medical Professional Portal', badgeClass:'doctor' },
+  clinic: { icon:'fa-hospital', label:'Clinic Account — Healthcare Facility Portal', badgeClass:'clinic' },
+  user:   { icon:'fa-person', label:'Patient Account — Personal Health Portal', badgeClass:'user' }
+};
+
+function setType(type) {
+  // જો યુઝર 'Patient' પર ક્લિક કરે, તો તેને login.html પેજ પર મોકલી દો
+  if (type === 'user') {
+    window.location.href = '/login-patient';
+    return; // અહીંથી જ બહાર નીકળી જાવ, નીચેનો કોડ રન ન કરવો
+  }
+
+  currentType = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-'+type).classList.add('active');
+
+  const cfg = typeConfig[type];
+  const badge = document.getElementById('roleBadge');
+  badge.className = 'role-badge ' + cfg.badgeClass;
+  document.getElementById('roleBadgeText').innerHTML = `<i class="fa-solid ${cfg.icon}"></i>&nbsp; ${cfg.label}`;
+
+  // Show/hide extra fields
+  document.querySelectorAll('.doctor-fields').forEach(el => el.style.display = type==='doctor'?'block':'none');
+  document.querySelectorAll('.clinic-fields').forEach(el => el.style.display = type==='clinic'?'block':'none');
+}
+
+
+// Initialize
+setType('doctor');
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===(t==='login'?0:1)));
+  document.getElementById('login-panel').classList.toggle('active', t==='login');
+  document.getElementById('signup-panel').classList.toggle('active', t==='signup');
+  clearMsg();
+}
+
+function showMsg(text, type='error') {
+  const m = document.getElementById('msg');
+  m.className = 'msg ' + type;
+  m.innerHTML = text;
+  m.style.display = 'block';
+}
+function clearMsg() { document.getElementById('msg').style.display = 'none'; }
+
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) return showMsg('⚠️ Please enter email and password');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Logging in...';
+  try {
+    const captchaToken = grecaptcha.getResponse();
+
+if (!captchaToken) {
+   showMsg('⚠️ Please complete CAPTCHA verification');
+   btn.disabled = false;
+   btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+   return;
+}
+
+const body = {
+   email,
+   password: pass,
+   user_type: currentType,
+   captcha_token: captchaToken
+};
+    if (currentType === 'doctor') body.license = document.getElementById('login-license').value.trim();
+    if (currentType === 'clinic') body.clinic_id = document.getElementById('login-clinic-id').value.trim();
+    const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+// login() ફંક્શનની અંદર...
+if (data.success) {
+  showMsg('✅ Login successful! Redirecting...', 'success');
+  setTimeout(() => { 
+    window.location.href = data.redirect || '/remote_doctor'; 
+  }, 1200);
+}
+
+    else {
+      showMsg(data.error || 'Login failed');
+      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+    }
+  } catch(e) {
+    showMsg('Server error. Try again.');
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+  }
+}
+
+async function sendSignupOTP() {
+  const name  = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass  = document.getElementById('signup-pass').value;
+  if (!name||!email||!pass) return showMsg('⚠️ Please fill all required fields');
+  if (pass.length < 8) return showMsg('⚠️ Password must be at least 8 characters');
+
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending OTP...';
+  try {
+    const res = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, phone:'0000000000'}) });
+    const data = await res.json();
+    if (data.success) {
+      showMsg('📧 OTP sent to ' + email, 'info');
+      document.getElementById('signup-step1').style.display = 'none';
+      document.getElementById('signup-step2').style.display = 'block';
+      document.getElementById('otp0').focus();
+      startTimer(120);
+    } else {
+      showMsg(data.error || 'Failed to send OTP');
+      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send OTP & Continue';
+    }
+  } catch(e) {
+    showMsg('Server error. Try again.');
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send OTP & Continue';
+  }
+}
+
+function otpMove(idx) {
+  const el = document.getElementById('otp'+idx);
+  if (el.value) { el.classList.add('filled'); if (idx<5) document.getElementById('otp'+(idx+1)).focus(); }
+  else el.classList.remove('filled');
+  if ([...Array(6)].map((_,i)=>document.getElementById('otp'+i).value).every(v=>v)) verifyAndSignup();
+}
+function otpBack(e,idx){ if(e.key==='Backspace'&&!document.getElementById('otp'+idx).value&&idx>0){ const p=document.getElementById('otp'+(idx-1)); p.value=''; p.classList.remove('filled'); p.focus(); } }
+function getOTP(){ return [...Array(6)].map((_,i)=>document.getElementById('otp'+i).value).join(''); }
+function clearOtpInputs(){ for(let i=0;i<6;i++){const el=document.getElementById('otp'+i);el.value='';el.classList.remove('filled');} }
+
+let timerInterval = null;
+function startTimer(s){ clearInterval(timerInterval); document.getElementById('resendBtn').style.display='none'; let rem=s; document.getElementById('timerDisplay').textContent=fmt(rem); timerInterval=setInterval(()=>{ rem--; document.getElementById('timerDisplay').textContent=fmt(rem); if(rem<=0){clearInterval(timerInterval);document.getElementById('resendBtn').style.display='inline';} },1000); }
+function stopTimer(){ clearInterval(timerInterval); }
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+async function resendOTP(){
+  document.getElementById('resendBtn').style.display='none'; clearOtpInputs();
+  const email=document.getElementById('signup-email').value.trim();
+  const res=await fetch('/api/send-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,phone:'0000000000'})});
+  const data=await res.json();
+  if(data.success){showMsg('📧 OTP resent!','info');startTimer(120);document.getElementById('otp0').focus();}
+  else showMsg(data.error||'Failed to resend');
+}
+
+async function verifyAndSignup(){
+  const otp=getOTP();
+  if(otp.length<6) return showMsg('Enter the complete 6-digit OTP');
+  const btn=document.getElementById('verifyBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Verifying...';
+
+  const body = {
+    name: document.getElementById('signup-name').value.trim(),
+    email: document.getElementById('signup-email').value.trim(),
+    password: document.getElementById('signup-pass').value,
+    otp, user_type: currentType
+  };
+  if (currentType==='doctor') {
+    body.license = document.getElementById('signup-license').value.trim();
+    body.specialization = document.getElementById('signup-specialization').value;
+    body.hospital = document.getElementById('signup-hospital').value.trim();
+  }
+  if (currentType==='clinic') {
+    body.clinic_type = document.getElementById('signup-clinic-type').value;
+    body.location = document.getElementById('signup-location').value.trim();
+  }
+
+  const res=await fetch('/api/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.success){stopTimer();showMsg('🎉 Account created! Please login.','success');setTimeout(()=>{switchTab('login');resetSignup();},1800);}
+  else{showMsg(data.error||'Signup failed');btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-user-check"></i> Verify & Create Account';}
+}
+
+function resetSignup(){
+  document.getElementById('signup-step1').style.display='block';
+  document.getElementById('signup-step2').style.display='none';
+  document.getElementById('sendOtpBtn').disabled=false;
+  document.getElementById('sendOtpBtn').innerHTML='<i class="fa-solid fa-paper-plane"></i> Send OTP & Continue';
+  stopTimer(); clearOtpInputs(); clearMsg();
+}
+
+function googleLogin(){ window.location.href='/auth/google'; }
+
+async function showForgot(){
+  const email=prompt("Enter your registered email:"); if(!email) return;
+  const res=await fetch('/api/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  const data=await res.json();
+  if(data.success){
+    const otp=prompt("Enter OTP sent to your email:"); if(!otp) return;
+    const v=await fetch('/api/verify-reset-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,otp})});
+    const vd=await v.json();
+    if(vd.success){
+      const np=prompt("Enter new password:"); if(!np) return;
+      const r=await fetch('/api/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:np})});
+      const rd=await r.json();
+      showMsg(rd.success?'✅ Password reset successful!':rd.error||'Reset failed', rd.success?'success':'error');
+    } else showMsg('❌ Invalid OTP');
+  } else showMsg(data.error||'Failed to send OTP');
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('login-panel').classList.contains('active')) login(); });
+window.addEventListener('DOMContentLoaded',()=>{
+  const p=new URLSearchParams(window.location.search);
+  if(p.get('timeout')==='1') showMsg('⏱️ Logged out due to inactivity. Please login again.','warning');
+});
+
+// Session timeout
+let sessionTimer,countdownInterval;
+function startSessionWatch(){
+  clearTimeout(sessionTimer);
+  sessionTimer=setTimeout(()=>{
+    let cnt=60; document.getElementById('sessionCountdown').textContent=cnt;
+    document.getElementById('sessionBar').style.width='100%';
+    document.getElementById('sessionOverlay').classList.add('show');
+    countdownInterval=setInterval(()=>{
+      cnt--; document.getElementById('sessionCountdown').textContent=cnt;
+      document.getElementById('sessionBar').style.width=(cnt/60*100)+'%';
+      if(cnt<=0){clearInterval(countdownInterval);window.location.href='/logout?timeout=1';}
+    },1000);
+  },59*60*1000);
+}
+function stayLoggedIn(){document.getElementById('sessionOverlay').classList.remove('show');clearInterval(countdownInterval);startSessionWatch();}
+document.addEventListener('click',startSessionWatch);document.addEventListener('keydown',startSessionWatch);
+startSessionWatch();
+</script>
+</body>
+</html>
